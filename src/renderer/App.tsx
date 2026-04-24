@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { FileTree } from './components/FileTree'
 import { Editor } from './components/Editor'
 import { AIPanel } from './components/AIPanel'
+import { SearchResults } from './components/SearchResults'
+import { AIGenerating } from './components/AIGenerating'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { Toolbar } from './components/Toolbar'
 import { Search, FolderOpen } from 'lucide-react'
@@ -32,8 +34,10 @@ function App(): JSX.Element {
   const [content, setContent] = useState<string>('')
   const [isDirty, setIsDirty] = useState(false)
   const [aiResults, setAiResults] = useState<Record<string, string>>({})
+  const [aiLoading, setAiLoading] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<FileInfo[]>([])
+  const [showSearchResults, setShowSearchResults] = useState(false)
 
   // Open vault
   const handleOpenVault = useCallback(async () => {
@@ -57,6 +61,7 @@ function App(): JSX.Element {
     setAiResults({})
     setSearchQuery('')
     setSearchResults([])
+    setShowSearchResults(false)
   }, [selectedFile, isDirty, content])
 
   // Search
@@ -65,9 +70,18 @@ function App(): JSX.Element {
     if (query.trim()) {
       const results = await window.api.searchFiles(query)
       setSearchResults(results)
+      setShowSearchResults(true)
     } else {
       setSearchResults([])
+      setShowSearchResults(false)
     }
+  }, [])
+
+  // Close search results
+  const handleCloseSearch = useCallback(() => {
+    setSearchQuery('')
+    setSearchResults([])
+    setShowSearchResults(false)
   }, [])
 
   // Save file
@@ -100,6 +114,7 @@ function App(): JSX.Element {
   // AI operations
   const handleAI = useCallback(async (action: string) => {
     if (!content) return
+    setAiLoading(action)
     try {
       let result: string | string[]
       switch (action) {
@@ -118,11 +133,14 @@ function App(): JSX.Element {
           result = await window.api.aiWrite(content)
           break
         default:
+          setAiLoading(null)
           return
       }
       setAiResults(prev => ({ ...prev, [action]: Array.isArray(result) ? result.join(', ') : result }))
     } catch (err) {
       console.error('AI error:', err)
+    } finally {
+      setAiLoading(null)
     }
   }, [content, files])
 
@@ -144,7 +162,7 @@ function App(): JSX.Element {
   }, [selectedFile, isDirty, content])
 
   // Display files (search results or all files)
-  const displayFiles = searchQuery.trim() ? searchResults : files
+  const displayFiles = showSearchResults ? searchResults : files
 
   return (
     <div className="app-container">
@@ -169,20 +187,32 @@ function App(): JSX.Element {
                 />
               </div>
             </div>
-            <Toolbar
-              onNewFile={handleNewFile}
-              onNewFolder={handleNewFolder}
-              vaultPath={vaultPath}
-              files={files}
-            />
-            <div className="file-tree">
-              <FileTree
-                files={displayFiles}
-                selectedFile={selectedFile}
+            
+            {showSearchResults ? (
+              <SearchResults
+                results={searchResults}
+                query={searchQuery}
                 onSelect={handleSelectFile}
-                vaultPath={vaultPath}
+                onClose={handleCloseSearch}
               />
-            </div>
+            ) : (
+              <>
+                <Toolbar
+                  onNewFile={handleNewFile}
+                  onNewFolder={handleNewFolder}
+                  vaultPath={vaultPath}
+                  files={files}
+                />
+                <div className="file-tree">
+                  <FileTree
+                    files={displayFiles}
+                    selectedFile={selectedFile}
+                    onSelect={handleSelectFile}
+                    vaultPath={vaultPath}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <div className="main-content">
             <div className="editor-container">
@@ -211,6 +241,7 @@ function App(): JSX.Element {
             aiResults={aiResults}
             onAI={handleAI}
             hasContent={!!content}
+            aiLoading={aiLoading}
           />
         </>
       )}

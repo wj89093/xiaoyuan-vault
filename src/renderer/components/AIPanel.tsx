@@ -1,9 +1,11 @@
-import { Sparkles, Tag, FileText, MessageSquare, PenTool } from 'lucide-react'
+import { Sparkles, Tag, FileText, PenTool } from 'lucide-react'
+import { AIGenerating } from './AIGenerating'
 
 interface AIPanelProps {
   aiResults: Record<string, string>
   onAI: (action: string) => void
   hasContent: boolean
+  aiLoading?: string | null
 }
 
 const aiActions = [
@@ -13,7 +15,7 @@ const aiActions = [
   { key: 'write', label: 'AI 写作', desc: '大纲生成文档', icon: PenTool }
 ]
 
-export function AIPanel({ aiResults, onAI, hasContent }: AIPanelProps): JSX.Element {
+export function AIPanel({ aiResults, onAI, hasContent, aiLoading }: AIPanelProps): JSX.Element {
   return (
     <div className="ai-panel">
       <div className="ai-panel-header">AI 助手</div>
@@ -23,15 +25,20 @@ export function AIPanel({ aiResults, onAI, hasContent }: AIPanelProps): JSX.Elem
           <div className="ai-actions">
             {aiActions.map(action => {
               const Icon = action.icon
+              const isLoading = aiLoading === action.key
               return (
                 <button
                   key={action.key}
                   className="btn"
                   onClick={() => onAI(action.key)}
-                  disabled={!hasContent}
+                  disabled={!hasContent || !!aiLoading}
                   style={{ justifyContent: 'flex-start', gap: 'var(--space-3)' }}
                 >
-                  <Icon size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+                  {isLoading ? (
+                    <AIGenerating />
+                  ) : (
+                    <Icon size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+                  )}
                   <span>{action.label}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>
                     {action.desc}
