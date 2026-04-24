@@ -54,8 +54,11 @@ export function FileTree({ files, selectedFile, onSelect, vaultPath }: FileTreeP
     )
   }
 
-  // Build tree structure
+  // Build tree structure - use children if available
   const rootFiles = files.filter(f => !f.path.includes('/'))
+
+  // If files have children property, use them directly
+  const displayFiles = files[0]?.children ? files : rootFiles
 
   return (
     <div className="file-tree">
@@ -64,7 +67,7 @@ export function FileTree({ files, selectedFile, onSelect, vaultPath }: FileTreeP
           暂无文件，点击工具栏创建
         </div>
       ) : (
-        rootFiles.map(file => renderFile(file))
+        displayFiles.map(file => renderFile(file))
       )}
     </div>
   )

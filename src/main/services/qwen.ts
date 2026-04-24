@@ -1,6 +1,7 @@
 import log from 'electron-log/main'
+import 'dotenv/config'
 
-// Qwen API configuration - in production, this should be in config
+// Qwen API configuration
 const QWEN_API_KEY = process.env.QWEN_API_KEY || ''
 const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 

@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import log from 'electron-log/main'
-import { initDatabase, searchFiles, getFileContent, saveFile, createFolder } from './services/database'
+import { initDatabase, searchFiles, getFileContent, saveFile, createFolder, listVaultFiles } from './services/database'
 import { callQwenAI } from './services/qwen'
 
 // Configure logging
@@ -63,7 +63,7 @@ function setupIpcHandlers(): void {
 
   // File operations
   ipcMain.handle('file:list', async () => {
-    return searchFiles('')
+    return listVaultFiles()
   })
 
   ipcMain.handle('file:search', async (_, query: string) => {
