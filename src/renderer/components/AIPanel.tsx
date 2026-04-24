@@ -26,12 +26,16 @@ export function AIPanel({ aiResults, onAI, hasContent }: AIPanelProps): JSX.Elem
               return (
                 <button
                   key={action.key}
-                  className={`btn ${hasContent ? 'btn-primary' : ''}`}
+                  className="btn"
                   onClick={() => onAI(action.key)}
                   disabled={!hasContent}
+                  style={{ justifyContent: 'flex-start', gap: 'var(--space-3)' }}
                 >
-                  <Icon size={14} />
+                  <Icon size={16} style={{ color: 'var(--color-text-tertiary)' }} />
                   <span>{action.label}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>
+                    {action.desc}
+                  </span>
                 </button>
               )
             })}

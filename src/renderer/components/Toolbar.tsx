@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Plus, FolderPlus } from 'lucide-react'
 import type { FileInfo } from '../types'
 
@@ -15,6 +15,37 @@ export function Toolbar({ onNewFile, onNewFolder, vaultPath, files }: ToolbarPro
   const [fileName, setFileName] = useState('')
   const [folderName, setFolderName] = useState('')
   const [targetFolder, setTargetFolder] = useState(vaultPath)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
+  const fileDropdownRef = useRef<HTMLDivElement>(null)
+  const folderDropdownRef = useRef<HTMLDivElement>(null)
+
+  const folders = files.filter(f => f.isDirectory)
+
+  useEffect(() => {
+    if (showNewFile && fileInputRef.current) {
+      fileInputRef.current.focus()
+    }
+  }, [showNewFile])
+
+  useEffect(() => {
+    if (showNewFolder && folderInputRef.current) {
+      folderInputRef.current.focus()
+    }
+  }, [showNewFolder])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (fileDropdownRef.current && !fileDropdownRef.current.contains(e.target as Node)) {
+        setShowNewFile(false)
+      }
+      if (folderDropdownRef.current && !folderDropdownRef.current.contains(e.target as Node)) {
+        setShowNewFolder(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleCreateFile = () => {
     if (fileName.trim()) {
@@ -32,45 +63,49 @@ export function Toolbar({ onNewFile, onNewFolder, vaultPath, files }: ToolbarPro
     }
   }
 
-  const folders = files.filter(f => f.isDirectory)
-
   return (
     <div className="toolbar">
-      <button className="btn" onClick={() => setShowNewFile(!showNewFile)}>
-        <Plus size={14} />
-        文件
+      <button
+        className="btn btn-icon"
+        onClick={() => setShowNewFile(!showNewFile)}
+        title="新建文件"
+      >
+        <Plus size={16} />
       </button>
-      <button className="btn" onClick={() => setShowNewFolder(!showNewFolder)}>
-        <FolderPlus size={14} />
-        文件夹
+      <button
+        className="btn btn-icon"
+        onClick={() => setShowNewFolder(!showNewFolder)}
+        title="新建文件夹"
+      >
+        <FolderPlus size={16} />
       </button>
 
       {showNewFile && (
-        <div className="dropdown">
-          <div className="dropdown-section">创建新文件</div>
-          <div style={{ padding: '8px 12px' }}>
+        <div className="dropdown" ref={fileDropdownRef} style={{ top: '100%', left: 0 }}>
+          <div className="dropdown-section">新建文件</div>
+          <div style={{ padding: 'var(--space-2)' }}>
             <input
+              ref={fileInputRef}
               type="text"
               className="input"
               placeholder="文件名"
               value={fileName}
               onChange={e => setFileName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreateFile()}
-              autoFocus
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: 'var(--space-2)' }}
             />
             <select
               className="select"
               value={targetFolder}
               onChange={e => setTargetFolder(e.target.value)}
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: 'var(--space-2)' }}
             >
               <option value={vaultPath}>根目录</option>
               {folders.map(f => (
                 <option key={f.path} value={f.path}>{f.name}</option>
               ))}
             </select>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               <button className="btn btn-primary" onClick={handleCreateFile}>创建</button>
               <button className="btn" onClick={() => setShowNewFile(false)}>取消</button>
             </div>
@@ -79,31 +114,31 @@ export function Toolbar({ onNewFile, onNewFolder, vaultPath, files }: ToolbarPro
       )}
 
       {showNewFolder && (
-        <div className="dropdown">
-          <div className="dropdown-section">创建新文件夹</div>
-          <div style={{ padding: '8px 12px' }}>
+        <div className="dropdown" ref={folderDropdownRef} style={{ top: '100%', left: 0 }}>
+          <div className="dropdown-section">新建文件夹</div>
+          <div style={{ padding: 'var(--space-2)' }}>
             <input
+              ref={folderInputRef}
               type="text"
               className="input"
               placeholder="文件夹名"
               value={folderName}
               onChange={e => setFolderName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
-              autoFocus
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: 'var(--space-2)' }}
             />
             <select
               className="select"
               value={targetFolder}
               onChange={e => setTargetFolder(e.target.value)}
-              style={{ marginBottom: 8 }}
+              style={{ marginBottom: 'var(--space-2)' }}
             >
               <option value={vaultPath}>根目录</option>
               {folders.map(f => (
                 <option key={f.path} value={f.path}>{f.name}</option>
               ))}
             </select>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               <button className="btn btn-primary" onClick={handleCreateFolder}>创建</button>
               <button className="btn" onClick={() => setShowNewFolder(false)}>取消</button>
             </div>
