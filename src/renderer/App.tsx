@@ -4,6 +4,7 @@ import { Editor } from './components/Editor'
 import { AIPanel } from './components/AIPanel'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { Toolbar } from './components/Toolbar'
+import { Search, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
 
 declare global {
@@ -31,6 +32,8 @@ function App(): JSX.Element {
   const [content, setContent] = useState<string>('')
   const [isDirty, setIsDirty] = useState(false)
   const [aiResults, setAiResults] = useState<Record<string, string>>({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<FileInfo[]>([])
 
   // Open vault
   const handleOpenVault = useCallback(async () => {
@@ -45,7 +48,6 @@ function App(): JSX.Element {
   // Select file
   const handleSelectFile = useCallback(async (filePath: string) => {
     if (selectedFile && isDirty) {
-      // Auto-save on file switch
       await window.api.saveFile(selectedFile, content)
     }
     const fileContent = await window.api.readFile(filePath)
@@ -53,7 +55,20 @@ function App(): JSX.Element {
     setContent(fileContent)
     setIsDirty(false)
     setAiResults({})
+    setSearchQuery('')
+    setSearchResults([])
   }, [selectedFile, isDirty, content])
+
+  // Search
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query)
+    if (query.trim()) {
+      const results = await window.api.searchFiles(query)
+      setSearchResults(results)
+    } else {
+      setSearchResults([])
+    }
+  }, [])
 
   // Save file
   const handleSave = useCallback(async () => {
@@ -128,6 +143,9 @@ function App(): JSX.Element {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [selectedFile, isDirty, content])
 
+  // Display files (search results or all files)
+  const displayFiles = searchQuery.trim() ? searchResults : files
+
   return (
     <div className="app-container">
       {!vaultPath ? (
@@ -136,7 +154,20 @@ function App(): JSX.Element {
         <>
           <div className="sidebar">
             <div className="sidebar-header">
-              <span className="sidebar-title">📁 {vaultPath?.split('/').pop()}</span>
+              <FolderOpen size={16} style={{ color: 'var(--color-text-tertiary)' }} />
+              <span className="sidebar-title">{vaultPath?.split('/').pop()}</span>
+            </div>
+            <div className="search-container">
+              <div className="search-wrapper">
+                <Search className="search-icon" size={14} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="搜索文件..."
+                  value={searchQuery}
+                  onChange={e => handleSearch(e.target.value)}
+                />
+              </div>
             </div>
             <Toolbar
               onNewFile={handleNewFile}
@@ -146,7 +177,7 @@ function App(): JSX.Element {
             />
             <div className="file-tree">
               <FileTree
-                files={files}
+                files={displayFiles}
                 selectedFile={selectedFile}
                 onSelect={handleSelectFile}
                 vaultPath={vaultPath}
@@ -160,10 +191,8 @@ function App(): JSX.Element {
                   <div className="editor-header">
                     <span className="editor-title">{selectedFile.split('/').pop()}</span>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {isDirty && <span style={{ fontSize: 12, color: '#faad14' }}>未保存</span>}
-                      <button className="toolbar-btn" onClick={handleSave}>
-                        保存
-                      </button>
+                      {isDirty && <span className="editor-status">未保存</span>}
+                      <button className="btn" onClick={handleSave}>保存</button>
                     </div>
                   </div>
                   <div className="editor-wrapper">

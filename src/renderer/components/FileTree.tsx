@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText } from 'lucide-react'
 import type { FileInfo } from '../types'
 
 interface FileTreeProps {
@@ -29,12 +30,21 @@ export function FileTree({ files, selectedFile, onSelect, vaultPath }: FileTreeP
       return (
         <div key={file.path}>
           <div
-            className="file-item"
-            style={{ paddingLeft: depth * 16 + 8 }}
+            className="file-tree-item"
+            style={{ paddingLeft: depth * 16 + 16 }}
             onClick={() => toggleFolder(file.path)}
           >
-            <span className="file-item-icon">{isExpanded ? '📂' : '📁'}</span>
-            <span className="file-item-name">{file.name}</span>
+            {isExpanded ? (
+              <ChevronDown className="file-tree-icon" size={14} />
+            ) : (
+              <ChevronRight className="file-tree-icon" size={14} />
+            )}
+            {isExpanded ? (
+              <FolderOpen className="file-tree-icon" size={16} />
+            ) : (
+              <Folder className="file-tree-icon" size={16} />
+            )}
+            <span className="file-tree-name">{file.name}</span>
           </div>
           {isExpanded && file.children?.map(child => renderFile(child, depth + 1))}
         </div>
@@ -44,28 +54,23 @@ export function FileTree({ files, selectedFile, onSelect, vaultPath }: FileTreeP
     return (
       <div
         key={file.path}
-        className={`file-item ${isSelected ? 'active' : ''}`}
-        style={{ paddingLeft: depth * 16 + 8 }}
+        className={`file-tree-item ${isSelected ? 'active' : ''}`}
+        style={{ paddingLeft: depth * 16 + 36 }}
         onClick={() => onSelect(file.path)}
       >
-        <span className="file-item-icon">📄</span>
-        <span className="file-item-name">{file.name}</span>
+        <FileText className="file-tree-icon" size={16} />
+        <span className="file-tree-name">{file.name}</span>
       </div>
     )
   }
 
-  // Build tree structure - use children if available
-  const rootFiles = files.filter(f => !f.path.includes('/'))
-
-  // If files have children property, use them directly
-  const displayFiles = files[0]?.children ? files : rootFiles
+  const hasChildren = files[0]?.children
+  const displayFiles = hasChildren ? files : files.filter(f => !f.path.includes('/'))
 
   return (
     <div className="file-tree">
       {files.length === 0 ? (
-        <div style={{ padding: 16, color: '#666', fontSize: 13 }}>
-          暂无文件，点击工具栏创建
-        </div>
+        <div className="loading">No files yet</div>
       ) : (
         displayFiles.map(file => renderFile(file))
       )}
