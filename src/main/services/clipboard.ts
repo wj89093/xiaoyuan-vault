@@ -8,6 +8,7 @@ let bubbleWindow: BrowserWindow | null = null
 let cardWindow: BrowserWindow | null = null
 let vaultPath = ''
 let bubbleAction = '' // Communicates bubble → main before window closes
+let cardAction = ''   // Communicates card → main before window closes
 
 // ============ Public API ============
 
@@ -34,16 +35,16 @@ body:active{cursor:grabbing}
 .bubble{
   width:${bubbleSize}px;height:${bubbleSize}px;
   border-radius:50%;
-  background:rgba(30,30,32,0.88);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:#ffffff;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 20px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow:0 2px 12px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.04);
   transition:transform .2s,box-shadow .2s;
-  font-size:22px;color:#f5f5f7;
+  font-size:22px;color:#515154;
   -webkit-app-region:no-drag;
+  cursor:pointer;
 }
-.bubble:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,0,0,0.4)}
-.bubble.drag-over{transform:scale(1.15);box-shadow:0 0 0 4px #007aff,0 8px 32px rgba(0,122,255,0.4)}
+.bubble:hover{transform:scale(1.08);box-shadow:0 4px 20px rgba(0,0,0,0.12),0 0 0 1px rgba(0,122,255,0.15)}
+.bubble.drag-over{transform:scale(1.15);box-shadow:0 0 0 3px #007aff,0 6px 24px rgba(0,122,255,0.2)}
 </style></head><body>
 <div class="bubble" id="bubble">📥</div>
 <script>
@@ -67,8 +68,9 @@ document.addEventListener('drop', e => {
     frame: false, transparent: true,
     alwaysOnTop: true, resizable: false,
     skipTaskbar: true, hasShadow: false,
-    type: 'panel',
-    paintWhenInitiallyHidden: true,
+    vibrancy: 'hud',
+    visualEffectState: 'active',
+    show: false,
     webPreferences: {
       sandbox: false, contextIsolation: false,
       nodeIntegration: false,
@@ -76,29 +78,41 @@ document.addEventListener('drop', e => {
   })
 
   bubbleWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+
+  bubbleWindow.once('ready-to-show', () => {
+    console.log('[Bubble] ready-to-show')
+    bubbleWindow?.showInactive()
+  })
   bubbleWindow.setVisibleOnAllWorkspaces(true)
   bubbleWindow.setAlwaysOnTop(true, 'floating')
 
   bubbleWindow.on('close', () => {
-    const title = bubbleWindow?.webContents?.getTitle() || bubbleAction
-    bubbleAction = title
+    const raw = bubbleWindow && !bubbleWindow.isDestroyed()
+      ? bubbleWindow.webContents.getTitle()
+      : ''
+    // data: URLs return the URL as title — ignore those
+    bubbleAction = raw && !raw.startsWith('data:') ? raw : ''
+    console.log('[Bubble] close raw:', raw, '→ action:', bubbleAction)
   })
 
   bubbleWindow.on('closed', () => {
     const action = bubbleAction
+    console.log('[Bubble] closed, action:', action)
     bubbleAction = ''
     bubbleWindow = null
 
     if (action === 'EXPAND') {
+      console.log('[Bubble] expanding card...')
       const pos = screen.getCursorScreenPoint()
       showCaptureCard(pos.x - 250, pos.y + 10)
-    } else if (action.startsWith('DROP:')) {
+    } else if (action && action.startsWith('DROP:')) {
       try {
         const data = JSON.parse(action.replace('DROP:', ''))
         handleDropOnBubble(data)
       } catch {}
       setTimeout(showBubble, 200)
     } else {
+      console.log('[Bubble] respawning (no action)')
       setTimeout(showBubble, 200)
     }
   })
@@ -123,27 +137,29 @@ function showCaptureCard(centerX: number, centerY: number): void {
     return
   }
 
+  console.log('[Card] creating at', centerX, centerY)
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-.card{width:480px;margin:0 auto;background:rgba(30,30,32,0.94);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px)}
+.card{width:480px;margin:0 auto;background:#ffffff;border-radius:10px;padding:24px;box-shadow:0 8px 40px rgba(0,0,0,0.12),0 0 0 1px rgba(0,0,0,0.06)}
 .header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.header-title{font-size:14px;font-weight:600;color:#f5f5f7;flex:1}
+.header-title{font-size:14px;font-weight:600;color:#1d1d1f;flex:1}
 .header-hint{font-size:11px;color:#a1a1a6}
-#dropzone{position:relative;border:2px dashed rgba(255,255,255,0.12);border-radius:12px;margin-bottom:14px;background:rgba(255,255,255,0.02);transition:border-color .2s,background .2s;min-height:100px}
-#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.06)}
+#dropzone{position:relative;border:2px dashed #dcdcde;border-radius:8px;margin-bottom:14px;background:#f5f5f7;border-radius:12px;margin-bottom:14px;background:rgba(255,255,255,0.02);transition:border-color .2s,background .2s;min-height:100px}
+#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.04)}}
 .dz-hint{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px;color:#6e6e73;font-size:13px;pointer-events:none;transition:color .2s}
-.dz-hint .icon{font-size:28px;opacity:0.4}
-#content{width:100%;min-height:100px;padding:14px;background:transparent;border:none;outline:none;color:#f5f5f7;font-size:14px;line-height:1.6;resize:none;font-family:inherit;display:none}
+.dz-hint .icon{font-size:28px;opacity:0.6}
+#content{width:100%;min-height:100px;padding:14px;background:transparent;border:none;outline:none;color:#1d1d1f;font-size:14px;line-height:1.6;resize:none;font-family:inherit;display:none}
 #content::placeholder{color:#6e6e73}
 .actions{display:flex;justify-content:flex-end;gap:8px}
 .btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .15s}
 .btn-primary{background:#007aff;color:#fff}.btn-primary:hover{background:#0071e3}
-.btn-secondary{background:rgba(255,255,255,0.08);color:#a1a1a6}.btn-secondary:hover{background:rgba(255,255,255,0.12);color:#f5f5f7}
-.file-list{display:none;font-size:12px;color:#a1a1a6;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:14px}
+.btn-secondary{background:#f5f5f7;color:#6e6e73;border:1px solid #dcdcde}.btn-secondary:hover{background:#f0f0f2;color:#1d1d1f}
+.file-list{display:none;font-size:12px;color:#6e6e73;padding:8px 14px;background:#f5f5f7;border-radius:8px;margin-bottom:14px}
 .file-list .item{display:flex;align-items:center;gap:6px;padding:3px 0}
 .file-list .icon{font-size:14px}
-.saved-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#30d158;color:#000;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none}
+.saved-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#34c759;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none}
 .saved-toast.show{opacity:1}
 </style></head><body>
 <div class="card">
@@ -251,7 +267,9 @@ function save() {
     frame: false, transparent: true,
     alwaysOnTop: true, resizable: false,
     skipTaskbar: true, hasShadow: false,
-    type: 'panel',
+    vibrancy: 'hud',
+    visualEffectState: 'active',
+    show: false,
     webPreferences: {
       sandbox: false, contextIsolation: false,
       nodeIntegration: false,
@@ -259,27 +277,51 @@ function save() {
   })
 
   cardWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+
+  cardWindow.once('ready-to-show', () => {
+    console.log('[Card] ready-to-show')
+    cardWindow?.show()
+  })
+
+  cardWindow.webContents.on('did-finish-load', () => {
+    console.log('[Card] did-finish-load')
+  })
+
+  cardWindow.webContents.on('did-fail-load', (_, code, desc) => {
+    console.log('[Card] did-fail-load:', code, desc)
+  })
   cardWindow.setVisibleOnAllWorkspaces(true)
 
+  cardWindow.on('close', () => {
+    const raw = cardWindow && !cardWindow.isDestroyed()
+      ? cardWindow.webContents.getTitle()
+      : ''
+    cardAction = raw && !raw.startsWith('data:') ? raw : ''
+    console.log('[Card] close action:', cardAction)
+  })
+
   cardWindow.on('closed', () => {
-    const title = cardWindow?.getTitle() || ''
+    const action = cardAction
+    cardAction = ''
     cardWindow = null
 
-    if (title.startsWith('SAVE:')) {
+    if (action.startsWith('SAVE:')) {
       try {
-        const data = JSON.parse(title.replace('SAVE:', ''))
+        const data = JSON.parse(action.replace('SAVE:', ''))
         if (data.text) saveToVault(data.text)
       } catch {}
     }
-    // Always respawn bubble
+    // Always respawn bubble (unless minimised from bubble itself)
     setTimeout(showBubble, 200)
   })
 
   cardWindow.on('blur', () => {
-    // Auto-minimize on blur
-    if (cardWindow && !cardWindow.isDestroyed()) {
-      cardWindow.close()
-    }
+    // Slight delay — prevent immediate close when bubble→card transition
+    setTimeout(() => {
+      if (cardWindow && !cardWindow.isDestroyed()) {
+        cardWindow.close()
+      }
+    }, 2000)
   })
 }
 
