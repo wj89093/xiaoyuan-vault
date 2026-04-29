@@ -96,14 +96,10 @@ function App(): JSX.Element {
   const handleSaveAIMessage = useCallback(async (content: string) => {
     if (!vaultPath) return
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-    const collectDir = vaultPath + '/0-收集/AI对话'
-    try {
-      await (window.api as any).createFolder?.('0-收集/AI对话')
-    } catch {}
+    try { await (window.api as any).createFolder?.('0-收集/AI对话') } catch {}
     const title = content.split('\n')[0].slice(0, 40).replace(/[#*`\[\]]/g, '')
     const md = `---\ntitle: "${title || 'AI 对话'}"\ntype: note\nsource: ai-chat\ncreated: ${new Date().toISOString().slice(0, 10)}\ntags: [ai-chat]\n---\n\n${content}`
     const filePath = `0-收集/AI对话/ai-${timestamp}.md`
-    await window.api.createFile(filePath, title || 'AI 对话', 'note')
     await window.api.saveFile(filePath, md)
   }, [vaultPath])
 
@@ -300,7 +296,10 @@ function App(): JSX.Element {
                     files={displayFiles}
                     selectedFile={selectedFile}
                     onSelect={handleSelectFile}
-                    onNewFile={() => handleNewFile('', '')}
+                    onNewFile={() => {
+                      const name = prompt('文件名:')
+                      if (name) handleNewFile('', name.endsWith('.md') ? name : name + '.md')
+                    }}
                     vaultPath={vaultPath}
                   />
                 </div>
