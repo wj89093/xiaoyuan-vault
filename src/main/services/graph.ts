@@ -378,9 +378,13 @@ function cosineSimilarity(
 // ============ Helpers ============
 
 function getPageType(file: string): string {
-  if (file.startsWith('0-收集')) return 'resource'
-  if (file.startsWith('1-人物')) return 'person'
-  if (file.startsWith('2-公司')) return 'company'
-  if (file.startsWith('3-项目')) return 'project'
-  return 'note'
+  // Infer type from folder-map config (aligned with enrich.ts)
+  const folder = file.split('/')[0] || ''
+  // Static reverse lookup from default folder map
+  const folderToType: Record<string, string> = {
+    '0-收集': 'collection', '1-人物': 'person', '2-公司': 'company',
+    '3-项目': 'project', '4-会议': 'meeting', '5-交易': 'deal',
+    '6-概念': 'concept', '7-研究': 'research',
+  }
+  return folderToType[folder] || 'note'
 }
