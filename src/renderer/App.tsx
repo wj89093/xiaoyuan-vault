@@ -47,6 +47,7 @@ function App(): JSX.Element {
   const [showGraph, setShowGraph] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
+  const [showVaultMenu, setShowVaultMenu] = useState(false)
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -190,6 +191,20 @@ function App(): JSX.Element {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [selectedFile, isDirty, content])
 
+  // Auto-restore last vault on startup
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const lastPath = await (window.api as any).getLastVault?.()
+        if (lastPath) {
+          setVaultPath(lastPath)
+          const fileList = await window.api.listFiles()
+          setFiles(fileList)
+        }
+      } catch { /* first launch, show welcome */ }
+    })()
+  }, [])
+
   // Refresh file list after import
   useEffect(() => {
     return (window.api as any).onImportCompleted?.(async () => {
@@ -259,8 +274,33 @@ function App(): JSX.Element {
           <div className="sidebar">
             <div className="sidebar-header">
               <FolderOpen size={16} style={{ color: 'var(--color-text-tertiary)' }} />
-              <span className="sidebar-title">{vaultPath?.split('/').pop()}</span>
+              <span
+                className="sidebar-title sidebar-title-btn"
+                onClick={() => setShowVaultMenu(v => !v)}
+                title="点击切换知识库"
+              >{vaultPath?.split('/').pop()}</span>
             </div>
+
+            {/* Vault switch menu */}
+            {showVaultMenu && (
+              <div className="vault-menu">
+                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); handleOpenVault() }}>
+                  <FolderOpen size={13} />
+                  打开其他知识库
+                </div>
+                <div className="vault-menu-item danger" onClick={async () => {
+                  setShowVaultMenu(false)
+                  setVaultPath(null)
+                  setFiles([])
+                  setSelectedFile(null)
+                  setContent('')
+                  await (window.api as any).clearLastVault?.()
+                }}>
+                  <span>✕</span>
+                  关闭当前知识库
+                </div>
+              </div>
+            )}
             <div className="search-container">
               <div className="search-wrapper">
                 <Search className="search-icon" size={14} />
