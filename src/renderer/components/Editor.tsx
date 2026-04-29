@@ -12,7 +12,6 @@ import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil, FileText } from 'l
 interface EditorProps {
   value: string
   onChange: (value: string) => void
-  // Native preview for non-markdown files
   nativePreview?: {
     type: 'pdf' | 'html' | 'sheets' | 'image' | 'unsupported'
     text?: string
@@ -25,6 +24,77 @@ interface EditorProps {
 }
 
 type Mode = 'source' | 'reading'
+
+// PDF renderer using pdfjs-dist
+function PDFPreview({ dataUrl }: { dataUrl: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const pdfDocRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+
+    ;(async () => {
+      try {
+        const pdfjsLib = await import('pdfjs-dist')
+        // Set worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+        const loadingTask = pdfjsLib.getDocument(dataUrl)
+        const pdf = await loadingTask.promise
+        if (cancelled) return
+        pdfDocRef.current = pdf
+        setTotalPages(pdf.numPages)
+        await renderPage(pdf, page)
+        setLoading(false)
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e.message || 'PDF 加载失败')
+          setLoading(false)
+        }
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [dataUrl])
+
+  useEffect(() => {
+    if (!pdfDocRef.current) return
+    renderPage(pdfDocRef.current, page)
+  }, [page])
+
+  const renderPage = async (pdf: any, pageNum: number) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const page = await pdf.getPage(pageNum)
+    const scale = 1.5
+    const viewport = page.getViewport({ scale })
+    canvas.width = viewport.width
+    canvas.height = viewport.height
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+  }
+
+  return (
+    <div className="pdf-preview" ref={containerRef}>
+      <div className="pdf-toolbar">
+        <button className="pdf-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
+        <span className="pdf-page-info">{totalPages > 0 ? `${page} / ${totalPages}` : '加载中...'}</span>
+        <button className="pdf-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+      </div>
+      <div className="pdf-canvas-container">
+        {loading && <div className="pdf-loading">正在加载 PDF...</div>}
+        {error && <div className="pdf-error">{error}</div>}
+        <canvas ref={canvasRef} style={{ display: loading ? 'none' : 'block', maxWidth: '100%' }} />
+      </div>
+    </div>
+  )
+}
 
 export function Editor({ value, onChange, nativePreview, isNativePreview = false }: EditorProps): JSX.Element {
   const [mode, setMode] = useState<Mode>('source')
@@ -52,7 +122,7 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
         e.preventDefault()
-        if (isNativePreview) return // no mode toggle for native preview
+        if (isNativePreview) return
         if (mode === 'reading') setMode('source')
         else if (mode === 'source') setMode('reading')
       }
@@ -75,7 +145,7 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
           </span>
           {nativePreview.type === 'sheets' && nativePreview.sheetNames && (
             <div className="sheet-tabs">
-              {nativePreview.sheetNames.map((name, i) => (
+              {nativePreview.sheetNames.map((name: string, i: number) => (
                 <button
                   key={name}
                   className={`sheet-tab ${i === activeSheet ? 'active' : ''}`}
@@ -108,10 +178,8 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
             </div>
           )}
 
-          {nativePreview.type === 'pdf' && nativePreview.text && (
-            <div className="native-preview-text">
-              <pre>{nativePreview.text}</pre>
-            </div>
+          {nativePreview.type === 'pdf' && nativePreview.dataUrl && (
+            <PDFPreview dataUrl={nativePreview.dataUrl} />
           )}
 
           {nativePreview.type === 'unsupported' && (

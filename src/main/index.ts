@@ -382,11 +382,9 @@ AI 自动维护反向链接。
     const suffix = ext(filePath).toLowerCase()
 
     if (suffix === '.pdf') {
-      const pdfParse = (await import('pdf-parse')).default
       const data = await readFile(filePath)
-      const parsed = await pdfParse(Buffer.from(data))
-      // Return raw text for now (PDF rendering in browser via pdf.js in renderer)
-      return { type: 'pdf', text: parsed.text.slice(0, 5000) }
+      // Return raw buffer as base64 for renderer-side PDF.js rendering
+      return { type: 'pdf', dataUrl: `data:application/pdf;base64,${Buffer.from(data).toString('base64')}` }
     }
 
     if (['.docx', '.doc'].includes(suffix)) {
