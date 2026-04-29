@@ -46,6 +46,7 @@ function App(): JSX.Element {
   const [showQuickSwitch, setShowQuickSwitch] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -83,6 +84,21 @@ function App(): JSX.Element {
   }, [content, selectedFile, messages])
 
   // Open vault
+  // Save AI message to vault
+  const handleSaveAIMessage = useCallback(async (content: string) => {
+    if (!vaultPath) return
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const collectDir = vaultPath + '/0-收集/AI对话'
+    try {
+      await (window.api as any).createFolder?.('0-收集/AI对话')
+    } catch {}
+    const title = content.split('\n')[0].slice(0, 40).replace(/[#*`\[\]]/g, '')
+    const md = `---\ntitle: "${title || 'AI 对话'}"\ntype: note\nsource: ai-chat\ncreated: ${new Date().toISOString().slice(0, 10)}\ntags: [ai-chat]\n---\n\n${content}`
+    const filePath = `0-收集/AI对话/ai-${timestamp}.md`
+    await window.api.createFile(filePath, title || 'AI 对话', 'note')
+    await window.api.saveFile(filePath, md)
+  }, [vaultPath])
+
   const handleOpenVault = useCallback(async () => {
     const path = await window.api.openVault()
     if (path) {
@@ -178,12 +194,15 @@ function App(): JSX.Element {
     })
   }, [])
 
-  // Cmd+P / Ctrl+P Quick Switch
+  // Cmd+P / Ctrl+P Quick Switch + Cmd+F search focus
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
         e.preventDefault()
         if (vaultPath) setShowQuickSwitch(v => !v)
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f' && vaultPath) {
+        ;(document.querySelector('.search-input') as HTMLInputElement)?.focus()
       }
     }
     window.addEventListener('keydown', handler)
@@ -213,11 +232,20 @@ function App(): JSX.Element {
         />
       )}
       {showGraph && vaultPath && (
-        <KnowledgeGraph
-          files={files}
-          selectedFile={selectedFile}
-          onSelect={(path) => { setSelectedFile(path); setShowGraph(false) }}
-          onClose={() => setShowGraph(false)}
+        <div className="kg-overlay">
+          <KnowledgeGraph
+            files={files}
+            selectedFile={selectedFile}
+            onSelect={(path) => { setSelectedFile(path); setShowGraph(false) }}
+            onClose={() => setShowGraph(false)}
+          />
+        </div>
+      )}
+      {showSettings && vaultPath && (
+        <SettingsPanel
+          onClose={() => setShowSettings(false)}
+          autoAI={autoAI}
+          onUpdate={(s) => { setAutoAI(s); window.api.saveAutoAISettings?.(s as any) }}
         />
       )}
       {!vaultPath ? (
@@ -297,6 +325,10 @@ function App(): JSX.Element {
             messages={messages}
             onSend={handleSendMessage}
             loading={chatLoading}
+            onSaveToVault={async (msgId: string) => {
+              const msg = messages.find((m: any) => m.id === msgId || m.id === undefined)
+              if (msg) await handleSaveAIMessage(msg.content)
+            }}
           />
         </>
       )}
