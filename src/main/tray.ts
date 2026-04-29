@@ -14,7 +14,7 @@ export function createTray(mainWindow: Electron.BrowserWindow): Electron.Tray {
   if (icon.isEmpty()) {
     log.warn('Tray icon not found, using fallback')
     icon = nativeImage.createFromDataURL(
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAEASURBVDiNpZM9SwNBEIafuZhEEkQsLAQ7C+xsLfwDFgtbG+xsrGxttNZGCwtbC2trY6GFjYWFhYggYmEhSCQXLm9jxmR3d3t2l0Q8gp+ZnZ2Z+Wb2LYSUEk3TGv9jW0oppZSIiBw+fPh4RFRV9T8tMzMzg+d5xWKx+Ke6q6qTEZGTJ0+enBKRuaOjow87O7uftra2Xgshxmq12k4p5WGMmZ6cnPxCRH4RkT8iotPpdLZWq7Xr9XpPJiLyr2IAW9u2/0gpV8+cOfO9v79/sl6v/9rZ2Xk3HA6fLy4u/mGM+S0lfwGj0ejJwcHBh3K5/Kler78dDofP+v3+48Fg8Kjb7T4ZDAaP2u32g3q9/mBmZuZBs9l80Gq1HjabrXv1ev1eq9W60+l0bjebzdutVutWu92+2W63b7Tb7evtdvt6u92+0Wq1rrVarWvt9v9Nq9W61mq1rjWbzWutVutqs9m82mw2r7ZarSvN5v9Nq9W63Wq2rrWarNq1Xy9Wq1Xq1Wq3Xq1X69Wq9Xa9Xq9Wq1Wq1Wq1XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5XK5'
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVR4nGNgGLyg6v9/FEyGxi1omAiDsGvENIg2BhCnGY8hw8CAgY8FVEPITEjYDSJRI70BAIlX/REcJpYbAAAAAElFTkSuQmCC'
     )
   } else {
     icon = icon.resize({ width: 16, height: 16 })

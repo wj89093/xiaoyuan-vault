@@ -1,7 +1,4 @@
 import 'dotenv/config'
-import { config as dotenvConfig } from 'dotenv'
-dotenvConfig({ path: join(__dirname, '../../.env') })
-import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
 import { join } from 'path'
 import { mkdir, readFile, writeFile, copyFile } from 'fs/promises'
 import { existsSync } from 'fs'

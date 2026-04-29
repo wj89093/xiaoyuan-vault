@@ -1,5 +1,4 @@
 import log from 'electron-log/main'
-import 'dotenv/config'
 
 // Qwen API configuration
 const QWEN_API_KEY = process.env.QWEN_API_KEY || ''

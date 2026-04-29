@@ -1,5 +1,4 @@
 import log from 'electron-log/main'
-import 'dotenv/config'
 import { callQwenAI } from './qwen'
 
 // ============ Types ============
