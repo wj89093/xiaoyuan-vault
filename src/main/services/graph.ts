@@ -210,7 +210,7 @@ async function tokenizeDocument(
   return { file, title, tags, tokens }
 }
 
-function tokenize(text: string): Map<string, number> {
+export function tokenize(text: string): Map<string, number> {
   const tokenMap = new Map<string, number>()
 
   // Remove markdown syntax
@@ -247,7 +247,7 @@ function tokenize(text: string): Map<string, number> {
 
 // ============ TF-IDF ============
 
-function computeTFIDF(documents: TFIDFDocument[]): {
+export function computeTFIDF(documents: TFIDFDocument[]): {
   vectors: Map<string, Map<string, number>>[]
   idf: Map<string, number>
 } {
@@ -305,7 +305,7 @@ function computeTFIDF(documents: TFIDFDocument[]): {
 
 // ============ Edge Building ============
 
-function buildEdges(
+export function buildEdges(
   documents: TFIDFDocument[],
   vectors: Map<string, Map<string, number>>[],
   idf: Map<string, number>
@@ -355,7 +355,7 @@ function buildEdges(
   return edges
 }
 
-function cosineSimilarity(
+export function cosineSimilarity(
   vecA: Map<string, number>,
   vecB: Map<string, number>
 ): number {
@@ -379,7 +379,7 @@ function cosineSimilarity(
 
 // ============ Helpers ============
 
-function getPageType(file: string): string {
+export function getPageType(file: string): string {
   // Return 'note' as default — real type comes from frontmatter/enrich, not folder path
   return 'note'
 }
@@ -387,7 +387,7 @@ function getPageType(file: string): string {
 /**
  * Load type from folder-map.json (configurable, aligned with enrich.ts)
  */
-async function loadFolderToTypeMap(): Promise<Record<string, string>> {
+export async function loadFolderToTypeMap(): Promise<Record<string, string>> {
   try {
     const map = await loadEnrichFolderMap()
     // Invert: folder → type

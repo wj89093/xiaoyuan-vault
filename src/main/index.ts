@@ -639,7 +639,6 @@ app.on('window-all-closed', () => {
 })
 
 // Handle tray "退出" to allow clean quit via app.exit()
-let isQuitting = false
 ;(app as any).isQuitting = false
 
 app.on('before-quit', (e) => {

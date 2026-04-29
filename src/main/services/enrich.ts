@@ -104,11 +104,12 @@ export async function loadFolderMap(): Promise<Record<string, string>> {
   try {
     const vaultPath = getVaultPath()
     if (!vaultPath) return DEFAULT_FOLDER_MAP
-    const mapPath = join(require('path').join(vaultPath, '.xiaoyuan', 'folder-map.json'))
     const { readFile, mkdir } = await import('fs/promises')
-    const dir = require('path').join(vaultPath, '.xiaoyuan')
-    if (!require('fs').existsSync(dir)) await mkdir(dir, { recursive: true })
-    if (require('fs').existsSync(mapPath)) {
+    const { join: joinPath } = await import('path')
+    const dir = joinPath(vaultPath, '.xiaoyuan')
+    if (!existsSync(dir)) await mkdir(dir, { recursive: true })
+    const mapPath = joinPath(dir, 'folder-map.json')
+    if (existsSync(mapPath)) {
       _folderMap = JSON.parse(await readFile(mapPath, 'utf-8'))
       return _folderMap!
     }
@@ -125,10 +126,10 @@ export async function saveFolderMap(map: Record<string, string>): Promise<void> 
   const vaultPath = getVaultPath()
   if (!vaultPath) return
   const { writeFile, mkdir } = await import('fs/promises')
-  const { join } = require('path')
-  const dir = join(vaultPath, '.xiaoyuan')
-  if (!require('fs').existsSync(dir)) await mkdir(dir, { recursive: true })
-  await writeFile(join(dir, 'folder-map.json'), JSON.stringify(map, null, 2), 'utf-8')
+  const { join: joinPath } = await import('path')
+  const dir = joinPath(vaultPath, '.xiaoyuan')
+  if (!existsSync(dir)) await mkdir(dir, { recursive: true })
+  await writeFile(joinPath(dir, 'folder-map.json'), JSON.stringify(map, null, 2), 'utf-8')
 }
 
 function getDefaultFolder(type: string): string {

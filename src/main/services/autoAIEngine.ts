@@ -395,7 +395,7 @@ export async function appendToOperationLog(vaultPath: string, entries: string[])
 
 // ===== Content Worth Assessment (OpenWiki inspired) =====
 
-interface AssessResult {
+export interface AssessResult {
   worth: boolean
   score: number   // 0.0 - 1.0
   reason: string
@@ -405,7 +405,7 @@ interface AssessResult {
 /**
  * Heuristic content worth assessment (no AI call, fast)
  */
-function assessContentWorth(rawContent: string): AssessResult {
+export function assessContentWorth(rawContent: string): AssessResult {
   // Strip frontmatter if present
   const content = rawContent.replace(/^---[\s\S]*?---\n?/, '').trim()
 

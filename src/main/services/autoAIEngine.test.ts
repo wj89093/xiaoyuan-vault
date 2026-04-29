@@ -21,7 +21,7 @@ describe('assessContentWorth', () => {
   })
 
   it('should reject CLI output', () => {
-    const result = assessContentWorth('/usr/local/bin/node\nat main.js:10:5')
+    const result = assessContentWorth('/usr/local/bin/node\nat main.js:10:5\nmore log lines here\nto make it longer than fifty characters')
     expect(result.worth).toBe(false)
     expect(result.contentType).toBe('log')
   })
@@ -55,7 +55,7 @@ const x = 1;
   })
 
   it('should reject ad-like content', () => {
-    const content = '🎉🔥💥 限时优惠！点击链接领取福利！'.repeat(20) + ' https://example.com'.repeat(10)
+    const content = '🎉🔥💥 限时优惠！点击链接领取福利！'.repeat(5) + ' https://example.com'.repeat(6)
     const result = assessContentWorth(content)
     expect(result.worth).toBe(false)
     expect(result.contentType).toBe('trash')

@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react'
+import React from 'react'
 import type { FileInfo } from '../types'
 
 interface SearchResultsProps {

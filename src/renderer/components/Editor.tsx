@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import React from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView } from '@codemirror/view'

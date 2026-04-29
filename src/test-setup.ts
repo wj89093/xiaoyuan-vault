@@ -9,12 +9,23 @@ Object.defineProperty(global, 'window', {
       fetchUrl: vi.fn(),
       saveUrlContent: vi.fn(),
       chatLoad: vi.fn(),
+      chatSessions: vi.fn().mockResolvedValue([]),
+      chatCreate: vi.fn(),
+      chatSave: vi.fn(),
+      chatDelete: vi.fn(),
+      chatAsk: vi.fn(),
       createFolder: vi.fn(),
       createFile: vi.fn(),
       saveFile: vi.fn(),
       saveAutoAISettings: vi.fn()
     }
   },
+  writable: true
+})
+
+// Mock scrollIntoView
+Object.defineProperty(global.Element.prototype, 'scrollIntoView', {
+  value: vi.fn(),
   writable: true
 })
 

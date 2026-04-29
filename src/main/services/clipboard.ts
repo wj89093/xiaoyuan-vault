@@ -227,6 +227,15 @@ const fileList = document.getElementById('fileList')
 const toast = document.getElementById('toast')
 let droppedFiles = []
 let droppedText = ''
+let isEditing = false
+
+// Track editing state to prevent blur-close while typing
+content.addEventListener('focus', () => { isEditing = true })
+content.addEventListener('blur', () => {
+  setTimeout(() => {
+    if (document.activeElement !== content) isEditing = false
+  }, 200)
+})
 
 // Show textarea when clicked
 dz.addEventListener('click', () => {
@@ -352,16 +361,17 @@ function save() {
       try {
         const data = JSON.parse(action.replace('SAVE:', ''))
         const allPaths = [...(data.files || []).map((f: any) => f.path), ...(data.bubblePaths || [])]
-        // Move dropped files into vault
+        // Copy dropped files into vault (rename = data loss risk)
         if (allPaths.length > 0) {
-          const { rename } = await import('fs/promises')
+          const { copyFile } = await import('fs/promises')
           const { basename } = await import('path')
           const collectDir = join(vaultPath, '0-收集')
           if (!existsSync(collectDir)) await mkdir(collectDir, { recursive: true })
           for (const srcPath of allPaths) {
             if (!existsSync(srcPath)) continue
-            await rename(srcPath, join(collectDir, basename(srcPath)))
-            enrichFile(join(collectDir, basename(srcPath))).catch(() => {})
+            const dest = join(collectDir, basename(srcPath))
+            await copyFile(srcPath, dest)
+            enrichFile(dest).catch(() => {})
           }
         }
         if (data.text) saveToVault(data.text)
@@ -371,13 +381,17 @@ function save() {
     respawnBubble()
   })
 
+  let isEditing = false
+
   cardWindow.on('blur', () => {
-    // Slight delay — prevent immediate close when bubble→card transition
-    setTimeout(() => {
-      if (cardWindow && !cardWindow.isDestroyed()) {
-        cardWindow.close()
-      }
-    }, 2000)
+    // Don't close if user is actively typing or file list is populated
+    if (!isEditing) {
+      setTimeout(() => {
+        if (cardWindow && !cardWindow.isDestroyed()) {
+          cardWindow.close()
+        }
+      }, 2000)
+    }
   })
 }
 
@@ -390,17 +404,15 @@ async function handleDropOnBubble(data: any): Promise<void> {
     await mkdir(collectDir, { recursive: true })
   }
 
-  // Copy dropped files into vault
+  // Copy dropped files into vault (rename = data loss risk)
   if (data.filePaths && data.filePaths.length > 0) {
-    const { rename } = await import('fs/promises')
+    const { copyFile } = await import('fs/promises')
     const { basename } = await import('path')
     for (const srcPath of data.filePaths) {
       if (!existsSync(srcPath)) continue
-      const filename = basename(srcPath)
-      const destPath = join(collectDir, filename)
-      await rename(srcPath, destPath)
-      console.log('[Bubble] File moved:', filename)
-      // Trigger conversion + enrich
+      const destPath = join(collectDir, basename(srcPath))
+      await copyFile(srcPath, destPath)
+      console.log('[Bubble] File copied:', basename(srcPath))
       enrichFile(destPath).catch(() => {})
     }
   }

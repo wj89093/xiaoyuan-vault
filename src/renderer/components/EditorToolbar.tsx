@@ -1,4 +1,5 @@
 import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote } from 'lucide-react'
+import React from 'react'
 
 interface EditorToolbarProps {
   view: any  // CodeMirror EditorView
