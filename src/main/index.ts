@@ -18,7 +18,7 @@ import { resolveContentType } from './services/resolver'
 import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISettings } from './services/autoAIEngine'
 import { callQwenAI } from './services/qwen'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
-import { startClipboardWatcher, stopClipboardWatcher, setVaultPath } from './services/clipboard'
+import { registerSpotlightShortcut, unregisterSpotlightShortcut, setVaultPath, closeSpotlight } from './services/clipboard'
 import { askQuestion, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
 import { rebuildGraph, loadGraph } from './services/graph'
 import { transcribeAudio } from './services/whisper'
@@ -122,7 +122,7 @@ function setupIpcHandlers(): void {
       await initDatabase(vaultPath)
       await startAutoAIEngine()
       setVaultPath(vaultPath)
-      startClipboardWatcher(); triggerGraphRebuild()
+      registerSpotlightShortcut(); triggerGraphRebuild()
       return vaultPath
     }
     return null
@@ -139,7 +139,7 @@ function setupIpcHandlers(): void {
       await writeConfig({ lastVaultPath: vaultPath })
       await startAutoAIEngine()
       setVaultPath(vaultPath)
-      startClipboardWatcher(); triggerGraphRebuild()
+      registerSpotlightShortcut(); triggerGraphRebuild()
       return vaultPath
     }
     return null
@@ -159,7 +159,7 @@ function setupIpcHandlers(): void {
       await writeConfig({ lastVaultPath: vaultPath })
       await startAutoAIEngine()
       setVaultPath(vaultPath)
-      startClipboardWatcher(); triggerGraphRebuild()
+      registerSpotlightShortcut(); triggerGraphRebuild()
 
       // Phase 0.5: 最小结构 - 目录通过AI和用户协商后创建
       await mkdir(join(vaultPath, '0-收集'), { recursive: true })
@@ -330,7 +330,7 @@ AI 自动维护反向链接。
   ipcMain.handle('vault:clear', async () => {
     await writeConfig({})
     await stopAutoAIEngine()
-    stopClipboardWatcher()
+    unregisterSpotlightShortcut()
     return true
   })
 
@@ -551,11 +551,11 @@ AI 自动维护反向链接。
   // Clipboard watcher
   ipcMain.handle('clipboard:start', async (_, vaultPath: string) => {
     setVaultPath(vaultPath)
-    startClipboardWatcher(); triggerGraphRebuild()
+    registerSpotlightShortcut(); triggerGraphRebuild()
     return true
   })
   ipcMain.handle('clipboard:stop', async () => {
-    stopClipboardWatcher()
+    unregisterSpotlightShortcut()
     return true
   })
   ipcMain.handle('clipboard:setVaultPath', async (_, vaultPath: string) => {

@@ -1,34 +1,13 @@
-import { clipboard, BrowserWindow } from 'electron'
-import { createHash } from 'crypto'
+import { BrowserWindow, globalShortcut } from 'electron'
 import { join } from 'path'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { enrichFile } from './enrich'
 
-// ============ Types ============
-
-export interface ClipboardCapture {
-  id?: number
-  content: string
-  content_type: 'text' | 'url' | 'image'
-  source_app?: string
-  created_at?: number
-  saved: boolean
-  file_path?: string
-}
-
 // ============ Config ============
 
-const POLL_INTERVAL_MS = 500
-const URL_PATTERN = /^https?:\/\/[^\s]+$/i
-
-// ============ State ============
-
-let isRunning = false
-let pollTimer: NodeJS.Timeout | null = null
-let lastHash = ''
+let spotlightWindow: BrowserWindow | null = null
 let vaultPath = ''
-let popupWindow: BrowserWindow | null = null
 
 // ============ Public API ============
 
@@ -36,112 +15,135 @@ export function setVaultPath(path: string): void {
   vaultPath = path
 }
 
-export function startClipboardWatcher(): void {
-  if (isRunning) return
-  isRunning = true
-  pollTimer = setInterval(checkClipboard, POLL_INTERVAL_MS)
-  console.log('[Clipboard] Watcher started (500ms poll, popup mode)')
+/**
+ * Register global shortcut Cmd+Shift+C (OpenWiki-style spotlight capture)
+ */
+export function registerSpotlightShortcut(): void {
+  const registered = globalShortcut.register('CommandOrControl+Shift+C', () => {
+    toggleSpotlight()
+  })
+  console.log('[Spotlight] Shortcut Cmd+Shift+C registered:', registered)
 }
 
-export function stopClipboardWatcher(): void {
-  isRunning = false
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
-  closePopup()
-  console.log('[Clipboard] Watcher stopped')
+export function unregisterSpotlightShortcut(): void {
+  globalShortcut.unregisterAll()
 }
 
-// ============ Core Logic ============
-
-async function checkClipboard(): Promise<void> {
-  try {
-    const image = clipboard.readImage()
-    if (!image.isEmpty()) {
-      const hash = computeHash(image.toPNG().toString('base64'))
-      if (hash !== lastHash) { lastHash = hash; showPopup('image') }
-      return
-    }
-
-    const text = clipboard.readText()
-    if (!text || text.trim().length === 0) return
-
-    const hash = computeHash(text)
-    if (hash === lastHash) return
-    lastHash = hash
-
-    const isURL = URL_PATTERN.test(text.trim())
-    showPopup(isURL ? 'url' : 'text')
-  } catch {}
-}
-
-// ============ Popup Window ============
-
-function showPopup(contentType: string): void {
-  const text = clipboard.readText().trim()
-  const isURL = contentType === 'url'
-  const preview = text.slice(0, 200).replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const icon = isURL ? '🔗' : '📋'
-  const label = isURL ? '链接' : '文本'
-
-  if (popupWindow && !popupWindow.isDestroyed()) {
-    popupWindow.focus()
-    popupWindow.webContents.executeJavaScript(
-      `updatePreview(${JSON.stringify(preview)},${JSON.stringify(label)},${JSON.stringify(text)})`
-    ).catch(() => {})
+export function toggleSpotlight(): void {
+  if (spotlightWindow && !spotlightWindow.isDestroyed()) {
+    spotlightWindow.focus()
     return
   }
+  showSpotlight()
+}
 
+export function closeSpotlight(): void {
+  if (spotlightWindow && !spotlightWindow.isDestroyed()) {
+    spotlightWindow.close()
+  }
+}
+
+// ============ Spotlight Window ============
+
+function showSpotlight(): void {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(28,28,30,0.94);color:#f5f5f7;border-radius:14px;overflow:hidden;-webkit-app-region:drag}
-.popup{padding:20px;display:flex;flex-direction:column;height:100vh;gap:12px}
-.header{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
-.type-badge{font-size:11px;color:#a1a1a6;background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:10px}
-#dropzone{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:2px dashed rgba(255,255,255,0.2);border-radius:12px;font-size:13px;color:#a1a1a6;text-align:center;transition:all .2s;-webkit-app-region:no-drag;cursor:default}
-#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.1);color:#007aff}
-#dropzone .preview-text{max-height:100px;overflow:hidden;padding:8px;word-break:break-all}
-.actions{display:flex;gap:8px;justify-content:flex-end;-webkit-app-region:no-drag}
-.btn{padding:7px 18px;border-radius:8px;font-size:12px;font-weight:500;border:none;cursor:pointer}
-.btn-save{background:#007aff;color:#fff}.btn-save:hover{background:#0071e3}
-.btn-ignore{background:rgba(255,255,255,0.08);color:#a1a1a6}.btn-ignore:hover{background:rgba(255,255,255,0.12);color:#f5f5f7}
-</style></head><body><div class="popup">
-<div class="header">${icon} <span>${label} 已捕获</span> <span class="type-badge">Cmd+C</span></div>
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:transparent;overflow:hidden}
+.spotlight{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+.card{width:540px;background:rgba(30,30,32,0.92);border-radius:16px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,0.5);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px)}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.header-icon{font-size:20px}
+.header-title{font-size:14px;font-weight:600;color:#f5f5f7;flex:1}
+.header-hint{font-size:11px;color:#a1a1a6;background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:8px}
+#dropzone{position:relative;width:100%;min-height:120px;margin-bottom:16px;border:2px dashed rgba(255,255,255,0.12);border-radius:12px;background:rgba(255,255,255,0.03);transition:all .2s;cursor:text}
+#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.08)}
+#dropzone.drag-over .dz-hint{color:#007aff}
+.dz-hint{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#6e6e73;font-size:13px;pointer-events:none;transition:color .2s}
+.dz-hint .icon{font-size:28px;opacity:0.5}
+#content{width:100%;min-height:120px;padding:14px;background:transparent;border:none;outline:none;color:#f5f5f7;font-size:14px;line-height:1.6;resize:none;font-family:inherit}
+#content::placeholder{color:#6e6e73}
+.actions{display:flex;justify-content:flex-end;gap:8px}
+.btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .15s}
+.btn-primary{background:#007aff;color:#fff}.btn-primary:hover{background:#0071e3}
+.btn-secondary{background:rgba(255,255,255,0.08);color:#a1a1a6}.btn-secondary:hover{background:rgba(255,255,255,0.12);color:#f5f5f7}
+.status{font-size:11px;color:#30d158;text-align:right;margin-top:8px;opacity:0;transition:opacity .3s}
+.status.show{opacity:1}
+</style></head><body><div class="spotlight"><div class="card">
+<div class="header">
+  <span class="header-icon">✨</span>
+  <span class="header-title">快速捕获</span>
+  <span class="header-hint">Cmd+Shift+C</span>
+</div>
 <div id="dropzone">
-  <div class="preview-text">${preview || '拖拽内容到此保存'}</div>
+  <textarea id="content" placeholder="输入或拖拽内容到此处...&#10;&#10;支持：文本 / 链接 / Markdown"></textarea>
+  <div class="dz-hint"><span class="icon">📥</span>拖拽文件到此自动保存</div>
 </div>
 <div class="actions">
-  <button class="btn btn-ignore" onclick="window.close()">忽略</button>
-  <button class="btn btn-save" id="saveBtn" onclick="save()">保存到 Vault</button>
+  <button class="btn btn-secondary" onclick="closeSpotlight()">Esc 关闭</button>
+  <button class="btn btn-primary" onclick="save()">⏎ 保存到 Vault</button>
 </div>
-</div>
+<div class="status" id="status">✅ 已保存</div>
+</div></div>
 <script>
-let capturedText = ${JSON.stringify(text)}
 const dz = document.getElementById('dropzone')
+const textarea = document.getElementById('content')
+const hint = dz.querySelector('.dz-hint')
+const status = document.getElementById('status')
 
+textarea.addEventListener('input', () => {
+  hint.style.display = textarea.value.trim() ? 'none' : 'flex'
+})
+
+textarea.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSpotlight()
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') save()
+})
+
+// Drag-and-drop from Finder
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over') })
 dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'))
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('drag-over')
-  const dropped = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list')
-  if (dropped) {
-    capturedText = dropped
-    dz.querySelector('.preview-text').textContent = dropped.slice(0, 300)
+  const files = e.dataTransfer.files
+  const text = e.dataTransfer.getData('text/plain')
+  const uri = e.dataTransfer.getData('text/uri-list')
+  
+  if (files && files.length > 0) {
+    const names = Array.from(files).map(f => f.name).join(', ')
+    textarea.value = textarea.value 
+      ? textarea.value + '\\n📎 拖入文件: ' + names
+      : '📎 拖入文件: ' + names
+    hint.style.display = 'none'
+  } else if (text) {
+    textarea.value = textarea.value 
+      ? textarea.value + '\\n' + text
+      : text
+    hint.style.display = 'none'
+  } else if (uri) {
+    textarea.value = textarea.value 
+      ? textarea.value + '\\n' + uri
+      : uri
+    hint.style.display = 'none'
   }
 })
-function updatePreview(p, label, t) {
-  capturedText = t
-  dz.querySelector('.preview-text').textContent = p || '拖拽内容到此保存'
-}
+
+function closeSpotlight() { document.title = 'CLOSE'; window.close() }
 function save() {
-  document.title = 'SAVE:' + encodeURIComponent(capturedText); window.close()
+  const text = textarea.value.trim()
+  if (!text) return
+  document.title = 'SAVE:' + text.slice(0, 200)
+  status.classList.add('show')
+  setTimeout(() => window.close(), 600)
 }
 </script></body></html>`
 
-  popupWindow = new BrowserWindow({
-    width: 420, height: 280,
+  spotlightWindow = new BrowserWindow({
+    width: 600, height: 400,
     frame: false, transparent: true,
     alwaysOnTop: true, resizable: false,
     skipTaskbar: true,
-    vibrancy: 'hud',
+    center: true,
+    vibrancy: 'fullscreen-ui',
     visualEffectState: 'active',
     webPreferences: {
       sandbox: false, contextIsolation: false,
@@ -149,46 +151,65 @@ function save() {
     },
   })
 
-  popupWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-  popupWindow.center()
+  spotlightWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
 
-  popupWindow.on('closed', () => {
-    const title = popupWindow?.getTitle() || ''
-    popupWindow = null
+  spotlightWindow.on('closed', () => {
+    const title = spotlightWindow?.getTitle() || ''
+    spotlightWindow = null
     if (title.startsWith('SAVE:') && vaultPath) {
-      const captured = decodeURIComponent(title.replace('SAVE:', ''))
-      saveToVault(captured).catch(e => console.warn('[Clipboard] save failed:', e))
+      const content = title.replace('SAVE:', '')
+      saveToVault(content).catch(e => console.warn('[Spotlight] save failed:', e))
     }
+  })
+
+  // Auto-hide on blur (OpenWiki-style: 2s delay)
+  spotlightWindow.on('blur', () => {
+    setTimeout(() => {
+      const text = (spotlightWindow as any)?.webContents?.executeJavaScript
+      // Only close if no content was typed (empty state)
+      if (spotlightWindow && !spotlightWindow.isDestroyed()) {
+        const title = spotlightWindow.getTitle()
+        if (!title.startsWith('SAVE:')) {
+          // User might be interacting — check if content is empty
+          spotlightWindow.webContents.executeJavaScript(
+            'document.getElementById("content").value.trim()'
+          ).then((val: string) => {
+            if (!val && spotlightWindow && !spotlightWindow.isDestroyed()) {
+              spotlightWindow.close()
+            }
+          }).catch(() => {})
+        }
+      }
+    }, 3000)
   })
 }
 
-export function closePopup(): void {
-  if (popupWindow && !popupWindow.isDestroyed()) { popupWindow.close() }
-}
-
-// ============ Save to Vault ============
+// ============ Save ============
 
 async function saveToVault(content: string): Promise<void> {
   if (!vaultPath) return
 
   const collectDir = join(vaultPath, '0-收集')
   if (!existsSync(collectDir)) {
-    const { mkdir } = require('fs/promises')
     await mkdir(collectDir, { recursive: true })
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const isURL = URL_PATTERN.test(content.trim())
-  const prefix = isURL ? 'web' : 'clip'
+  const isURL = /^https?:\/\/[^\s]+$/i.test(content.trim())
+  const prefix = isURL ? 'web' : 'spotlight'
   const filename = `${prefix}-${timestamp}.md`
+
+  const title = content.split('\n')[0].slice(0, 60).replace(/["#*`\[\]]/g, '')
+  const typeTag = isURL ? 'web-clip' : 'note'
+  const date = new Date().toISOString().slice(0, 10)
 
   const frontmatter = [
     '---',
-    `title: "${content.slice(0, 60).replace(/"/g, '\\"')}"`,
-    `type: ${isURL ? 'web-clip' : 'clipboard'}`,
-    `source: clipboard`,
-    `created: ${new Date().toISOString().slice(0, 10)}`,
-    `tags: [auto-import, ${isURL ? 'url' : 'text'}]`,
+    `title: "${title || 'Spotlight 捕获'}"`,
+    `type: ${typeTag}`,
+    `source: spotlight`,
+    `created: ${date}`,
+    `tags: [spotlight, ${isURL ? 'url' : 'note'}]`,
     '---', '', content,
   ].join('\n')
 
@@ -196,9 +217,13 @@ async function saveToVault(content: string): Promise<void> {
   await writeFile(filePath, frontmatter, 'utf-8')
 
   enrichFile(filePath).catch(() => {})
-  console.log('[Clipboard] Saved:', filename)
+  console.log('[Spotlight] Saved:', filename)
 }
 
-function computeHash(content: string): string {
-  return createHash('sha256').update(content).digest('hex')
-}
+// ============ Legacy clipboard watcher (keep but simplified) ============
+
+let isRunning = false
+let pollTimer: NodeJS.Timeout | null = null
+
+export function startClipboardWatcher(): void {} // No-op: clipboard auto-capture removed
+export function stopClipboardWatcher(): void {}
