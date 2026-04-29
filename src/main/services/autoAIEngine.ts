@@ -1,6 +1,6 @@
 import log from 'electron-log/main'
 import { getVaultPath } from './database'
-import { callQwenAI } from './qwen'
+import { callAI } from './aiService'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { readFile, writeFile, appendFile, readdir, stat, mkdir } from 'fs/promises'
@@ -191,7 +191,7 @@ async function processFile(
   if (needsTags) {
     tasks.push(
       (async () => {
-        const tags = await callQwenAI('tags', { content: body }) as string[]
+        const tags = await callAI('tags', { content: body }) as string[]
         if (Array.isArray(tags) && tags.length > 0) {
           updates.tags = tags.slice(0, 5)
           log.info(`[AutoAI] tags → ${tags.slice(0, 3).join(', ')}`)
@@ -203,7 +203,7 @@ async function processFile(
   if (needsSummary) {
     tasks.push(
       (async () => {
-        const summary = await callQwenAI('summary', { content: body }) as string
+        const summary = await callAI('summary', { content: body }) as string
         if (summary && summary.length > 0) {
           updates.summary = summary.slice(0, 200)
           log.info(`[AutoAI] summary → ${summary.slice(0, 50)}...`)
@@ -215,7 +215,7 @@ async function processFile(
   if (needsCategory) {
     tasks.push(
       (async () => {
-        const category = await callQwenAI('classify', {
+        const category = await callAI('classify', {
           content: body,
           folders
         }) as string

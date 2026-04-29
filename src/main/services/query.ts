@@ -1,6 +1,6 @@
 import log from 'electron-log/main'
 import { readFile } from 'fs/promises'
-import { callQwenAI } from './qwen'
+import { callAI } from './aiService'
 import { searchFiles, getVaultPath } from './database'
 
 export interface QueryResult {
@@ -62,7 +62,7 @@ ${contextText}
 
 回答：`
 
-    const answer = await callQwenAI('reason', { question: prompt, context: [] }) as string
+    const answer = await callAI('reason', { question: prompt, context: [] }) as string
 
     // Step 5: Build source list
     const sources = contexts.map(c => ({

@@ -16,7 +16,7 @@ import { queryVault } from './services/query'
 import { runMaintenance } from './services/maintain'
 import { resolveContentType } from './services/resolver'
 import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISettings } from './services/autoAIEngine'
-import { callQwenAI } from './services/qwen'
+import { callAI } from './services/aiService'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
 import { showBubble, hideBubble, setVaultPath } from './services/clipboard'
 import { askQuestion, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
@@ -353,6 +353,17 @@ AI 自动维护反向链接。
     return true
   })
 
+  // AI Provider settings
+  ipcMain.handle('provider:get', async () => {
+    return readAutoAISettings()?.then(s => s?.provider || 'qwen').catch(() => 'qwen')
+  })
+  ipcMain.handle('provider:set', async (_, provider: string) => {
+    const settings = await readAutoAISettings() || { enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true }
+    ;(settings as any).provider = provider
+    await writeAutoAISettings(settings)
+    return true
+  })
+
   // File operations
   ipcMain.handle('file:list', async () => {
     return listVaultFiles()
@@ -470,23 +481,23 @@ AI 自动维护反向链接。
 
   // AI operations
   ipcMain.handle('ai:classify', async (_, content: string, folders: string[]) => {
-    return callQwenAI('classify', { content, folders })
+    return callAI('classify', { content, folders })
   })
 
   ipcMain.handle('ai:tags', async (_, content: string) => {
-    return callQwenAI('tags', { content })
+    return callAI('tags', { content })
   })
 
   ipcMain.handle('ai:summary', async (_, content: string) => {
-    return callQwenAI('summary', { content })
+    return callAI('summary', { content })
   })
 
   ipcMain.handle('ai:reason', async (_, question: string, context: string[]) => {
-    return callQwenAI('reason', { question, context })
+    return callAI('reason', { question, context })
   })
 
   ipcMain.handle('ai:write', async (_, outline: string) => {
-    return callQwenAI('write', { outline })
+    return callAI('write', { outline })
   })
 
   ipcMain.handle('resolver:classify', async (_, content: string, title?: string) => {

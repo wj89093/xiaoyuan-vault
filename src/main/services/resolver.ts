@@ -2,7 +2,7 @@ import log from 'electron-log/main'
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
-import { callQwenAI } from './qwen'
+import { callAI } from './aiService'
 import { getVaultPath } from './database'
 
 export interface ResolverResult {
@@ -76,7 +76,7 @@ ${preview}
 }`
 
   try {
-    const result = await callQwenAI('resolve', { prompt })
+    const result = await callAI('resolve', { prompt })
     const parsed = parseResolverResult(result as string)
     return parsed
   } catch (err: any) {

@@ -1,5 +1,5 @@
 import { getVaultPath, searchFiles } from './database'
-import { callQwenAI } from './qwen'
+import { callAI } from './aiService'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
@@ -102,7 +102,7 @@ async function rewriteQuery(
       .map(m => `${m.role}: ${m.content.slice(0, 200)}`)
       .join('\n')
 
-    const rewritten = await callQwenAI('reason', {
+    const rewritten = await callAI('reason', {
       question,
       context: [recentHistory],
       systemPrompt: `你是一个搜索查询重写助手。将用户的问题改写为1-2个关键词短语，用于在知识库中搜索。
@@ -119,7 +119,7 @@ async function rewriteQuery(
 只返回改写后的搜索词，不要解释。`,
     })
 
-    // For 'reason' type, the function callQwenAI returns the raw response
+    // For 'reason' type, the function callAI returns the raw response
     // Clean up and truncate
     const cleaned = String(rewritten || question).trim().slice(0, 50)
     log.info(`[RAG] query rewrite: "${question.slice(0, 40)}" → "${cleaned}"`)
@@ -232,7 +232,7 @@ async function generateAnswer(
     .join('\n')
 
   try {
-    const answer = await callQwenAI('reason', {
+    const answer = await callAI('reason', {
       question,
       context: [context],
       systemPrompt: `你是晓园 Vault 的知识助手。基于知识库中的内容回答问题。
