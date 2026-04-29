@@ -18,6 +18,7 @@ import { resolveContentType } from './services/resolver'
 import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISettings } from './services/autoAIEngine'
 import { callQwenAI } from './services/qwen'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
+import { startClipboardWatcher, stopClipboardWatcher, setVaultPath, startMiniPopup } from './services/clipboard'
 import { transcribeAudio } from './services/whisper'
 import { generateFileTemplate } from './services/frontmatter'
 import { fetchURL, saveURLToVault } from './services/urlFetch'
@@ -108,6 +109,8 @@ function setupIpcHandlers(): void {
     if (vaultPath && existsSync(vaultPath)) {
       await initDatabase(vaultPath)
       await startAutoAIEngine()
+      setVaultPath(vaultPath)
+      startClipboardWatcher()
       return vaultPath
     }
     return null
@@ -123,6 +126,8 @@ function setupIpcHandlers(): void {
       await initDatabase(vaultPath)
       await writeConfig({ lastVaultPath: vaultPath })
       await startAutoAIEngine()
+      setVaultPath(vaultPath)
+      startClipboardWatcher()
       return vaultPath
     }
     return null
@@ -141,6 +146,8 @@ function setupIpcHandlers(): void {
       await initDatabase(vaultPath)
       await writeConfig({ lastVaultPath: vaultPath })
       await startAutoAIEngine()
+      setVaultPath(vaultPath)
+      startClipboardWatcher()
 
       // Phase 0.5: 最小结构 - 目录通过AI和用户协商后创建
       await mkdir(join(vaultPath, '0-收集'), { recursive: true })
@@ -311,6 +318,7 @@ AI 自动维护反向链接。
   ipcMain.handle('vault:clear', async () => {
     await writeConfig({})
     await stopAutoAIEngine()
+    stopClipboardWatcher()
     return true
   })
 
@@ -499,6 +507,21 @@ AI 自动维护反向链接。
 
   ipcMain.handle('maintain:run', async () => {
     return runMaintenance()
+  })
+
+  // Clipboard watcher
+  ipcMain.handle('clipboard:start', async (_, vaultPath: string) => {
+    setVaultPath(vaultPath)
+    startClipboardWatcher()
+    return true
+  })
+  ipcMain.handle('clipboard:stop', async () => {
+    stopClipboardWatcher()
+    return true
+  })
+  ipcMain.handle('clipboard:setVaultPath', async (_, vaultPath: string) => {
+    setVaultPath(vaultPath)
+    return true
   })
 }
 

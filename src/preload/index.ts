@@ -63,6 +63,14 @@ const api = {
   getVaultPath: (): Promise<string | null> =>
     ipcRenderer.invoke('vault:path'),
 
+  // Clipboard watch
+  clipboardStart: (vaultPath: string): Promise<boolean> =>
+    ipcRenderer.invoke('clipboard:start', vaultPath),
+  clipboardStop: (): Promise<boolean> =>
+    ipcRenderer.invoke('clipboard:stop'),
+  clipboardSetVaultPath: (vaultPath: string): Promise<boolean> =>
+    ipcRenderer.invoke('clipboard:setVaultPath', vaultPath),
+
   // AI operations
   aiClassify: (content: string, folders: string[]): Promise<string> =>
     ipcRenderer.invoke('ai:classify', content, folders),
