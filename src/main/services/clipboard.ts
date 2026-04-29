@@ -1,7 +1,6 @@
 import { clipboard, BrowserWindow } from 'electron'
 import { createHash } from 'crypto'
 import { join } from 'path'
-import { is } from '@electron-toolkit/utils'
 import { writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { enrichFile } from './enrich'
@@ -18,8 +17,6 @@ export interface ClipboardCapture {
   file_path?: string
 }
 
-type ClipboardChangeCallback = (capture: ClipboardCapture) => void
-
 // ============ Config ============
 
 const POLL_INTERVAL_MS = 500
@@ -30,8 +27,8 @@ const URL_PATTERN = /^https?:\/\/[^\s]+$/i
 let isRunning = false
 let pollTimer: NodeJS.Timeout | null = null
 let lastHash = ''
-let onChangeCallback: ClipboardChangeCallback | null = null
 let vaultPath = ''
+let popupWindow: BrowserWindow | null = null
 
 // ============ Public API ============
 
@@ -39,28 +36,17 @@ export function setVaultPath(path: string): void {
   vaultPath = path
 }
 
-export function getVaultPath_clipboard(): string {
-  return vaultPath
-}
-
-export function setClipboardCallback(cb: ClipboardChangeCallback): void {
-  onChangeCallback = cb
-}
-
 export function startClipboardWatcher(): void {
   if (isRunning) return
   isRunning = true
-
   pollTimer = setInterval(checkClipboard, POLL_INTERVAL_MS)
-  console.log('[Clipboard] Watcher started (500ms poll)')
+  console.log('[Clipboard] Watcher started (500ms poll, popup mode)')
 }
 
 export function stopClipboardWatcher(): void {
   isRunning = false
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+  closePopup()
   console.log('[Clipboard] Watcher stopped')
 }
 
@@ -68,134 +54,150 @@ export function stopClipboardWatcher(): void {
 
 async function checkClipboard(): Promise<void> {
   try {
-    // Check image first (faster to detect)
     const image = clipboard.readImage()
     if (!image.isEmpty()) {
       const hash = computeHash(image.toPNG().toString('base64'))
-      if (hash !== lastHash) {
-        lastHash = hash
-        await handleImageCapture(image)
-        return
-      }
-    }
-
-    // Check text
-    const text = clipboard.readText()
-    if (!text || text.trim().length === 0) {
-      // Also check RTF for formatted text
-      const rtf = clipboard.readRTF()
-      if (rtf && rtf.trim().length > 0) {
-        const hash = computeHash(rtf)
-        if (hash !== lastHash) {
-          lastHash = hash
-          await handleTextCapture(rtf, 'rtf')
-        }
-      }
+      if (hash !== lastHash) { lastHash = hash; showPopup('image') }
       return
     }
+
+    const text = clipboard.readText()
+    if (!text || text.trim().length === 0) return
 
     const hash = computeHash(text)
     if (hash === lastHash) return
     lastHash = hash
 
-    await handleTextCapture(text, 'text')
-  } catch (e) {
-    // Silently ignore: may happen if clipboard is empty or inaccessible
-  }
+    const isURL = URL_PATTERN.test(text.trim())
+    showPopup(isURL ? 'url' : 'text')
+  } catch {}
 }
 
-async function handleTextCapture(text: string, format: string): Promise<void> {
-  const trimmed = text.trim()
-  const isURL = URL_PATTERN.test(trimmed)
-  const contentType = isURL ? 'url' : 'text'
+// ============ Popup Window ============
 
-  const capture: ClipboardCapture = {
-    content: trimmed.slice(0, 50000), // max 50KB
-    content_type: contentType,
-    saved: false,
-    created_at: Math.floor(Date.now() / 1000),
+function showPopup(contentType: string): void {
+  const text = clipboard.readText().trim()
+  const isURL = contentType === 'url'
+  const preview = text.slice(0, 200).replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const icon = isURL ? '🔗' : '📋'
+  const label = isURL ? '链接' : '文本'
+
+  if (popupWindow && !popupWindow.isDestroyed()) {
+    popupWindow.focus()
+    popupWindow.webContents.executeJavaScript(
+      `updatePreview(${JSON.stringify(preview)},${JSON.stringify(label)},${JSON.stringify(text)})`
+    ).catch(() => {})
+    return
   }
 
-  // Notify callback (for popup or auto-save)
-  if (onChangeCallback) {
-    onChangeCallback(capture)
-  }
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:rgba(28,28,30,0.94);color:#f5f5f7;border-radius:14px;overflow:hidden;-webkit-app-region:drag}
+.popup{padding:20px;display:flex;flex-direction:column;height:100vh;gap:12px}
+.header{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.type-badge{font-size:11px;color:#a1a1a6;background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:10px}
+#dropzone{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:2px dashed rgba(255,255,255,0.2);border-radius:12px;font-size:13px;color:#a1a1a6;text-align:center;transition:all .2s;-webkit-app-region:no-drag;cursor:default}
+#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.1);color:#007aff}
+#dropzone .preview-text{max-height:100px;overflow:hidden;padding:8px;word-break:break-all}
+.actions{display:flex;gap:8px;justify-content:flex-end;-webkit-app-region:no-drag}
+.btn{padding:7px 18px;border-radius:8px;font-size:12px;font-weight:500;border:none;cursor:pointer}
+.btn-save{background:#007aff;color:#fff}.btn-save:hover{background:#0071e3}
+.btn-ignore{background:rgba(255,255,255,0.08);color:#a1a1a6}.btn-ignore:hover{background:rgba(255,255,255,0.12);color:#f5f5f7}
+</style></head><body><div class="popup">
+<div class="header">${icon} <span>${label} 已捕获</span> <span class="type-badge">Cmd+C</span></div>
+<div id="dropzone">
+  <div class="preview-text">${preview || '拖拽内容到此保存'}</div>
+</div>
+<div class="actions">
+  <button class="btn btn-ignore" onclick="window.close()">忽略</button>
+  <button class="btn btn-save" id="saveBtn" onclick="save()">保存到 Vault</button>
+</div>
+</div>
+<script>
+let capturedText = ${JSON.stringify(text)}
+const dz = document.getElementById('dropzone')
 
-  // Auto-save if vault is open
-  if (vaultPath) {
-    await saveToVault(capture)
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over') })
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'))
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over')
+  const dropped = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list')
+  if (dropped) {
+    capturedText = dropped
+    dz.querySelector('.preview-text').textContent = dropped.slice(0, 300)
   }
+})
+function updatePreview(p, label, t) {
+  capturedText = t
+  dz.querySelector('.preview-text').textContent = p || '拖拽内容到此保存'
 }
+function save() {
+  document.title = 'SAVE:' + encodeURIComponent(capturedText); window.close()
+}
+</script></body></html>`
 
-async function handleImageCapture(image: Electron.NativeImage): Promise<void> {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const capture: ClipboardCapture = {
-    content: `[Image] clipboard-${timestamp}`,
-    content_type: 'image',
-    saved: false,
-    created_at: Math.floor(Date.now() / 1000),
-  }
+  popupWindow = new BrowserWindow({
+    width: 420, height: 280,
+    frame: false, transparent: true,
+    alwaysOnTop: true, resizable: false,
+    skipTaskbar: true,
+    vibrancy: 'hud',
+    visualEffectState: 'active',
+    webPreferences: {
+      sandbox: false, contextIsolation: false,
+      nodeIntegration: false,
+    },
+  })
 
-  if (vaultPath) {
-    const imgDir = join(vaultPath, '0-收集')
-    if (!existsSync(imgDir)) {
-      const { mkdir } = await import('fs/promises')
-      await mkdir(imgDir, { recursive: true })
+  popupWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  popupWindow.center()
+
+  popupWindow.on('closed', () => {
+    const title = popupWindow?.getTitle() || ''
+    popupWindow = null
+    if (title.startsWith('SAVE:') && vaultPath) {
+      const captured = decodeURIComponent(title.replace('SAVE:', ''))
+      saveToVault(captured).catch(e => console.warn('[Clipboard] save failed:', e))
     }
-    const filename = `clip-img-${timestamp}.png`
-    const imgPath = join(imgDir, filename)
-    await writeFile(imgPath, image.toPNG())
-    capture.file_path = imgPath
-    capture.saved = true
-
-    // Trigger auto-enrich
-    enrichFile(imgPath).catch(() => {})
-  }
-
-  if (onChangeCallback) {
-    onChangeCallback(capture)
-  }
+  })
 }
 
-async function saveToVault(capture: ClipboardCapture): Promise<void> {
+export function closePopup(): void {
+  if (popupWindow && !popupWindow.isDestroyed()) { popupWindow.close() }
+}
+
+// ============ Save to Vault ============
+
+async function saveToVault(content: string): Promise<void> {
   if (!vaultPath) return
 
   const collectDir = join(vaultPath, '0-收集')
   if (!existsSync(collectDir)) {
-    const { mkdir } = await import('fs/promises')
+    const { mkdir } = require('fs/promises')
     await mkdir(collectDir, { recursive: true })
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const prefix = capture.content_type === 'url' ? 'web' : 'clip'
-  const ext = '.md'
-  const filename = `${prefix}-${timestamp}${ext}`
-  const filePath = join(collectDir, filename)
+  const isURL = URL_PATTERN.test(content.trim())
+  const prefix = isURL ? 'web' : 'clip'
+  const filename = `${prefix}-${timestamp}.md`
 
-  // Write frontmatter + content
   const frontmatter = [
     '---',
-    `title: "${capture.content.slice(0, 80).replace(/"/g, '\\"')}"`,
-    `type: ${capture.content_type === 'url' ? 'web-clip' : 'clipboard'}`,
+    `title: "${content.slice(0, 60).replace(/"/g, '\\"')}"`,
+    `type: ${isURL ? 'web-clip' : 'clipboard'}`,
     `source: clipboard`,
     `created: ${new Date().toISOString().slice(0, 10)}`,
-    `tags: [auto-import, ${capture.content_type === 'url' ? 'url' : 'text'}]`,
-    '---',
-    '',
-    capture.content,
+    `tags: [auto-import, ${isURL ? 'url' : 'text'}]`,
+    '---', '', content,
   ].join('\n')
 
+  const filePath = join(collectDir, filename)
   await writeFile(filePath, frontmatter, 'utf-8')
-  capture.file_path = filePath
-  capture.saved = true
 
-  // Trigger auto-enrich（async, don't block）
-  enrichFile(filePath).catch((e) => {
-    console.warn('[Clipboard] enrich failed:', e.message)
-  })
+  enrichFile(filePath).catch(() => {})
+  console.log('[Clipboard] Saved:', filename)
 }
-
-// ============ Utilities ============
 
 function computeHash(content: string): string {
   return createHash('sha256').update(content).digest('hex')
