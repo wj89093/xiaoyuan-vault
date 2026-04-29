@@ -105,6 +105,11 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
       e.preventDefault()
       send()
     }
+    // Escape to clear
+    if (e.key === 'Escape' && input) {
+      e.preventDefault()
+      setInput('')
+    }
   }
 
   const startNewSession = () => {
@@ -288,9 +293,8 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
               <div className="ai-chat-message assistant">
                 <div className="ai-chat-avatar"><Bot size={13} /></div>
                 <div className="ai-chat-bubble">
-                  <div className="ai-chat-thinking">
-                    <Loader size={12} className="spin" />
-                    思考中...
+                  <div className="ai-chat-dots">
+                    <span /><span /><span />
                   </div>
                 </div>
               </div>

@@ -1,13 +1,15 @@
-import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote } from 'lucide-react'
+import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns } from 'lucide-react'
 import React from 'react'
 
 interface EditorToolbarProps {
   view: any  // CodeMirror EditorView
   previewMode: boolean
   onTogglePreview: () => void
+  onToggleSplit: () => void
+  splitView?: boolean
 }
 
-export function EditorToolbar({ view, previewMode, onTogglePreview }: EditorToolbarProps): JSX.Element {
+export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSplit, splitView }: EditorToolbarProps): JSX.Element {
   const insert = (template: string, cursorOffset?: number) => {
     if (!view) return
     const selection = view.state.selection.main
@@ -40,6 +42,8 @@ export function EditorToolbar({ view, previewMode, onTogglePreview }: EditorTool
     { icon: <ListOrdered size={15} />, label: '有序列表', action: () => insert('1. $TEXT\n') },
     { icon: <Quote size={15} />, label: '引用', action: () => insert('> $TEXT\n') },
     { type: 'divider' as const },
+    { icon: <Columns size={15} />, label: splitView ? '关闭分屏' : '分屏', action: onToggleSplit, active: splitView },
+    { type: 'divider' as const },
     { icon: previewMode ? <EyeOff size={15} /> : <Eye size={15} />,
       label: previewMode ? '编辑' : '预览',
       action: onTogglePreview,
@@ -54,7 +58,7 @@ export function EditorToolbar({ view, previewMode, onTogglePreview }: EditorTool
         ) : (
           <button
             key={i}
-            className="editor-toolbar-btn"
+            className={`editor-toolbar-btn${(item as any).active ? ' active' : ''}`}
             title={item.label}
             onClick={item.action}
           >
