@@ -3,6 +3,7 @@ import { readFile, readdir, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, extname } from 'path'
 import log from 'electron-log/main'
+import { loadFolderMap as loadEnrichFolderMap } from './enrich'
 
 // ============ Types ============
 
@@ -108,14 +109,15 @@ export async function rebuildGraph(): Promise<{ nodes: number; edges: number }> 
     // Step 3: Calculate TF-IDF vectors
     const { vectors, idf } = computeTFIDF(documents)
 
-    // Step 4: Build nodes
+    // Step 4: Load folder map and build nodes
+    const folderToType = await loadFolderToTypeMap()
     const nodes: GraphNode[] = documents.map(doc => {
-      const incomingEdges = 0 // Will be updated after edge creation
+      const folder = doc.file.split('/')[0] || ''
       return {
         id: doc.file,
         title: doc.title,
         tags: doc.tags,
-        page_type: getPageType(doc.file),
+        page_type: folderToType[folder] || 'note',
         edge_count: 0,
       }
     })
@@ -378,13 +380,23 @@ function cosineSimilarity(
 // ============ Helpers ============
 
 function getPageType(file: string): string {
-  // Infer type from folder-map config (aligned with enrich.ts)
-  const folder = file.split('/')[0] || ''
-  // Static reverse lookup from default folder map
-  const folderToType: Record<string, string> = {
-    '0-收集': 'collection', '1-人物': 'person', '2-公司': 'company',
-    '3-项目': 'project', '4-会议': 'meeting', '5-交易': 'deal',
-    '6-概念': 'concept', '7-研究': 'research',
+  // Return 'note' as default — real type comes from frontmatter/enrich, not folder path
+  return 'note'
+}
+
+/**
+ * Load type from folder-map.json (configurable, aligned with enrich.ts)
+ */
+async function loadFolderToTypeMap(): Promise<Record<string, string>> {
+  try {
+    const map = await loadEnrichFolderMap()
+    // Invert: folder → type
+    const inverted: Record<string, string> = {}
+    for (const [type, folder] of Object.entries(map)) {
+      inverted[folder] = type
+    }
+    return inverted
+  } catch {
+    return {}
   }
-  return folderToType[folder] || 'note'
 }

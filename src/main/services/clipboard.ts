@@ -125,8 +125,13 @@ document.addEventListener('drop', e => {
 
 function respawnBubble(): void {
   setTimeout(() => {
-    bubbleLocked = false
-    showBubble()
+    try {
+      bubbleLocked = false
+      showBubble()
+    } catch (e) {
+      bubbleLocked = false
+      console.warn('[Bubble] respawn failed:', e)
+    }
   }, 800)
 }
 
