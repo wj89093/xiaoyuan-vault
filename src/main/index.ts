@@ -376,6 +376,46 @@ AI 自动维护反向链接。
     return getFileContent(filePath)
   })
 
+  // Render non-markdown files as HTML for native preview
+  ipcMain.handle('file:render', async (_, filePath: string) => {
+    const { ext } = require('path')
+    const suffix = ext(filePath).toLowerCase()
+
+    if (suffix === '.pdf') {
+      const pdfParse = (await import('pdf-parse')).default
+      const data = await readFile(filePath)
+      const parsed = await pdfParse(Buffer.from(data))
+      // Return raw text for now (PDF rendering in browser via pdf.js in renderer)
+      return { type: 'pdf', text: parsed.text.slice(0, 5000) }
+    }
+
+    if (['.docx', '.doc'].includes(suffix)) {
+      const mammoth = await import('mammoth')
+      const result = await mammoth.convertToHtml({ path: filePath })
+      return { type: 'html', content: result.value }
+    }
+
+    if (['.xlsx', '.xls', '.csv'].includes(suffix)) {
+      const XLSX = await import('xlsx')
+      const workbook = XLSX.readFile(filePath)
+      const sheets: Record<string, string> = {}
+      for (const name of workbook.SheetNames) {
+        const html = XLSX.utils.sheet_to_html(workbook.Sheets[name])
+        sheets[name] = html
+      }
+      return { type: 'sheets', sheets, sheetNames: workbook.SheetNames }
+    }
+
+    if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(suffix)) {
+      const data = await readFile(filePath)
+      const base64 = Buffer.from(data).toString('base64')
+      const mime = suffix === '.svg' ? 'image/svg+xml' : `image/${suffix.slice(1)}`
+      return { type: 'image', dataUrl: `data:${mime};base64,${base64}` }
+    }
+
+    return { type: 'unsupported' }
+  })
+
   ipcMain.handle('file:create', async (_, filePath: string, title: string, type?: string) => {
     const content = generateFileTemplate(title, type)
     return saveFile(filePath, content)

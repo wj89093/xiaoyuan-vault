@@ -49,6 +49,8 @@ function App(): JSX.Element {
   const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
+  const [nativePreview, setNativePreview] = useState<any>(null)
+  const [isNativePreview, setIsNativePreview] = useState(false)
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -180,12 +182,31 @@ function App(): JSX.Element {
     if (selectedFile && isDirty) {
       await window.api.saveFile(selectedFile, content)
     }
+
+    const ext = filePath.split('.').pop()?.toLowerCase() || ''
+    const isMarkdown = ['md', 'markdown', 'mdown', 'mkd'].includes(ext)
+
+    if (!isMarkdown) {
+      // Native preview for non-markdown files
+      const preview = await (window.api as any).renderFile?.(filePath)
+      setNativePreview(preview || { type: 'unsupported' })
+      setIsNativePreview(true)
+      setSelectedFile(filePath)
+      setContent('')
+      setIsDirty(false)
+      setSearchQuery('')
+      setShowSearchResults(false)
+      return
+    }
+
+    // Regular markdown file
     const fileContent = await window.api.readFile(filePath)
+    setNativePreview(null)
+    setIsNativePreview(false)
     setSelectedFile(filePath)
     setContent(fileContent)
     setIsDirty(false)
     setSearchQuery('')
-    setSearchResults([])
     setShowSearchResults(false)
   }, [selectedFile, isDirty, content])
 
@@ -431,7 +452,12 @@ function App(): JSX.Element {
                     </div>
                   </div>
                   <div className="editor-wrapper">
-                    <Editor value={content} onChange={handleContentChange} />
+                    <Editor
+                      value={content}
+                      onChange={handleContentChange}
+                      nativePreview={nativePreview}
+                      isNativePreview={isNativePreview}
+                    />
                   </div>
                 </>
               ) : (

@@ -7,19 +7,30 @@ import { EditorToolbar } from './EditorToolbar'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { parseFrontmatter } from '../../main/services/frontmatter'
-import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil } from 'lucide-react'
+import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil, FileText } from 'lucide-react'
 
 interface EditorProps {
   value: string
   onChange: (value: string) => void
+  // Native preview for non-markdown files
+  nativePreview?: {
+    type: 'pdf' | 'html' | 'sheets' | 'image' | 'unsupported'
+    text?: string
+    content?: string
+    dataUrl?: string
+    sheets?: Record<string, string>
+    sheetNames?: string[]
+  }
+  isNativePreview?: boolean
 }
 
 type Mode = 'source' | 'reading'
 
-export function Editor({ value, onChange }: EditorProps): JSX.Element {
+export function Editor({ value, onChange, nativePreview, isNativePreview = false }: EditorProps): JSX.Element {
   const [mode, setMode] = useState<Mode>('source')
   const [splitView, setSplitView] = useState(false)
   const editorViewRef = useRef<EditorView | null>(null)
+  const [activeSheet, setActiveSheet] = useState(0)
 
   const handleCreate = useCallback((view: EditorView) => {
     editorViewRef.current = view
@@ -41,13 +52,79 @@ export function Editor({ value, onChange }: EditorProps): JSX.Element {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
         e.preventDefault()
+        if (isNativePreview) return // no mode toggle for native preview
         if (mode === 'reading') setMode('source')
         else if (mode === 'source') setMode('reading')
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [mode])
+  }, [mode, isNativePreview])
+
+  // Native file preview
+  if (isNativePreview && nativePreview) {
+    return (
+      <div className="editor-wrapper">
+        <div className="editor-frontmatter-bar">
+          <FileText size={12} />
+          <span className="fm-stat" style={{ marginLeft: 4 }}>
+            {nativePreview.type === 'pdf' ? 'PDF 文档' :
+             nativePreview.type === 'html' ? 'Word 文档' :
+             nativePreview.type === 'sheets' ? '表格文档' :
+             nativePreview.type === 'image' ? '图片' : '不支持的格式'}
+          </span>
+          {nativePreview.type === 'sheets' && nativePreview.sheetNames && (
+            <div className="sheet-tabs">
+              {nativePreview.sheetNames.map((name, i) => (
+                <button
+                  key={name}
+                  className={`sheet-tab ${i === activeSheet ? 'active' : ''}`}
+                  onClick={() => setActiveSheet(i)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="native-preview">
+          {nativePreview.type === 'image' && nativePreview.dataUrl && (
+            <div className="native-preview-image">
+              <img src={nativePreview.dataUrl} alt="Preview" />
+            </div>
+          )}
+
+          {nativePreview.type === 'html' && nativePreview.content && (
+            <div className="native-preview-html" dangerouslySetInnerHTML={{ __html: nativePreview.content }} />
+          )}
+
+          {nativePreview.type === 'sheets' && nativePreview.sheets && nativePreview.sheetNames && (
+            <div className="native-preview-sheets">
+              <div
+                className="sheet-content"
+                dangerouslySetInnerHTML={{ __html: nativePreview.sheets[nativePreview.sheetNames[activeSheet]] || '' }}
+              />
+            </div>
+          )}
+
+          {nativePreview.type === 'pdf' && nativePreview.text && (
+            <div className="native-preview-text">
+              <pre>{nativePreview.text}</pre>
+            </div>
+          )}
+
+          {nativePreview.type === 'unsupported' && (
+            <div className="native-preview-unsupported">
+              <FileText size={48} strokeWidth={1} />
+              <p>此文件格式暂不支持预览</p>
+              <p className="ai-chat-empty-hint">文件已保存在知识库，可右键用其他应用打开</p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="editor-wrapper">
@@ -76,7 +153,6 @@ export function Editor({ value, onChange }: EditorProps): JSX.Element {
       </div>
 
       {mode === 'reading' ? (
-        /* Obsidian Reading Mode — full rendered, click anywhere to edit */
         <div
           className="editor-reading"
           onClick={() => setMode('source')}
@@ -84,30 +160,7 @@ export function Editor({ value, onChange }: EditorProps): JSX.Element {
         >
           {value.trim() ? (
             <>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  // Wiki links [[...]] as styled inline
-                  p: ({ children, ...p }) => {
-                    // Walk children to find [[...]] patterns
-                    return <p {...p}>{children}</p>
-                  },
-                  // External links open in browser
-                  a: ({ href, children }) => {
-                    const isExternal = href?.startsWith('http')
-                    return (
-                      <a
-                        href={href}
-                        target={isExternal ? '_blank' : undefined}
-                        rel={isExternal ? 'noopener noreferrer' : undefined}
-                        onClick={isExternal ? undefined : e => e.stopPropagation()}
-                      >
-                        {children}
-                      </a>
-                    )
-                  }
-                }}
-              >
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {value}
               </ReactMarkdown>
               <div className="editor-reading-hint">

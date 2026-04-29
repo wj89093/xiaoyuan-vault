@@ -52,6 +52,8 @@ const api = {
   listFiles: (): Promise<FileInfo[]> => ipcRenderer.invoke('file:list'),
   searchFiles: (query: string): Promise<FileInfo[]> => ipcRenderer.invoke('file:search', query),
   readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
+  renderFile: (filePath: string): Promise<{ type: string; [key: string]: any }> =>
+    ipcRenderer.invoke('file:render', filePath),
   createFile: (filePath: string, title: string, type?: string): Promise<boolean> =>
     ipcRenderer.invoke('file:create', filePath, title, type),
   saveFile: (filePath: string, content: string): Promise<boolean> =>
