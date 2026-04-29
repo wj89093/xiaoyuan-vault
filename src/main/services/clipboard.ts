@@ -30,8 +30,7 @@ export function showBubble(): void {
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:transparent;overflow:hidden;cursor:grab}
-body:active{cursor:grabbing}
+body{background:transparent;overflow:hidden;margin:0;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
 .bubble{
   width:${bubbleSize}px;height:${bubbleSize}px;
   border-radius:50%;
@@ -40,13 +39,12 @@ body:active{cursor:grabbing}
   box-shadow:0 2px 12px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.04);
   transition:transform .2s,box-shadow .2s;
   font-size:22px;color:#515154;
-  -webkit-app-region:no-drag;
-  cursor:pointer;
+  -webkit-app-region:no-drag;cursor:pointer;
 }
 .bubble:hover{transform:scale(1.08);box-shadow:0 4px 20px rgba(0,0,0,0.12),0 0 0 1px rgba(0,122,255,0.15)}
 .bubble.drag-over{transform:scale(1.15);box-shadow:0 0 0 3px #007aff,0 6px 24px rgba(0,122,255,0.2)}
 </style></head><body>
-<div class="bubble" id="bubble">📥</div>
+<div class="bubble" id="bubble"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
 <script>
 const bubble = document.getElementById('bubble')
 bubble.addEventListener('click', () => { document.title = 'EXPAND'; window.close() })
@@ -57,7 +55,8 @@ document.addEventListener('drop', e => {
   const files = Array.from(e.dataTransfer.files || [])
   const text = e.dataTransfer.getData('text/plain')
   const uri = e.dataTransfer.getData('text/uri-list')
-  document.title = 'DROP:' + JSON.stringify({ fileCount:files.length, fileNames:files.map(f=>f.name), text:text?text.slice(0,200):'', uri:uri||'' })
+  const filePaths = files.map(f => (f as any).path || f.name).filter(Boolean)
+  document.title = 'DROP:' + JSON.stringify({ filePaths, text:text?text.slice(0,200):'' })
   window.close()
 })
 </script></body></html>`
@@ -68,8 +67,6 @@ document.addEventListener('drop', e => {
     frame: false, transparent: true,
     alwaysOnTop: true, resizable: false,
     skipTaskbar: true, hasShadow: false,
-    vibrancy: 'hud',
-    visualEffectState: 'active',
     show: false,
     webPreferences: {
       sandbox: false, contextIsolation: false,
@@ -164,14 +161,14 @@ body{background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-se
 </style></head><body>
 <div class="card">
 <div class="header">
-  <span style="font-size:16px">✨</span>
+  <span style="font-size:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4m0 6v4M5 12h4m6 0h4M3 21l1.5-4.5L9 15l4.5 1.5L15 21l1.5-4.5L21 15l-4.5-1.5L15 9l-1.5 4.5L9 9l-1.5 4.5L3 15l1.5 4.5L3 21z"/></svg></span>
   <span class="header-title">快速捕获</span>
   <span class="header-hint">点击悬浮球打开</span>
 </div>
 <div class="file-list" id="fileList"></div>
 <div id="dropzone">
   <textarea id="content" placeholder="输入内容或粘贴链接..."></textarea>
-  <div class="dz-hint" id="dzHint"><span class="icon">📥</span>点击输入文字，或拖拽文件/文字到此</div>
+  <div class="dz-hint" id="dzHint"><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>点击输入文字，或拖拽文件/文字到此</div>
 </div>
 <div class="actions">
   <button class="btn btn-secondary" onclick="minimize()">收起</button>
@@ -212,13 +209,13 @@ dz.addEventListener('drop', e => {
   
   // Files from Finder
   if (e.dataTransfer.files.length > 0) {
-    droppedFiles = Array.from(e.dataTransfer.files)
+    droppedFiles = Array.from(e.dataTransfer.files).map(f => ({ name: f.name, path: (f as any).path || "" }))
     fileList.style.display = 'block'
-    fileList.innerHTML = droppedFiles.map(f => '<div class="item"><span class="icon">📄</span>' + f.name + '</div>').join('')
+    fileList.innerHTML = droppedFiles.map(f => '<div class="item"><span class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>' + f.name + '</div>') + '</div>').join('')
     content.style.display = 'block'
     hint.style.display = 'none'
     if (!content.value.trim()) {
-      content.value = droppedFiles.map(f => '📎 ' + f.name).join('\\n')
+      content.value = droppedFiles.map(f => "📎 " + f.name).join("\n")
     }
   }
   
@@ -246,7 +243,7 @@ function minimize() { document.title = 'MINIMIZE'; window.close() }
 function save() {
   const text = content.value.trim()
   if (!text && droppedFiles.length === 0) return
-  const payload = { text, fileCount: droppedFiles.length, fileNames: droppedFiles.map(f => f.name) }
+  const payload = { text, files: droppedFiles.filter(f => f.path).map(f => ({ name: f.name, path: f.path })) }
   document.title = 'SAVE:' + JSON.stringify(payload).slice(0, 300)
   toast.classList.add('show')
   setTimeout(() => window.close(), 800)
@@ -267,8 +264,6 @@ function save() {
     frame: false, transparent: true,
     alwaysOnTop: true, resizable: false,
     skipTaskbar: true, hasShadow: false,
-    vibrancy: 'hud',
-    visualEffectState: 'active',
     show: false,
     webPreferences: {
       sandbox: false, contextIsolation: false,
@@ -300,7 +295,7 @@ function save() {
     console.log('[Card] close action:', cardAction)
   })
 
-  cardWindow.on('closed', () => {
+  cardWindow.on('closed', async () => {
     const action = cardAction
     cardAction = ''
     cardWindow = null
@@ -308,6 +303,19 @@ function save() {
     if (action.startsWith('SAVE:')) {
       try {
         const data = JSON.parse(action.replace('SAVE:', ''))
+        // Copy dropped files into vault
+        if (data.files && data.files.length > 0) {
+          const { rename } = await import('fs/promises')
+          const { basename } = await import('path')
+          const collectDir = join(vaultPath, '0-收集')
+          if (!existsSync(collectDir)) await mkdir(collectDir, { recursive: true })
+          for (const f of data.files) {
+            if (!existsSync(f.path)) continue
+            await rename(f.path, join(collectDir, basename(f.path)))
+            enrichFile(join(collectDir, basename(f.path))).catch(() => {})
+          }
+        }
+        // Save text content
         if (data.text) saveToVault(data.text)
       } catch {}
     }
@@ -334,44 +342,24 @@ async function handleDropOnBubble(data: any): Promise<void> {
     await mkdir(collectDir, { recursive: true })
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-
-  if (data.fileCount > 0) {
-    // Save file reference
-    const content = data.fileNames.map((n: string) => `📎 ${n}`).join('\n')
-    const filename = `drop-${timestamp}.md`
-
-    const frontmatter = [
-      '---',
-      `title: "拖入文件 ${data.fileNames[0] || 'files'}"`,
-      `type: note`,
-      `source: bubble-drop`,
-      `created: ${new Date().toISOString().slice(0, 10)}`,
-      `tags: [drop-import]`,
-      '---', '', content,
-    ].join('\n')
-
-    const filePath = join(collectDir, filename)
-    await writeFile(filePath, frontmatter, 'utf-8')
-    enrichFile(filePath).catch(() => {})
-    console.log('[Bubble] File drop saved:', filename)
+  // Copy dropped files into vault
+  if (data.filePaths && data.filePaths.length > 0) {
+    const { rename } = await import('fs/promises')
+    const { basename } = await import('path')
+    for (const srcPath of data.filePaths) {
+      if (!existsSync(srcPath)) continue
+      const filename = basename(srcPath)
+      const destPath = join(collectDir, filename)
+      await rename(srcPath, destPath)
+      console.log('[Bubble] File moved:', filename)
+      // Trigger conversion + enrich
+      enrichFile(destPath).catch(() => {})
+    }
   }
 
+  // Save dropped text
   if (data.text) {
-    const filename = `drop-${timestamp}.md`
-    const frontmatter = [
-      '---',
-      `title: "${data.text.slice(0, 40).replace(/"/g, '\\"')}"`,
-      `type: note`,
-      `source: bubble-drop`,
-      `created: ${new Date().toISOString().slice(0, 10)}`,
-      `tags: [drop-import]`,
-      '---', '', data.text,
-    ].join('\n')
-
-    const filePath = join(collectDir, filename)
-    await writeFile(filePath, frontmatter, 'utf-8')
-    enrichFile(filePath).catch(() => {})
+    await saveToVault(data.text)
   }
 }
 

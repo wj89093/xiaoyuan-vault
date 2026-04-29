@@ -4,6 +4,7 @@ import { Editor } from './components/Editor'
 import { AIChat } from './components/AIChat'
 import { SearchResults } from './components/SearchResults'
 import { WelcomeScreen } from './components/WelcomeScreen'
+import { QuickSwitch } from './components/QuickSwitch'
 import { Toolbar } from './components/Toolbar'
 import { Search, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
@@ -39,6 +40,7 @@ function App(): JSX.Element {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [messages, setMessages] = useState<Array<{role: string, content: string}>>([])
   const [chatLoading, setChatLoading] = useState(false)
+  const [showQuickSwitch, setShowQuickSwitch] = useState(false)
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -161,11 +163,33 @@ function App(): JSX.Element {
     })
   }, [])
 
+  // Cmd+P / Ctrl+P Quick Switch
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault()
+        if (vaultPath) setShowQuickSwitch(v => !v)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [vaultPath])
+
   // Display files (search results or all files)
   const displayFiles = showSearchResults ? searchResults : files
 
   return (
     <div className="app-container" style={{ background: '#f5f5f5' }}>
+      {showQuickSwitch && (
+        <QuickSwitch
+          files={files}
+          onSelect={(path: string) => {
+            setSelectedFile(path)
+            setShowQuickSwitch(false)
+          }}
+          onClose={() => setShowQuickSwitch(false)}
+        />
+      )}
       {!vaultPath ? (
         <WelcomeScreen onOpenVault={handleOpenVault} onNewVault={handleNewVault} />
       ) : (
