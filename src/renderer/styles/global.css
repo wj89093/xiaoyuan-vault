@@ -661,6 +661,17 @@ body {
   display: block; font-size: 11px; color: #a1a1a6; margin-top: 1px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.quick-switch-item-snippet {
+  display: block; font-size: 11px; color: #6e6e73; margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.quick-switch-section-label {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; color: #a1a1a6;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 6px 8px 3px;
+}
+.quick-switch-section-label svg { opacity: 0.6; }
 .quick-switch-item-arrow { color: #a1a1a6; flex-shrink: 0; }
 .quick-switch-item.selected .quick-switch-item-arrow { color: #007aff; }
 .quick-switch-empty {

@@ -48,6 +48,7 @@ function App(): JSX.Element {
   const [showSettings, setShowSettings] = useState(false)
   const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
   const [showVaultMenu, setShowVaultMenu] = useState(false)
+  const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -252,6 +253,16 @@ function App(): JSX.Element {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [selectedFile, isDirty, content])
 
+  // Track recent files
+  useEffect(() => {
+    if (!selectedFile) return
+    const name = selectedFile.split('/').pop() || selectedFile
+    setRecentFiles(prev => {
+      const filtered = prev.filter(f => f.path !== selectedFile)
+      return [{ path: selectedFile, name }, ...filtered].slice(0, 8)
+    })
+  }, [selectedFile])
+
   // Auto-restore last vault on startup
   useEffect(() => {
     ;(async () => {
@@ -304,6 +315,7 @@ function App(): JSX.Element {
       {showQuickSwitch && (
         <QuickSwitch
           files={files}
+          recentFiles={recentFiles}
           onSelect={(path: string) => {
             setSelectedFile(path)
             setShowQuickSwitch(false)
