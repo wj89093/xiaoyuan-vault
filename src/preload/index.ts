@@ -85,6 +85,8 @@ const api = {
   aiReason: (question: string, context: string[]): Promise<string> =>
     ipcRenderer.invoke('ai:reason', question, context),
   aiWrite: (outline: string): Promise<string> => ipcRenderer.invoke('ai:write', outline),
+  chatAsk: (question: string, history?: any[]): Promise<any> =>
+    ipcRenderer.invoke('chat:ask', question, history || []),
   resolveContent: (content: string, title?: string): Promise<any> =>
     ipcRenderer.invoke('resolver:classify', content, title),
   enrichFile: (filePath: string): Promise<any> =>

@@ -22,6 +22,7 @@ declare global {
       aiTags: (content: string) => Promise<string[]>
       aiSummary: (content: string) => Promise<string>
       aiReason: (question: string, context: string[]) => Promise<string>
+      chatAsk: (question: string, history?: any[]) => Promise<{answer: string; sources: {file: string; title: string; snippet: string}[]; confidence: number}>
       aiWrite: (outline: string) => Promise<string>
       moveFile: (filePath: string, newParentDir: string) => Promise<boolean>
       getVaultPath: () => Promise<string | null>
@@ -52,20 +53,30 @@ function App(): JSX.Element {
     }
   }, [])
 
-  // AI Chat
+  // AI Chat (RAG-enhanced: file-context when selected, vault-wide when not)
   const handleSendMessage = useCallback(async (text: string) => {
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setChatLoading(true)
     try {
-      const result = await window.api.aiReason(text, [content])
-      setMessages(prev => [...prev, { role: 'assistant', content: result }])
+      let response: string
+      if (selectedFile && content) {
+        // File-focused Q&A
+        response = await window.api.aiReason(text, [content])
+      } else {
+        // Vault-wide RAG
+        const rag = await (window.api as any).chatAsk?.(text, messages.slice(-6))
+        response = rag?.answer
+          ? `${rag.answer}\n\n---\n${rag.sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`
+          : '抱歉，未找到相关信息。'
+      }
+      setMessages(prev => [...prev, { role: 'assistant', content: response }])
     } catch (err) {
       console.error('AI chat error:', err)
       setMessages(prev => [...prev, { role: 'assistant', content: '抱歉，处理请求时出错。' }])
     } finally {
       setChatLoading(false)
     }
-  }, [content])
+  }, [content, selectedFile, messages])
 
   // Open vault
   const handleOpenVault = useCallback(async () => {
