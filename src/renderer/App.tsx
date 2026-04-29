@@ -175,6 +175,13 @@ function App(): JSX.Element {
     return () => window.removeEventListener('keydown', handler)
   }, [vaultPath])
 
+  // Global shortcut Cmd+Shift+F → Quick Switch
+  useEffect(() => {
+    return (window.api as any).onQuickSwitch?.(() => {
+      if (vaultPath) setShowQuickSwitch(true)
+    })
+  }, [vaultPath])
+
   // Display files (search results or all files)
   const displayFiles = showSearchResults ? searchResults : files
 

@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { config as dotenvConfig } from 'dotenv'
 dotenvConfig({ path: join(__dirname, '../../.env') })
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
 import { join } from 'path'
 import { mkdir, readFile, writeFile, copyFile } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -578,6 +578,24 @@ app.whenReady().then(() => {
   setupIpcHandlers()
   createWindow()
   createTray(mainWindow!)
+
+  // Global shortcuts
+  globalShortcut.register('CommandOrControl+Shift+O', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+  globalShortcut.register('CommandOrControl+Shift+F', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+      mainWindow.webContents.send('shortcut:quick-switch')
+    }
+  })
+  console.log('[GlobalShortcut] Cmd+Shift+O (show), Cmd+Shift+F (search) registered')
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
