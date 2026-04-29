@@ -161,6 +161,14 @@ async function processFile(
   const raw = await readFile(filePath, 'utf-8')
   const { frontmatter, content } = parseFrontmatter(raw)
 
+  // ===== Assess: 内容价值评估（OpenWiki inspired）=====
+  const assessment = assessContentWorth(content)
+  if (!assessment.worth) {
+    log.info(`[AutoAI] assess skip: ${basename(filePath)} — ${assessment.reason}`)
+    return false
+  }
+  log.info(`[AutoAI] assess pass: ${basename(filePath)} — score ${assessment.score}`)
+
   // Skip if AI already done all tasks
   const needsTags = settings.onTags && (!frontmatter.tags || frontmatter.tags.length === 0)
   const needsSummary = settings.onSummary && !frontmatter.summary
@@ -379,4 +387,87 @@ export async function appendToOperationLog(vaultPath: string, entries: string[])
 
   // Append (create if not exists)
   await appendFile(logPath, content, 'utf-8')
+}
+
+// ===== Content Worth Assessment (OpenWiki inspired) =====
+
+interface AssessResult {
+  worth: boolean
+  score: number   // 0.0 - 1.0
+  reason: string
+  contentType: 'article' | 'note' | 'snippet' | 'log' | 'trash'
+}
+
+/**
+ * Heuristic content worth assessment (no AI call, fast)
+ */
+function assessContentWorth(rawContent: string): AssessResult {
+  // Strip frontmatter if present
+  const content = rawContent.replace(/^---[\s\S]*?---\n?/, '').trim()
+
+  // Skip empty content
+  if (!content || content.length === 0) {
+    return { worth: false, score: 0, reason: 'empty content', contentType: 'trash' }
+  }
+
+  // Skip too short (likely noise, one-liner, CLI output)
+  const wordCount = content.replace(/\s+/g, ' ').trim().length
+  if (wordCount < 50) {
+    return { worth: false, score: 0.1, reason: `too short (${wordCount} chars)`, contentType: 'snippet' }
+  }
+
+  // Skip pure URL-only content (likely a bookmark without context)
+  const urlPattern = /^https?:\/\/[^\s]+\s*$/
+  if (urlPattern.test(content)) {
+    return { worth: false, score: 0.2, reason: 'URL-only content', contentType: 'snippet' }
+  }
+
+  // Skip CLI logs / error traces (high density of paths and line numbers)
+  const cliPatterns = [
+    /\/usr\/(?:local\/)?(?:bin|lib|share)\//,
+    /node_modules\//,
+    /at\s+\w+\.\w+\s+\(.+\.\w+:\d+:\d+\)/,  // stack trace
+    /^\s*[\[\]{}()]=>/m,  // CLI output indicators
+  ]
+  for (const pattern of cliPatterns) {
+    if (pattern.test(content) && wordCount < 200) {
+      return { worth: false, score: 0.3, reason: 'CLI/log output detected', contentType: 'log' }
+    }
+  }
+
+  // Skip ad-like content (high density of emoji + links)
+  const emojiCount = (content.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || []).length
+  const linkCount = (content.match(/https?:\/\/[^\s]+/g) || []).length
+  if (emojiCount > 10 && linkCount > 5 && wordCount < 300) {
+    return { worth: false, score: 0.2, reason: 'ad-like content (emoji+links)', contentType: 'trash' }
+  }
+
+  // Score calculation
+  let score = 0.5
+  let contentType: AssessResult['contentType'] = 'note'
+
+  // Long content → higher value
+  if (wordCount > 1000) { score += 0.2; contentType = 'article' }
+  else if (wordCount > 300) { score += 0.1; contentType = 'article' }
+
+  // Has paragraph structure → higher value
+  const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 100)
+  if (paragraphs.length >= 3) score += 0.15
+  else if (paragraphs.length >= 1) score += 0.05
+
+  // Has headings → structured content
+  if (/^#{1,6}\s+.+/m.test(content)) score += 0.1
+
+  // Has code blocks → technical content
+  if (/```[\s\S]*?```/.test(content)) score += 0.05
+
+  // Cap at 1.0
+  score = Math.min(score, 1.0)
+
+  return {
+    worth: score >= 0.4,
+    score: Math.round(score * 100) / 100,
+    reason: score >= 0.4 ? 'content has knowledge value' : `low-value (score: ${(score * 100).toFixed(0)}%)`,
+    contentType,
+  }
 }
