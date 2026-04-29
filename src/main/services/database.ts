@@ -1,10 +1,21 @@
 import Database from 'better-sqlite3'
-import { join } from 'path'
-import { readdir, stat, readFile, writeFile, mkdir } from 'fs/promises'
+import { join, dirname, basename } from 'path'
+import { readdir, stat, readFile, writeFile, mkdir, rename as fsRename, unlink, rmdir } from 'fs/promises'
 import log from 'electron-log/main'
+import { parseFrontmatter } from './frontmatter'
 
 let db: Database.Database | null = null
 let vaultPath: string = ''
+
+export interface FileRecord {
+  path: string
+  name: string
+  isDirectory: boolean
+  modified: number
+  children?: FileRecord[]
+  title?: string
+  tags?: string
+}
 
 export async function initDatabase(vault: string): Promise<void> {
   vaultPath = vault
@@ -15,14 +26,19 @@ export async function initDatabase(vault: string): Promise<void> {
 
   db = new Database(dbPath)
 
+  // Enable WAL for better concurrency
+  db.pragma('journal_mode = WAL')
+
   // Create FTS5 table for full-text search
   db.exec(`
     CREATE TABLE IF NOT EXISTS files (
       id TEXT PRIMARY KEY,
       path TEXT UNIQUE,
+      name TEXT,
       title TEXT,
       content TEXT,
       tags TEXT,
+      frontmatter TEXT,
       folder TEXT,
       modified_at INTEGER,
       content_hash TEXT
@@ -30,6 +46,7 @@ export async function initDatabase(vault: string): Promise<void> {
 
     CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(
       path,
+      name,
       title,
       content,
       tags,
@@ -38,20 +55,20 @@ export async function initDatabase(vault: string): Promise<void> {
     );
 
     CREATE TRIGGER IF NOT EXISTS files_ai AFTER INSERT ON files BEGIN
-      INSERT INTO files_fts(rowid, path, title, content, tags)
-      VALUES (new.rowid, new.path, new.title, new.content, new.tags);
+      INSERT INTO files_fts(rowid, path, name, title, content, tags)
+      VALUES (new.rowid, new.path, new.name, new.title, new.content, new.tags);
     END;
 
     CREATE TRIGGER IF NOT EXISTS files_ad AFTER DELETE ON files BEGIN
-      INSERT INTO files_fts(files_fts, rowid, path, title, content, tags)
-      VALUES ('delete', old.rowid, old.path, old.title, old.content, old.tags);
+      INSERT INTO files_fts(files_fts, rowid, path, name, title, content, tags)
+      VALUES ('delete', old.rowid, old.path, old.name, old.title, old.content, old.tags);
     END;
 
     CREATE TRIGGER IF NOT EXISTS files_au AFTER UPDATE ON files BEGIN
-      INSERT INTO files_fts(files_fts, rowid, path, title, content, tags)
-      VALUES ('delete', old.rowid, old.path, old.title, old.content, old.tags);
-      INSERT INTO files_fts(rowid, path, title, content, tags)
-      VALUES (new.rowid, new.path, new.title, new.content, new.tags);
+      INSERT INTO files_fts(files_fts, rowid, path, name, title, content, tags)
+      VALUES ('delete', old.rowid, old.path, old.name, old.title, old.content, old.tags);
+      INSERT INTO files_fts(rowid, path, name, title, content, tags)
+      VALUES (new.rowid, new.path, new.name, new.title, new.content, new.tags);
     END;
   `)
 
@@ -85,19 +102,31 @@ async function indexFile(filePath: string): Promise<void> {
     const content = await readFile(filePath, 'utf-8')
     const stats = await stat(filePath)
     const relPath = filePath.replace(vaultPath + '/', '')
-    const title = extractTitle(content)
+    const name = basename(relPath)
+    const { frontmatter } = parseFrontmatter(content)
+    const title = frontmatter.title || extractTitle(content) || name.replace(/\.md$/, '')
     const hash = simpleHash(content)
 
     const stmt = db.prepare(`
-      INSERT OR REPLACE INTO files (path, title, content, modified_at, content_hash, folder)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO files (path, name, title, content, tags, frontmatter, modified_at, content_hash, folder)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
     const folder = relPath.includes('/')
       ? relPath.split('/').slice(0, -1).join('/')
       : ''
 
-    stmt.run(relPath, title, content, stats.mtimeMs, hash, folder)
+    stmt.run(
+      relPath,
+      name,
+      title,
+      content,
+      frontmatter.tags?.join(', ') || '',
+      JSON.stringify(frontmatter),
+      stats.mtimeMs,
+      hash,
+      folder
+    )
   } catch (err) {
     log.error('Index error:', err)
   }
@@ -105,7 +134,7 @@ async function indexFile(filePath: string): Promise<void> {
 
 function extractTitle(content: string): string {
   const match = content.match(/^#\s+(.+)$/m)
-  return match ? match[1] : ''
+  return match ? match[1].trim() : ''
 }
 
 function simpleHash(str: string): string {
@@ -118,29 +147,23 @@ function simpleHash(str: string): string {
   return hash.toString(16)
 }
 
-export async function searchFiles(query: string): Promise<any[]> {
+export async function searchFiles(query: string): Promise<FileRecord[]> {
   if (!db) return []
 
   if (!query.trim()) {
     // Return all files
     const stmt = db.prepare(`
-      SELECT path, title, modified_at, folder
+      SELECT path, name, title, tags, modified_at, folder
       FROM files
       ORDER BY modified_at DESC
       LIMIT 100
     `)
-    const rows = stmt.all() as any[]
-    return rows.map(r => ({
-      path: r.path,
-      name: r.path.split('/').pop() || r.path,
-      isDirectory: false,
-      modified: r.modified_at
-    }))
+    return stmt.all().map(r => normalizeRecord(r))
   }
 
   // FTS search
   const stmt = db.prepare(`
-    SELECT f.path, f.title, f.modified_at, f.folder
+    SELECT f.path, f.name, f.title, f.tags, f.modified_at, f.folder
     FROM files f
     JOIN files_fts fts ON f.rowid = fts.rowid
     WHERE files_fts MATCH ?
@@ -149,28 +172,28 @@ export async function searchFiles(query: string): Promise<any[]> {
   `)
 
   try {
-    const rows = stmt.all(query + '*') as any[]
-    return rows.map(r => ({
-      path: r.path,
-      name: r.path.split('/').pop() || r.path,
-      isDirectory: false,
-      modified: r.modified_at
-    }))
+    const rows = stmt.all(query + '*')
+    return rows.map(r => normalizeRecord(r))
   } catch {
     // If FTS fails, try LIKE search
     const likeStmt = db.prepare(`
-      SELECT path, title, modified_at, folder
+      SELECT path, name, title, tags, modified_at, folder
       FROM files
-      WHERE content LIKE ? OR title LIKE ?
+      WHERE content LIKE ? OR title LIKE ? OR tags LIKE ?
       LIMIT 50
     `)
-    const likeRows = likeStmt.all(`%${query}%`, `%${query}%`) as any[]
-    return likeRows.map(r => ({
-      path: r.path,
-      name: r.path.split('/').pop() || r.path,
-      isDirectory: false,
-      modified: r.modified_at
-    }))
+    return likeStmt.all(`%${query}%`, `%${query}%`, `%${query}%`).map(r => normalizeRecord(r))
+  }
+}
+
+function normalizeRecord(r: any): FileRecord {
+  return {
+    path: r.path,
+    name: r.name || r.path.split('/').pop() || r.path,
+    isDirectory: false,
+    modified: r.modified_at,
+    title: r.title || undefined,
+    tags: r.tags || undefined
   }
 }
 
@@ -191,17 +214,19 @@ export async function saveFile(filePath: string, content: string): Promise<boole
         ? filePath.replace(vaultPath + '/', '')
         : filePath
       const stats = await stat(fullPath)
-      const title = extractTitle(content)
+      const name = basename(relPath)
+      const { frontmatter } = parseFrontmatter(content)
+      const title = frontmatter.title || extractTitle(content) || name.replace(/\.md$/, '')
       const hash = simpleHash(content)
       const folder = relPath.includes('/')
         ? relPath.split('/').slice(0, -1).join('/')
         : ''
 
       const stmt = db.prepare(`
-        INSERT OR REPLACE INTO files (path, title, content, modified_at, content_hash, folder)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO files (path, name, title, content, tags, frontmatter, modified_at, content_hash, folder)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      stmt.run(relPath, title, content, stats.mtimeMs, hash, folder)
+      stmt.run(relPath, name, title, content, frontmatter.tags?.join(', ') || '', JSON.stringify(frontmatter), stats.mtimeMs, hash, folder)
     }
 
     return true
@@ -209,6 +234,148 @@ export async function saveFile(filePath: string, content: string): Promise<boole
     log.error('Save error:', err)
     return false
   }
+}
+
+export async function renameFile(oldPath: string, newName: string): Promise<boolean> {
+  try {
+    const oldFullPath = oldPath.startsWith(vaultPath) ? oldPath : join(vaultPath, oldPath)
+    const parentDir = dirname(oldFullPath)
+    const newFullPath = join(parentDir, newName)
+
+    // Check if target already exists
+    try {
+      await stat(newFullPath)
+      return false // Target exists, can't rename
+    } catch {
+      // OK, target doesn't exist
+    }
+
+    await fsRename(oldFullPath, newFullPath)
+
+    // Update database
+    if (db) {
+      const oldRelPath = oldPath.startsWith(vaultPath) ? oldPath.replace(vaultPath + '/', '') : oldPath
+      const newRelPath = join(dirname(oldRelPath), newName)
+
+      const existing = db.prepare('SELECT * FROM files WHERE path = ?').get(oldRelPath) as any
+      if (existing) {
+        // Update file record
+        db.prepare(`
+          UPDATE files SET path = ?, name = ? WHERE path = ?
+        `).run(newRelPath, newName, oldRelPath)
+
+        // Also update FTS by re-indexing
+        const content = await readFile(newFullPath, 'utf-8')
+        const stats = await stat(newFullPath)
+        const { frontmatter } = parseFrontmatter(content)
+        const title = frontmatter.title || extractTitle(content) || newName.replace(/\.md$/, '')
+        const hash = simpleHash(content)
+        const folder = newRelPath.includes('/') ? newRelPath.split('/').slice(0, -1).join('/') : ''
+
+        db.prepare(`
+          UPDATE files SET content = ?, title = ?, tags = ?, frontmatter = ?, modified_at = ?, content_hash = ?, folder = ? WHERE path = ?
+        `).run(content, title, frontmatter.tags?.join(', ') || '', JSON.stringify(frontmatter), stats.mtimeMs, hash, folder, newRelPath)
+      }
+    }
+
+    return true
+  } catch (err) {
+    log.error('Rename error:', err)
+    return false
+  }
+}
+
+export async function moveFile(oldPath: string, newParentDir: string): Promise<boolean> {
+  try {
+    const oldFullPath = oldPath.startsWith(vaultPath) ? oldPath : join(vaultPath, oldPath)
+    const newFullPath = join(vaultPath, newParentDir, basename(oldFullPath))
+
+    // Check if source exists
+    try { await stat(oldFullPath) } catch { return false }
+
+    // Check if target already exists
+    try { await stat(newFullPath); return false } catch { /* OK */ }
+
+    // Ensure parent dir exists
+    await mkdir(dirname(newFullPath), { recursive: true })
+
+    await fsRename(oldFullPath, newFullPath)
+
+    // Update database
+    if (db) {
+      const oldRelPath = oldPath.startsWith(vaultPath + '/') ? oldPath.slice(vaultPath.length + 1) : oldPath
+      const newRelPath = join(newParentDir, basename(oldRelPath))
+
+      const existing = db.prepare('SELECT * FROM files WHERE path = ?').get(oldRelPath) as any
+      if (existing) {
+        db.prepare('UPDATE files SET path = ?, folder = ? WHERE path = ?').run(newRelPath, newParentDir, oldRelPath)
+
+        // Re-index content
+        const content = await readFile(newFullPath, 'utf-8')
+        const stats = await stat(newFullPath)
+        const { frontmatter } = parseFrontmatter(content)
+        const title = frontmatter.title || extractTitle(content) || basename(oldRelPath).replace(/\.md$/, '')
+        const hash = simpleHash(content)
+        db.prepare(`
+          UPDATE files SET content = ?, title = ?, tags = ?, frontmatter = ?, modified_at = ?, content_hash = ? WHERE path = ?
+        `).run(content, title, frontmatter.tags?.join(', ') || '', JSON.stringify(frontmatter), stats.mtimeMs, hash, newRelPath)
+      }
+    }
+    return true
+  } catch (err) {
+    log.error('Move error:', err)
+    return false
+  }
+}
+
+export async function deleteFile(filePath: string): Promise<boolean> {
+  try {
+    const fullPath = filePath.startsWith(vaultPath) ? filePath : join(vaultPath, filePath)
+    await unlink(fullPath)
+
+    // Remove from database
+    if (db) {
+      const relPath = filePath.startsWith(vaultPath) ? filePath.replace(vaultPath + '/', '') : filePath
+      db.prepare('DELETE FROM files WHERE path = ?').run(relPath)
+    }
+
+    return true
+  } catch (err) {
+    log.error('Delete error:', err)
+    return false
+  }
+}
+
+export async function deleteFolder(folderPath: string): Promise<boolean> {
+  try {
+    const fullPath = folderPath.startsWith(vaultPath) ? folderPath : join(vaultPath, folderPath)
+
+    // Remove all files in this folder from DB first
+    if (db) {
+      const relPath = folderPath.startsWith(vaultPath) ? folderPath.replace(vaultPath + '/', '') : folderPath
+      db.prepare('DELETE FROM files WHERE folder LIKE ?').run(`${relPath}%`)
+    }
+
+    // Remove the directory recursively from filesystem
+    await fsDeleteRecursive(fullPath)
+    return true
+  } catch (err) {
+    log.error('Delete folder error:', err)
+    return false
+  }
+}
+
+async function fsDeleteRecursive(dirPath: string): Promise<void> {
+  const entries = await readdir(dirPath, { withFileTypes: true })
+  for (const entry of entries) {
+    const fullPath = join(dirPath, entry.name)
+    if (entry.isDirectory()) {
+      await fsDeleteRecursive(fullPath)
+    } else {
+      await unlink(fullPath)
+    }
+  }
+  await rmdir(dirPath)
 }
 
 export async function createFolder(folderPath: string): Promise<boolean> {
@@ -222,13 +389,13 @@ export async function createFolder(folderPath: string): Promise<boolean> {
   }
 }
 
-export async function listVaultFiles(): Promise<any[]> {
+export async function listVaultFiles(): Promise<FileRecord[]> {
   if (!vaultPath) return []
   return scanDirectory(vaultPath)
 }
 
-async function scanDirectory(dir: string, basePath: string = ''): Promise<any[]> {
-  const results: any[] = []
+async function scanDirectory(dir: string, basePath: string = ''): Promise<FileRecord[]> {
+  const results: FileRecord[] = []
   const entries = await readdir(dir, { withFileTypes: true })
 
   for (const entry of entries) {
@@ -248,14 +415,39 @@ async function scanDirectory(dir: string, basePath: string = ''): Promise<any[]>
       })
     } else {
       const stats = await stat(fullPath)
+      // Check DB for metadata
+      let title: string | undefined
+      let tags: string | undefined
+      if (db) {
+        const record = db.prepare('SELECT title, tags FROM files WHERE path = ?').get(relPath) as any
+        if (record) {
+          title = record.title || undefined
+          tags = record.tags || undefined
+        }
+      }
       results.push({
         path: relPath,
         name: entry.name,
         isDirectory: false,
-        modified: stats.mtimeMs
+        modified: stats.mtimeMs,
+        title,
+        tags
       })
     }
   }
 
+  // Sort: folders first, then files alphabetically
+  results.sort((a, b) => {
+    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
+
   return results
+}
+
+/**
+ * Get the vault path
+ */
+export function getVaultPath(): string {
+  return vaultPath
 }

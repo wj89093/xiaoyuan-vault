@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react'
-import { Plus, FolderPlus } from 'lucide-react'
+import { Plus, FolderPlus, Network, Settings } from 'lucide-react'
 import type { FileInfo } from '../types'
 
 interface ToolbarProps {
   onNewFile: (folderPath: string, fileName: string) => void
   onNewFolder: (parentPath: string, folderName: string) => void
+  onOpenGraph: () => void
+  onOpenSettings: () => void
   vaultPath: string
   files: FileInfo[]
 }
 
-export function Toolbar({ onNewFile, onNewFolder, vaultPath, files }: ToolbarProps): JSX.Element {
+export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, vaultPath, files }: ToolbarProps): JSX.Element {
   const [showNewFile, setShowNewFile] = useState(false)
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [fileName, setFileName] = useState('')
@@ -78,6 +80,20 @@ export function Toolbar({ onNewFile, onNewFolder, vaultPath, files }: ToolbarPro
         title="新建文件夹"
       >
         <FolderPlus size={16} />
+      </button>
+      <button
+        className="btn btn-icon"
+        onClick={onOpenGraph}
+        title="知识图谱"
+      >
+        <Network size={16} />
+      </button>
+      <button
+        className="btn btn-icon"
+        onClick={onOpenSettings}
+        title="设置"
+      >
+        <Settings size={16} />
       </button>
 
       {showNewFile && (

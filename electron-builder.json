@@ -7,15 +7,28 @@
   },
   "files": [
     "out/**/*",
-    "!node_modules/**/*",
     "**/*.map"
   ],
   "asarUnpack": [
-    "**/*.node"
+    "**/*.node",
+    "whisper/**"
+  ],
+  "extraResources": [
+    {
+      "from": "resources/whisper",
+      "to": "whisper",
+      "filter": ["**/*"]
+    }
   ],
   "mac": {
-    "target": ["dmg"],
-    "category": "public.app-category.productivity"
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "category": "public.app-category.productivity",
+    "postinstall": "resources/scripts/postinstall.sh"
   },
   "win": {
     "target": ["nsis"]

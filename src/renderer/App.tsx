@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { FileTree } from './components/FileTree'
 import { Editor } from './components/Editor'
-import { AIPanel } from './components/AIPanel'
+import { AIChat } from './components/AIChat'
 import { SearchResults } from './components/SearchResults'
-import { AIGenerating } from './components/AIGenerating'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { Toolbar } from './components/Toolbar'
 import { Search, FolderOpen } from 'lucide-react'
@@ -33,11 +32,36 @@ function App(): JSX.Element {
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [content, setContent] = useState<string>('')
   const [isDirty, setIsDirty] = useState(false)
-  const [aiResults, setAiResults] = useState<Record<string, string>>({})
-  const [aiLoading, setAiLoading] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<FileInfo[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [messages, setMessages] = useState<Array<{role: string, content: string}>>([])
+  const [chatLoading, setChatLoading] = useState(false)
+
+  // New vault
+  const handleNewVault = useCallback(async () => {
+    const path = await window.api.openVault()
+    if (path) {
+      setVaultPath(path)
+      const fileList = await window.api.listFiles()
+      setFiles(fileList)
+    }
+  }, [])
+
+  // AI Chat
+  const handleSendMessage = useCallback(async (text: string) => {
+    setMessages(prev => [...prev, { role: 'user', content: text }])
+    setChatLoading(true)
+    try {
+      const result = await window.api.aiReason(text, [content])
+      setMessages(prev => [...prev, { role: 'assistant', content: result }])
+    } catch (err) {
+      console.error('AI chat error:', err)
+      setMessages(prev => [...prev, { role: 'assistant', content: '抱歉，处理请求时出错。' }])
+    } finally {
+      setChatLoading(false)
+    }
+  }, [content])
 
   // Open vault
   const handleOpenVault = useCallback(async () => {
@@ -58,7 +82,6 @@ function App(): JSX.Element {
     setSelectedFile(filePath)
     setContent(fileContent)
     setIsDirty(false)
-    setAiResults({})
     setSearchQuery('')
     setSearchResults([])
     setShowSearchResults(false)
@@ -111,39 +134,6 @@ function App(): JSX.Element {
     setFiles(fileList)
   }, [])
 
-  // AI operations
-  const handleAI = useCallback(async (action: string) => {
-    if (!content) return
-    setAiLoading(action)
-    try {
-      let result: string | string[]
-      switch (action) {
-        case 'classify': {
-          const folders = files.filter(f => f.isDirectory).map(f => f.name)
-          result = await window.api.aiClassify(content, folders)
-          break
-        }
-        case 'tags':
-          result = await window.api.aiTags(content)
-          break
-        case 'summary':
-          result = await window.api.aiSummary(content)
-          break
-        case 'write':
-          result = await window.api.aiWrite(content)
-          break
-        default:
-          setAiLoading(null)
-          return
-      }
-      setAiResults(prev => ({ ...prev, [action]: Array.isArray(result) ? result.join(', ') : result }))
-    } catch (err) {
-      console.error('AI error:', err)
-    } finally {
-      setAiLoading(null)
-    }
-  }, [content, files])
-
   // Content change
   const handleContentChange = useCallback((value: string) => {
     setContent(value)
@@ -161,13 +151,21 @@ function App(): JSX.Element {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [selectedFile, isDirty, content])
 
+  // Refresh file list after import
+  useEffect(() => {
+    return (window.api as any).onImportCompleted?.(async () => {
+      const fileList = await window.api.listFiles()
+      setFiles(fileList)
+    })
+  }, [])
+
   // Display files (search results or all files)
   const displayFiles = showSearchResults ? searchResults : files
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ background: '#f5f5f5' }}>
       {!vaultPath ? (
-        <WelcomeScreen onOpenVault={handleOpenVault} />
+        <WelcomeScreen onOpenVault={handleOpenVault} onNewVault={handleNewVault} />
       ) : (
         <>
           <div className="sidebar">
@@ -237,11 +235,10 @@ function App(): JSX.Element {
               )}
             </div>
           </div>
-          <AIPanel
-            aiResults={aiResults}
-            onAI={handleAI}
-            hasContent={!!content}
-            aiLoading={aiLoading}
+          <AIChat
+            messages={messages}
+            onSend={handleSendMessage}
+            loading={chatLoading}
           />
         </>
       )}

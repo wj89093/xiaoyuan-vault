@@ -3,6 +3,7 @@ import 'dotenv/config'
 
 // Qwen API configuration
 const QWEN_API_KEY = process.env.QWEN_API_KEY || ''
+const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen3.6-flash'
 const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 
 interface QwenRequest {
@@ -58,6 +59,12 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
       userPrompt = params.outline
       break
 
+    case 'resolve':
+      // RESOLVER classification — prompt already includes rules + content
+      systemPrompt = `你是一个知识内容分类助手。严格按照提供的决策树规则进行分类。只返回 JSON，不要解释。`
+      userPrompt = params.prompt
+      break
+
     default:
       return null
   }
@@ -70,7 +77,7 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
         'Authorization': `Bearer ${QWEN_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'qwen3.5-flash',
+        model: process.env.QWEN_MODEL || 'qwen3.6-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
