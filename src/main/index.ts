@@ -606,7 +606,7 @@ app.whenReady().then(() => {
       mainWindow.webContents.send('shortcut:quick-switch')
     }
   })
-  console.log('[GlobalShortcut] Cmd+Shift+O (show), Cmd+Shift+F (search) registered')
+  log.info('[GlobalShortcut] Cmd+Shift+O (show), Cmd+Shift+F (search) registered')
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
