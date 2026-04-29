@@ -54,7 +54,7 @@
 ### 🐛 Bug 修复 (22 项)
 - CSS token --color-accent-10/25 补全
 - KnowledgeGraph Wiki link 真实读取
-- AIPanel/AIGenerating CSS 清理
+- AIChat 组件完善（会话持久化、session 管理）
 - Toolbar 图谱/设置按钮连线
 - SettingsPanel 渲染 + AI 模型切换
 - IPC 暴露补全 (folderMap/graph/converter)

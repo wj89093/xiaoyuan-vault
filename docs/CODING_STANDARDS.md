@@ -228,7 +228,7 @@ function knowledge_graph() {}
 ```typescript
 // ✅ 组件文件：PascalCase.tsx
 FileTree.tsx
-AIPanel.tsx
+AIChat.tsx
 KnowledgeGraph.tsx
 
 // ✅ 非组件：kebab-case.ts
