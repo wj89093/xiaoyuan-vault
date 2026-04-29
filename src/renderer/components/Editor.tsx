@@ -117,14 +117,47 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
   const type = frontmatter.type || 'collection'
   const status = frontmatter.status || 'active'
 
-  // Cmd+E toggle Reading ↔ Source mode
+  // Cmd+E toggle Reading ↔ Source mode + Cmd+B/I/K formatting shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (!editorViewRef.current) return
+      const view = editorViewRef.current
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
         e.preventDefault()
         if (isNativePreview) return
         if (mode === 'reading') setMode('source')
         else if (mode === 'source') setMode('reading')
+        return
+      }
+      // Cmd+B: bold
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault()
+        const selection = view.state.selection.main
+        const selectedText = view.state.sliceDoc(selection.from, selection.to)
+        const bold = `**${selectedText}**`
+        view.dispatch({ changes: { from: selection.from, to: selection.to, insert: bold } })
+        view.focus()
+        return
+      }
+      // Cmd+I: italic
+      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+        e.preventDefault()
+        const selection = view.state.selection.main
+        const selectedText = view.state.sliceDoc(selection.from, selection.to)
+        const italic = `*${selectedText}*`
+        view.dispatch({ changes: { from: selection.from, to: selection.to, insert: italic } })
+        view.focus()
+        return
+      }
+      // Cmd+K: link
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        const selection = view.state.selection.main
+        const selectedText = view.state.sliceDoc(selection.from, selection.to)
+        const link = `[${selectedText}](url)`
+        view.dispatch({ changes: { from: selection.from, to: selection.to, insert: link } })
+        view.focus()
+        return
       }
     }
     window.addEventListener('keydown', handler)

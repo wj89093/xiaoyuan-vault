@@ -8,6 +8,7 @@ import { QuickSwitch } from './components/QuickSwitch'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Toolbar } from './components/Toolbar'
+import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { Search, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
 
@@ -49,6 +50,7 @@ function App(): JSX.Element {
   const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
+  const { toasts, dismiss: dismissToast } = useToasts()
   const [nativePreview, setNativePreview] = useState<any>(null)
   const [isNativePreview, setIsNativePreview] = useState(false)
 
@@ -59,6 +61,7 @@ function App(): JSX.Element {
       setVaultPath(path)
       const fileList = await window.api.listFiles()
       setFiles(fileList)
+      showToast('success', '知识库已创建并打开')
     }
   }, [])
 
@@ -107,12 +110,14 @@ function App(): JSX.Element {
 
         unsubDone = api.onChatStreamDone?.(({ answer, sources, confidence }: any) => {
           settled = true
+          const sourcePaths = sources?.map((s: any) => ({ file: s.file, title: s.title })) || []
           setMessages(prev => prev.map((m: any) =>
             m.id === placeholderId
               ? {
                   ...m,
                   content: `${answer}\n\n---\n${sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`,
-                  sources: sources?.map((s: any) => s.title) || [],
+                  pagesUsed: sourcePaths,
+                  sourceMode: 'knowledge_base',
                 }
               : m
           ))
@@ -174,6 +179,7 @@ function App(): JSX.Element {
       setVaultPath(path)
       const fileList = await window.api.listFiles()
       setFiles(fileList)
+      showToast('success', '知识库已打开')
     }
   }, [])
 
@@ -235,6 +241,7 @@ function App(): JSX.Element {
     if (selectedFile) {
       await window.api.saveFile(selectedFile, content)
       setIsDirty(false)
+      showToast('success', '文件已保存')
     }
   }, [selectedFile, content])
 
@@ -303,6 +310,7 @@ function App(): JSX.Element {
     return (window.api as any).onImportCompleted?.(async () => {
       const fileList = await window.api.listFiles()
       setFiles(fileList)
+      showToast('success', '文件导入成功')
     })
   }, [])
 
@@ -483,7 +491,20 @@ function App(): JSX.Element {
               const msg = messages.find((m: any) => m.id === msgId || m.id === undefined)
               if (msg) await handleSaveAIMessage(msg.content)
             }}
+            onNavigateToPage={(filePath: string) => {
+              // Try exact path first, then search by filename
+              const exact = files.find(f => f.path === filePath)
+              if (exact) {
+                handleSelectFile(filePath)
+              } else {
+                // Search by filename
+                const name = filePath.split('/').pop() || filePath
+                const found = files.find(f => f.name === name || f.path?.endsWith(name))
+                if (found) handleSelectFile(found.path!)
+              }
+            }}
           />
+          <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         </>
       )}
     </div>

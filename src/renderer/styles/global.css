@@ -1065,3 +1065,28 @@ body {
 .pdf-canvas-container canvas { box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
 .pdf-loading, .pdf-error { display: flex; align-items: center; justify-content: center; height: 200px; color: #fff; font-size: 14px; }
 .pdf-error { color: #f87171; }
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  background: #1d1d1f; color: #fff;
+  font-size: 13px; min-width: 240px; max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  animation: toastIn 200ms ease-out;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast-icon { flex-shrink: 0; }
+.toast-success .toast-icon { color: #34d399; }
+.toast-error .toast-icon { color: #f87171; }
+.toast-info .toast-icon { color: #60a5fa; }
+.toast-message { flex: 1; }
+.toast-close { background: none; border: none; color: #9ca3af; cursor: pointer; padding: 2px; }
+.toast-close:hover { color: #fff; }

@@ -8,7 +8,7 @@ export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
-  pagesUsed?: string[]  // 引用的页面 ID
+  pagesUsed?: Array<{ file: string; title: string }>  // 引用的页面
   sourceMode?: 'knowledge_base' | 'mixed' | 'ai_only'
   saved?: boolean
 }
@@ -256,14 +256,15 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                   {msg.pagesUsed && msg.pagesUsed.length > 0 && (
                     <div className="ai-chat-refs">
                       <span className="ai-chat-refs-label">引用来源：</span>
-                      {msg.pagesUsed.map((pageId, i) => (
+                      {msg.pagesUsed.map((pg: any, i: number) => (
                         <button
                           key={i}
                           className="ai-chat-ref"
-                          onClick={() => onNavigateToPage?.(pageId)}
+                          onClick={() => onNavigateToPage?.(pg.file)}
+                          title={pg.file}
                         >
                           <BookOpen size={10} />
-                          {pageId}
+                          {pg.title}
                         </button>
                       ))}
                     </div>
