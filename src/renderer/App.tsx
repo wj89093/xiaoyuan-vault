@@ -166,11 +166,16 @@ function App(): JSX.Element {
   const handleSaveAIMessage = useCallback(async (content: string) => {
     if (!vaultPath) return
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-    try { await (window.api as any).createFolder?.('0-收集/AI对话') } catch {}
-    const title = content.split('\n')[0].slice(0, 40).replace(/[#*`\[\]]/g, '')
-    const md = `---\ntitle: "${title || 'AI 对话'}"\ntype: note\nsource: ai-chat\ncreated: ${new Date().toISOString().slice(0, 10)}\ntags: [ai-chat]\n---\n\n${content}`
-    const filePath = `0-收集/AI对话/ai-${timestamp}.md`
-    await window.api.saveFile(filePath, md)
+    try {
+      await (window.api as any).createFolder?.('0-收集/AI对话')
+      const title = content.split('\n')[0].slice(0, 40).replace(/[#*`\[\]]/g, '')
+      const md = `---\ntitle: "${title || 'AI 对话'}"\ntype: note\nsource: ai-chat\ncreated: ${new Date().toISOString().slice(0, 10)}\ntags: [ai-chat]\n---\n\n${content}`
+      const filePath = `0-收集/AI对话/ai-${timestamp}.md`
+      await window.api.saveFile(filePath, md)
+      showToast('success', 'AI 回复已保存到知识库')
+    } catch (e) {
+      showToast('error', '保存失败')
+    }
   }, [vaultPath])
 
   const handleOpenVault = useCallback(async () => {
