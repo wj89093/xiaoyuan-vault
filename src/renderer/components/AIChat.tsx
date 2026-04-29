@@ -198,6 +198,28 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
+                        text: ({ children, ...props }: any) => {
+                          const text = String(children || '')
+                          // Parse [[wiki links]] as clickable buttons
+                          const parts = text.split(/(\[\[[^\]]+\]\])/g)
+                          if (parts.length <= 1) return <span {...props}>{children}</span>
+                          return <span>{parts.map((part, i) => {
+                            const match = part.match(/^\[\[(.+)\]\]$/)
+                            if (match) {
+                              const title = match[1]
+                              return (
+                                <button
+                                  key={i}
+                                  className="ai-chat-wiki-link"
+                                  onClick={() => onNavigateToPage?.(title)}
+                                >
+                                  {title}
+                                </button>
+                              )
+                            }
+                            return <span key={i}>{part}</span>
+                          })}</span>
+                        },
                         a: ({ href, children }) => {
                           const isExternal = href?.startsWith('http')
                           return (

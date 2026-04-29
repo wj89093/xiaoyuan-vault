@@ -9,6 +9,7 @@ let cardWindow: BrowserWindow | null = null
 let vaultPath = ''
 let bubbleAction = '' // Communicates bubble → main before window closes
 let cardAction = ''   // Communicates card → main before window closes
+let bubbleLocked = false
 
 // ============ Public API ============
 
@@ -20,10 +21,13 @@ export function setVaultPath(path: string): void {
  * Show the floating bubble (persistent, always-on-top)
  */
 export function showBubble(): void {
+  if (bubbleLocked) return
   if (bubbleWindow && !bubbleWindow.isDestroyed()) {
     bubbleWindow.show()
     return
   }
+
+  bubbleLocked = true
 
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
   const bubbleSize = 48
@@ -77,7 +81,7 @@ document.addEventListener('drop', e => {
   bubbleWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
 
   bubbleWindow.once('ready-to-show', () => {
-    console.log('[Bubble] ready-to-show')
+    bubbleLocked = false
     bubbleWindow?.showInactive()
   })
   bubbleWindow.setVisibleOnAllWorkspaces(true)
@@ -107,16 +111,23 @@ document.addEventListener('drop', e => {
         const data = JSON.parse(action.replace('DROP:', ''))
         handleDropOnBubble(data)
       } catch {}
-      setTimeout(showBubble, 200)
+      respawnBubble()
     } else {
       console.log('[Bubble] respawning (no action)')
-      setTimeout(showBubble, 200)
+      respawnBubble()
     }
   })
 
   bubbleWindow.on('blur', () => {
     // Keep bubble visible, don't close on blur
   })
+}
+
+function respawnBubble(): void {
+  setTimeout(() => {
+    bubbleLocked = false
+    showBubble()
+  }, 800)
 }
 
 export function hideBubble(): void {
@@ -320,7 +331,7 @@ function save() {
       } catch {}
     }
     // Always respawn bubble (unless minimised from bubble itself)
-    setTimeout(showBubble, 200)
+    respawnBubble()
   })
 
   cardWindow.on('blur', () => {

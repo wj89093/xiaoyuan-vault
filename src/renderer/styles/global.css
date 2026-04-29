@@ -694,3 +694,12 @@ body {
 }
 .kg-legend-item { display: flex; align-items: center; gap: 4px; }
 .kg-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* AIChat Wiki Link */
+.ai-chat-wiki-link {
+  display: inline; background: rgba(0,122,255,0.08); color: #007aff;
+  padding: 1px 6px; border-radius: 4px; border: none;
+  cursor: pointer; font-size: inherit; font-family: inherit;
+  transition: background 100ms;
+}
+.ai-chat-wiki-link:hover { background: rgba(0,122,255,0.15); }
