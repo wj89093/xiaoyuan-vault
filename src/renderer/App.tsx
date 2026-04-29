@@ -5,6 +5,8 @@ import { AIChat } from './components/AIChat'
 import { SearchResults } from './components/SearchResults'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { QuickSwitch } from './components/QuickSwitch'
+import { KnowledgeGraph } from './components/KnowledgeGraph'
+import { SettingsPanel } from './components/SettingsPanel'
 import { Toolbar } from './components/Toolbar'
 import { Search, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
@@ -42,6 +44,8 @@ function App(): JSX.Element {
   const [messages, setMessages] = useState<Array<{role: string, content: string}>>([])
   const [chatLoading, setChatLoading] = useState(false)
   const [showQuickSwitch, setShowQuickSwitch] = useState(false)
+  const [showGraph, setShowGraph] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -208,6 +212,14 @@ function App(): JSX.Element {
           onClose={() => setShowQuickSwitch(false)}
         />
       )}
+      {showGraph && vaultPath && (
+        <KnowledgeGraph
+          files={files}
+          selectedFile={selectedFile}
+          onSelect={(path) => { setSelectedFile(path); setShowGraph(false) }}
+          onClose={() => setShowGraph(false)}
+        />
+      )}
       {!vaultPath ? (
         <WelcomeScreen onOpenVault={handleOpenVault} onNewVault={handleNewVault} />
       ) : (
@@ -242,6 +254,8 @@ function App(): JSX.Element {
                 <Toolbar
                   onNewFile={handleNewFile}
                   onNewFolder={handleNewFolder}
+                  onOpenGraph={() => setShowGraph(true)}
+                  onOpenSettings={() => setShowSettings(true)}
                   vaultPath={vaultPath}
                   files={files}
                 />
