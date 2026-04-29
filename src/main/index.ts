@@ -18,7 +18,8 @@ import { resolveContentType } from './services/resolver'
 import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISettings } from './services/autoAIEngine'
 import { callQwenAI } from './services/qwen'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
-import { startClipboardWatcher, stopClipboardWatcher, setVaultPath, startMiniPopup } from './services/clipboard'
+import { startClipboardWatcher, stopClipboardWatcher, setVaultPath } from './services/clipboard'
+import { askQuestion, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
 import { transcribeAudio } from './services/whisper'
 import { generateFileTemplate } from './services/frontmatter'
 import { fetchURL, saveURLToVault } from './services/urlFetch'
@@ -503,6 +504,26 @@ AI 自动维护反向链接。
 
   ipcMain.handle('query:vault', async (_, question: string) => {
     return queryVault(question)
+  })
+
+  // RAG Chat (OpenWiki Ask Sidebar inspired)
+  ipcMain.handle('chat:ask', async (_, question: string, history: any[]) => {
+    return askQuestion(question, history || [])
+  })
+  ipcMain.handle('chat:sessions', async () => {
+    return loadSessions()
+  })
+  ipcMain.handle('chat:create', async (_, firstQuestion: string) => {
+    return createSession(firstQuestion)
+  })
+  ipcMain.handle('chat:load', async (_, sessionId: string) => {
+    return loadMessages(sessionId)
+  })
+  ipcMain.handle('chat:save', async (_, sessionId: string, messages: any[]) => {
+    return saveMessages(sessionId, messages)
+  })
+  ipcMain.handle('chat:delete', async (_, sessionId: string) => {
+    return deleteSession(sessionId)
   })
 
   ipcMain.handle('maintain:run', async () => {
