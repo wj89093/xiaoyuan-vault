@@ -27,9 +27,10 @@ interface AIChatProps {
   onLoadSession?: (sessionId: string) => void
   onSaveToVault?: (msgId: string) => Promise<void>
   onNavigateToPage?: (pageId: string) => void
+  onInsertToDoc?: (content: string) => void
 }
 
-export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault, onNavigateToPage }: AIChatProps): JSX.Element {
+export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault, onNavigateToPage, onInsertToDoc }: AIChatProps): JSX.Element {
   const [input, setInput] = useState('')
   const [view, setView] = useState<'list' | 'chat'>('chat')
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -270,21 +271,32 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                     </div>
                   )}
 
-                  {/* Save to vault button */}
-                  {msg.role === 'assistant' && msg.sourceMode && msg.sourceMode !== 'ai_only' && onSaveToVault && (
-                    <button
-                      className="ai-chat-save"
-                      onClick={() => handleSave(msg.id)}
-                      disabled={savingId === msg.id || savedIds.has(msg.id)}
-                    >
-                      {savingId === msg.id ? (
-                        <><Loader size={10} className="spin" /> 保存中...</>
-                      ) : savedIds.has(msg.id) ? (
-                        <><BookOpen size={10} /> 已保存到知识库</>
-                      ) : (
-                        <><BookOpen size={10} /> 保存到知识库</>
+                  {/* Action buttons for assistant messages */}
+                  {msg.role === 'assistant' && onInsertToDoc && msg.content && (
+                    <div className="ai-chat-actions-row">
+                      {msg.sourceMode && msg.sourceMode !== 'ai_only' && onSaveToVault && (
+                        <button
+                          className="ai-chat-save"
+                          onClick={() => handleSave(msg.id)}
+                          disabled={savingId === msg.id || savedIds.has(msg.id)}
+                        >
+                          {savingId === msg.id ? (
+                            <><Loader size={10} className="spin" /> 保存中...</>
+                          ) : savedIds.has(msg.id) ? (
+                            <><BookOpen size={10} /> 已保存</>
+                          ) : (
+                            <><BookOpen size={10} /> 保存到知识库</>
+                          )}
+                        </button>
                       )}
-                    </button>
+                      <button
+                        className="ai-chat-insert"
+                        onClick={() => onInsertToDoc(msg.content)}
+                        title="插入到当前文档"
+                      >
+                        <Plus size={10} /> 插入文档
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

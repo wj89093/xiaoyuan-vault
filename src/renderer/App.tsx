@@ -508,6 +508,13 @@ function App(): JSX.Element {
                 if (found) handleSelectFile(found.path!)
               }
             }}
+            onInsertToDoc={!isNativePreview && selectedFile ? (async (aiContent: string) => {
+              const separator = '\n\n---\n\n'
+              const newContent = content + (content ? separator : '') + aiContent
+              setContent(newContent)
+              setIsDirty(true)
+              showToast('success', '已插入到文档')
+            }) : undefined}
           />
           <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         </>
