@@ -20,6 +20,7 @@ import { callQwenAI } from './services/qwen'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
 import { startClipboardWatcher, stopClipboardWatcher, setVaultPath } from './services/clipboard'
 import { askQuestion, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
+import { rebuildGraph, loadGraph } from './services/graph'
 import { transcribeAudio } from './services/whisper'
 import { generateFileTemplate } from './services/frontmatter'
 import { fetchURL, saveURLToVault } from './services/urlFetch'
@@ -81,6 +82,16 @@ function createWindow(): void {
   }
 }
 
+// Background graph rebuild (OpenWiki-inspired: 5s delay)
+function triggerGraphRebuild(): void {
+  setTimeout(() => {
+    rebuildGraph().then(r => {
+      log.info(`[Graph] background rebuild: ${r.nodes} nodes, ${r.edges} edges`)
+      mainWindow?.webContents.send('graph:updated', r)
+    }).catch(e => log.error('[Graph] rebuild failed:', e.message))
+  }, 5000)
+}
+
 // IPC Handlers
 function setupIpcHandlers(): void {
   // File rename
@@ -111,7 +122,7 @@ function setupIpcHandlers(): void {
       await initDatabase(vaultPath)
       await startAutoAIEngine()
       setVaultPath(vaultPath)
-      startClipboardWatcher()
+      startClipboardWatcher(); triggerGraphRebuild()
       return vaultPath
     }
     return null
@@ -128,7 +139,7 @@ function setupIpcHandlers(): void {
       await writeConfig({ lastVaultPath: vaultPath })
       await startAutoAIEngine()
       setVaultPath(vaultPath)
-      startClipboardWatcher()
+      startClipboardWatcher(); triggerGraphRebuild()
       return vaultPath
     }
     return null
@@ -148,7 +159,7 @@ function setupIpcHandlers(): void {
       await writeConfig({ lastVaultPath: vaultPath })
       await startAutoAIEngine()
       setVaultPath(vaultPath)
-      startClipboardWatcher()
+      startClipboardWatcher(); triggerGraphRebuild()
 
       // Phase 0.5: 最小结构 - 目录通过AI和用户协商后创建
       await mkdir(join(vaultPath, '0-收集'), { recursive: true })
@@ -526,6 +537,13 @@ AI 自动维护反向链接。
     return deleteSession(sessionId)
   })
 
+  ipcMain.handle('graph:rebuild', async () => {
+    return rebuildGraph()
+  })
+  ipcMain.handle('graph:load', async () => {
+    return loadGraph()
+  })
+
   ipcMain.handle('maintain:run', async () => {
     return runMaintenance()
   })
@@ -533,7 +551,7 @@ AI 自动维护反向链接。
   // Clipboard watcher
   ipcMain.handle('clipboard:start', async (_, vaultPath: string) => {
     setVaultPath(vaultPath)
-    startClipboardWatcher()
+    startClipboardWatcher(); triggerGraphRebuild()
     return true
   })
   ipcMain.handle('clipboard:stop', async () => {
