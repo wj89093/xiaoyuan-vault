@@ -11,6 +11,19 @@ interface SearchResultsProps {
 export function SearchResults({ results, query, onSelect, onClose }: SearchResultsProps): JSX.Element {
   if (!query.trim()) return <div />
 
+  const highlight = (text: string, q: string) => {
+    if (!q.trim()) return text
+    const idx = text.toLowerCase().indexOf(q.toLowerCase())
+    if (idx === -1) return text
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark>{text.slice(idx, idx + q.length)}</mark>
+        {text.slice(idx + q.length)}
+      </>
+    )
+  }
+
   return (
     <div className="search-results">
       <div className="search-results-header">
@@ -33,8 +46,8 @@ export function SearchResults({ results, query, onSelect, onClose }: SearchResul
             >
               <FileText size={14} className="search-results-icon" />
               <div className="search-results-info">
-                <span className="search-results-name">{file.name}</span>
-                <span className="search-results-path">{file.path}</span>
+                <span className="search-results-name">{highlight(file.name, query)}</span>
+                <span className="search-results-path">{highlight(file.path, query)}</span>
               </div>
             </div>
           ))
