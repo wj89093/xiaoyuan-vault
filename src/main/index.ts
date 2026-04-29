@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { join } from 'path'
+import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
 import { mkdir, readFile, writeFile, copyFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { basename } from 'path'
