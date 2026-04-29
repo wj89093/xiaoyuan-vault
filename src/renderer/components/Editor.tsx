@@ -13,7 +13,7 @@ interface EditorProps {
   value: string
   onChange: (value: string) => void
   nativePreview?: {
-    type: 'pdf' | 'html' | 'sheets' | 'image' | 'unsupported'
+    type: 'pdf' | 'html' | 'sheets' | 'image' | 'video' | 'audio' | 'unsupported'
     text?: string
     content?: string
     dataUrl?: string
@@ -141,7 +141,9 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
             {nativePreview.type === 'pdf' ? 'PDF 文档' :
              nativePreview.type === 'html' ? 'Word 文档' :
              nativePreview.type === 'sheets' ? '表格文档' :
-             nativePreview.type === 'image' ? '图片' : '不支持的格式'}
+             nativePreview.type === 'image' ? '图片' :
+             nativePreview.type === 'video' ? '视频' :
+             nativePreview.type === 'audio' ? '音频' : '不支持的格式'}
           </span>
           {nativePreview.type === 'sheets' && nativePreview.sheetNames && (
             <div className="sheet-tabs">
@@ -180,6 +182,20 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
 
           {nativePreview.type === 'pdf' && nativePreview.dataUrl && (
             <PDFPreview dataUrl={nativePreview.dataUrl} />
+          )}
+
+          {nativePreview.type === 'video' && nativePreview.dataUrl && (
+            <div className="native-preview-media">
+              <video controls src={nativePreview.dataUrl} style={{ maxWidth: '100%', borderRadius: 8 }} />
+            </div>
+          )}
+
+          {nativePreview.type === 'audio' && nativePreview.dataUrl && (
+            <div className="native-preview-media">
+              <div className="audio-player">
+                <audio controls src={nativePreview.dataUrl} style={{ width: '100%' }} />
+              </div>
+            </div>
           )}
 
           {nativePreview.type === 'unsupported' && (

@@ -411,6 +411,20 @@ AI 自动维护反向链接。
       return { type: 'image', dataUrl: `data:${mime};base64,${base64}` }
     }
 
+    if (['.mp4', '.mov', '.avi', '.mkv', '.webm'].includes(suffix)) {
+      const data = await readFile(filePath)
+      const base64 = Buffer.from(data).toString('base64')
+      const mime = suffix === '.mov' ? 'video/quicktime' : `video/${suffix.slice(1)}`
+      return { type: 'video', dataUrl: `data:${mime};base64,${base64}` }
+    }
+
+    if (['.mp3', '.wav', '.ogg', '.aac', '.m4a', '.flac'].includes(suffix)) {
+      const data = await readFile(filePath)
+      const base64 = Buffer.from(data).toString('base64')
+      const mime = suffix === '.m4a' ? 'audio/x-m4a' : `audio/${suffix.slice(1)}`
+      return { type: 'audio', dataUrl: `data:${mime};base64,${base64}` }
+    }
+
     return { type: 'unsupported' }
   })
 
