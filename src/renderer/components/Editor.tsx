@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView } from '@codemirror/view'
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { EditorToolbar } from './EditorToolbar'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -44,6 +45,7 @@ export function Editor({ value, onChange }: EditorProps): JSX.Element {
           extensions={[
             markdown(),
             EditorView.lineWrapping,
+            syntaxHighlighting(defaultHighlightStyle),
           ]}
           onChange={onChange}
           onCreateEditor={handleCreate}

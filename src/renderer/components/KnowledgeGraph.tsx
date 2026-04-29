@@ -284,6 +284,7 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
       <div className="kg-legend">
         <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: COLORS.link }} />引用链接</span>
         <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: COLORS.linkFolder }} />同文件夹</span>
+        <span className="kg-legend-hint">🖱 滚轮缩放 · 拖拽移动</span>
       </div>
     </div>
   )

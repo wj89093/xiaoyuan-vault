@@ -35,7 +35,8 @@ export function SearchResults({ results, query, onSelect, onClose }: SearchResul
       <div className="search-results-list">
         {results.length === 0 ? (
           <div className="search-results-empty">
-            未找到 "{query}"
+            <p>未找到 &quot;{query}&quot;</p>
+            <p className="search-results-empty-hint">试试其他关键词，或检查拼写</p>
           </div>
         ) : (
           results.map(file => (
