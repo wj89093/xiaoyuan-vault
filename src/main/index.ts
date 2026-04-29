@@ -11,7 +11,7 @@ import log from 'electron-log/main'
 import { createTray, destroyTray } from './tray'
 import { openImportWindow } from './importWindow'
 import { initDatabase, searchFiles, getFileContent, saveFile, createFolder, listVaultFiles, renameFile, deleteFile, deleteFolder, moveFile, getVaultPath } from './services/database'
-import { enrichFile, enrichInbox, enrichFileWithConfirmation } from './services/enrich'
+import { enrichFile, enrichInbox, enrichFileWithConfirmation, loadFolderMap, saveFolderMap } from './services/enrich'
 import { queryVault } from './services/query'
 import { runMaintenance } from './services/maintain'
 import { resolveContentType } from './services/resolver'
@@ -514,6 +514,15 @@ AI 自动维护反向链接。
 
   ipcMain.handle('enrich:inbox', async () => {
     return enrichInbox()
+  })
+
+  // Folder map (configurable type→folder mapping)
+  ipcMain.handle('folderMap:load', async () => {
+    return loadFolderMap()
+  })
+  ipcMain.handle('folderMap:save', async (_, map: Record<string, string>) => {
+    await saveFolderMap(map)
+    return true
   })
 
   ipcMain.handle('import:open', async () => {

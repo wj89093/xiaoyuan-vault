@@ -21,6 +21,7 @@ export { rebuildIndexFile, appendToOperationLog }
 
 // ─── Enrich a file ─────────────────────────────────────────────────────
 
+// Ensure folder map is loaded before processing
 export async function enrichFile(
   filePath: string,
   confirmedType?: string,
@@ -79,18 +80,60 @@ export async function enrichFile(
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
+// ─── Folder Map (configurable, not hardcoded per schema.md) ──────────
+
+const DEFAULT_FOLDER_MAP: Record<string, string> = {
+  person: '1-人物',
+  company: '2-公司',
+  project: '3-项目',
+  meeting: '4-会议',
+  deal: '5-交易',
+  concept: '6-概念',
+  research: '7-研究',
+  collection: '0-收集',
+}
+
+let _folderMap: Record<string, string> | null = null
+
+/**
+ * Load folder map from .xiaoyuan/folder-map.json (configurable)
+ * Falls back to defaults if file doesn't exist
+ */
+export async function loadFolderMap(): Promise<Record<string, string>> {
+  if (_folderMap) return _folderMap
+  try {
+    const vaultPath = getVaultPath()
+    if (!vaultPath) return DEFAULT_FOLDER_MAP
+    const mapPath = join(require('path').join(vaultPath, '.xiaoyuan', 'folder-map.json'))
+    const { readFile, mkdir } = await import('fs/promises')
+    const dir = require('path').join(vaultPath, '.xiaoyuan')
+    if (!require('fs').existsSync(dir)) await mkdir(dir, { recursive: true })
+    if (require('fs').existsSync(mapPath)) {
+      _folderMap = JSON.parse(await readFile(mapPath, 'utf-8'))
+      return _folderMap!
+    }
+  } catch {}
+  _folderMap = { ...DEFAULT_FOLDER_MAP }
+  return _folderMap
+}
+
+/**
+ * Save custom folder map (allows user/AI to reconfigure)
+ */
+export async function saveFolderMap(map: Record<string, string>): Promise<void> {
+  _folderMap = { ...map }
+  const vaultPath = getVaultPath()
+  if (!vaultPath) return
+  const { writeFile, mkdir } = await import('fs/promises')
+  const { join } = require('path')
+  const dir = join(vaultPath, '.xiaoyuan')
+  if (!require('fs').existsSync(dir)) await mkdir(dir, { recursive: true })
+  await writeFile(join(dir, 'folder-map.json'), JSON.stringify(map, null, 2), 'utf-8')
+}
+
 function getDefaultFolder(type: string): string {
-  const map: Record<string, string> = {
-    person: '1-人物',
-    company: '2-公司',
-    project: '3-项目',
-    meeting: '4-会议',
-    deal: '5-交易',
-    concept: '6-概念',
-    research: '7-研究',
-    collection: '0-收集'
-  }
-  return map[type] || '0-收集'
+  if (!_folderMap) return DEFAULT_FOLDER_MAP[type] || '0-收集'
+  return _folderMap[type] || '0-收集'
 }
 
 // ─── Batch enrich inbox ──────────────────────────────────────────────
