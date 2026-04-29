@@ -6,6 +6,8 @@ interface ImportResult {
   name: string
   path: string
   status: 'ok' | 'error'
+  converted?: boolean
+  mdPath?: string
   error?: string
 }
 
@@ -160,7 +162,10 @@ export function ImportApp(): JSX.Element {
               <CheckCircle size={14} style={{ color: r.status === 'ok' ? 'var(--color-accent)' : 'red', flexShrink: 0 }} />
               <div className="import-result-info">
                 <div className="import-result-name">{r.name}</div>
-                <div className="import-result-type">{r.type === 'url' ? '链接' : '文件'} → raw files</div>
+                <div className="import-result-type">
+                  {r.type === 'url' ? '🔗 链接' : r.converted ? '✅ 已转 Markdown' : '📄 原始文件'}
+                  {r.error && <span className="import-result-error"> — {r.error}</span>}
+                </div>
               </div>
               <button className="btn btn-icon" onClick={() => removeResult(i)} style={{ padding: 2, flexShrink: 0 }}>
                 <X size={12} />
