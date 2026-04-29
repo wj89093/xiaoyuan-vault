@@ -23,19 +23,57 @@ interface AIChatProps {
   messages: ChatMessage[]
   onSend: (text: string) => void
   loading: boolean
+  onLoadSession?: (sessionId: string) => void
   onSaveToVault?: (msgId: string) => Promise<void>
   onNavigateToPage?: (pageId: string) => void
 }
 
-export function AIChat({ messages, onSend, loading, onSaveToVault, onNavigateToPage }: AIChatProps): JSX.Element {
+export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault, onNavigateToPage }: AIChatProps): JSX.Element {
   const [input, setInput] = useState('')
   const [view, setView] = useState<'list' | 'chat'>('chat')
   const [sessions, setSessions] = useState<ChatSession[]>([])
-  const [activeSessionId, setActiveSessionId] = useState<string>('default')
+  const [activeSessionId, setActiveSessionId] = useState<string>('')
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const saveTimer = useRef<any>(null)
+
+  // Load sessions on mount
+  useEffect(() => {
+    (async () => {
+      const api = window.api as any
+      const list = await api.chatSessions?.() || []
+      if (list.length > 0) {
+        setSessions(list)
+        // Load latest session
+        const msgs = await api.chatLoad?.(list[0].id) || []
+        // Note: messages are controlled by App.tsx, not loaded here
+      }
+      setLoaded(true)
+    })().catch(() => setLoaded(true))
+  }, [])
+
+  // Auto-create session on first message + persist
+  useEffect(() => {
+    if (!loaded || messages.length === 0) return
+    const api = window.api as any
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(async () => {
+      if (!activeSessionId) {
+        const session = await api.chatCreate?.(messages[0]?.content?.slice(0, 40) || '新会话')
+        if (session) setActiveSessionId(session.id)
+      }
+      if (activeSessionId) {
+        await api.chatSave?.(activeSessionId, messages)
+        // Update session list
+        const list = await api.chatSessions?.() || []
+        setSessions(list)
+      }
+    }, 1000)
+    return () => clearTimeout(saveTimer.current)
+  }, [messages.length, loaded])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -68,10 +106,8 @@ export function AIChat({ messages, onSend, loading, onSaveToVault, onNavigateToP
     }
   }
 
-  // Session management (mock for now)
   const startNewSession = () => {
-    const newId = crypto.randomUUID()
-    setActiveSessionId(newId)
+    setActiveSessionId('')
     setView('chat')
   }
 
@@ -119,7 +155,7 @@ export function AIChat({ messages, onSend, loading, onSaveToVault, onNavigateToP
             </div>
           ) : (
             sessions.map(s => (
-              <div key={s.id} className="ai-chat-session-item" onClick={() => { setActiveSessionId(s.id); setView('chat'); }}>
+              <div key={s.id} className="ai-chat-session-item" onClick={async () => { setActiveSessionId(s.id); setView('chat'); onLoadSession?.(s.id); }}>
                 <span className="ai-chat-session-title">{s.title || '未命名会话'}</span>
                 <span className="ai-chat-session-date">{s.updatedAt?.slice(0, 10)}</span>
               </div>
@@ -248,7 +284,7 @@ export function AIChat({ messages, onSend, loading, onSaveToVault, onNavigateToP
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              rows={2}
+              rows={1}
             />
             <button
               className="ai-chat-send"

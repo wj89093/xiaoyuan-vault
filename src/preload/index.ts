@@ -87,6 +87,16 @@ const api = {
   aiWrite: (outline: string): Promise<string> => ipcRenderer.invoke('ai:write', outline),
   chatAsk: (question: string, history?: any[]): Promise<any> =>
     ipcRenderer.invoke('chat:ask', question, history || []),
+  chatSessions: (): Promise<any[]> =>
+    ipcRenderer.invoke('chat:sessions'),
+  chatCreate: (firstQuestion: string): Promise<any> =>
+    ipcRenderer.invoke('chat:create', firstQuestion),
+  chatLoad: (sessionId: string): Promise<any[]> =>
+    ipcRenderer.invoke('chat:load', sessionId),
+  chatSave: (sessionId: string, messages: any[]): Promise<boolean> =>
+    ipcRenderer.invoke('chat:save', sessionId, messages),
+  chatDelete: (sessionId: string): Promise<boolean> =>
+    ipcRenderer.invoke('chat:delete', sessionId),
   resolveContent: (content: string, title?: string): Promise<any> =>
     ipcRenderer.invoke('resolver:classify', content, title),
   enrichFile: (filePath: string): Promise<any> =>
