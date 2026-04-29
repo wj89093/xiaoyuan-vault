@@ -58,6 +58,10 @@ const api = {
     ipcRenderer.invoke('file:delete', filePath),
   deleteFolder: (folderPath: string): Promise<boolean> =>
     ipcRenderer.invoke('folder:delete', folderPath),
+  moveFile: (filePath: string, newParentDir: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:move', filePath, newParentDir),
+  getVaultPath: (): Promise<string | null> =>
+    ipcRenderer.invoke('vault:path'),
 
   // AI operations
   aiClassify: (content: string, folders: string[]): Promise<string> =>

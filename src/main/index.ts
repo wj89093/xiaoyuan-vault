@@ -314,6 +314,10 @@ AI 自动维护反向链接。
     return true
   })
 
+  ipcMain.handle('vault:path', async () => {
+    return getVaultPath()
+  })
+
   // Auto AI settings
   ipcMain.handle('autoAI:get', async () => {
     return await readAutoAISettings()

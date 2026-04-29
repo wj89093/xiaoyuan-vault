@@ -22,6 +22,8 @@ declare global {
       aiSummary: (content: string) => Promise<string>
       aiReason: (question: string, context: string[]) => Promise<string>
       aiWrite: (outline: string) => Promise<string>
+      moveFile: (filePath: string, newParentDir: string) => Promise<boolean>
+      getVaultPath: () => Promise<string | null>
     }
   }
 }
