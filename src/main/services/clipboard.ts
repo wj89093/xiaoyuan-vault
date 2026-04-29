@@ -7,6 +7,7 @@ import { enrichFile } from './enrich'
 let bubbleWindow: BrowserWindow | null = null
 let cardWindow: BrowserWindow | null = null
 let vaultPath = ''
+let bubbleAction = '' // Communicates bubble → main before window closes
 
 // ============ Public API ============
 
@@ -47,28 +48,15 @@ body:active{cursor:grabbing}
 <div class="bubble" id="bubble">📥</div>
 <script>
 const bubble = document.getElementById('bubble')
-let filesInDrop = []
-
-// Click to expand
-bubble.addEventListener('click', () => {
-  document.title = 'EXPAND'
-  window.close()
-})
-
-// Drag-over to accept files
+bubble.addEventListener('click', () => { document.title = 'EXPAND'; window.close() })
 document.addEventListener('dragover', e => { e.preventDefault(); bubble.classList.add('drag-over') })
 document.addEventListener('dragleave', () => bubble.classList.remove('drag-over'))
 document.addEventListener('drop', e => {
   e.preventDefault(); bubble.classList.remove('drag-over')
-  filesInDrop = Array.from(e.dataTransfer.files || [])
+  const files = Array.from(e.dataTransfer.files || [])
   const text = e.dataTransfer.getData('text/plain')
   const uri = e.dataTransfer.getData('text/uri-list')
-  document.title = 'DROP:' + JSON.stringify({
-    fileCount: filesInDrop.length,
-    fileNames: filesInDrop.map(f => f.name),
-    text: text ? text.slice(0, 200) : '',
-    uri: uri || ''
-  })
+  document.title = 'DROP:' + JSON.stringify({ fileCount:files.length, fileNames:files.map(f=>f.name), text:text?text.slice(0,200):'', uri:uri||'' })
   window.close()
 })
 </script></body></html>`
@@ -91,25 +79,27 @@ document.addEventListener('drop', e => {
   bubbleWindow.setVisibleOnAllWorkspaces(true)
   bubbleWindow.setAlwaysOnTop(true, 'floating')
 
+  bubbleWindow.on('close', () => {
+    const title = bubbleWindow?.webContents?.getTitle() || bubbleAction
+    bubbleAction = title
+  })
+
   bubbleWindow.on('closed', () => {
-    const title = bubbleWindow?.getTitle() || ''
+    const action = bubbleAction
+    bubbleAction = ''
     bubbleWindow = null
 
-    if (title === 'EXPAND') {
-      // Clicked → show expanded card
+    if (action === 'EXPAND') {
       const pos = screen.getCursorScreenPoint()
-      showCaptureCard(pos.x - 260, pos.y + 10)
-    } else if (title.startsWith('DROP:')) {
-      // File dropped on bubble → process
+      showCaptureCard(pos.x - 250, pos.y + 10)
+    } else if (action.startsWith('DROP:')) {
       try {
-        const data = JSON.parse(title.replace('DROP:', ''))
+        const data = JSON.parse(action.replace('DROP:', ''))
         handleDropOnBubble(data)
       } catch {}
-      // Respawn bubble
-      setTimeout(showBubble, 100)
+      setTimeout(showBubble, 200)
     } else {
-      // Respawn bubble
-      setTimeout(showBubble, 100)
+      setTimeout(showBubble, 200)
     }
   })
 
