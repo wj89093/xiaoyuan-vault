@@ -292,6 +292,7 @@ function App(): JSX.Element {
                     files={displayFiles}
                     selectedFile={selectedFile}
                     onSelect={handleSelectFile}
+                    onNewFile={() => handleNewFile('', '')}
                     vaultPath={vaultPath}
                   />
                 </div>

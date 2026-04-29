@@ -97,7 +97,10 @@ export function QuickSwitch({ files, onSelect, onClose }: QuickSwitchProps): JSX
         </div>
         <div className="quick-switch-results">
           {filtered.length === 0 ? (
-            <div className="quick-switch-empty">未找到匹配文件</div>
+            <div className="quick-switch-empty">
+              <p>未找到匹配文件</p>
+              <p className="quick-switch-empty-hint">试试其他关键词，或新建文件</p>
+            </div>
           ) : (
             filtered.map((file, i) => (
               <div
