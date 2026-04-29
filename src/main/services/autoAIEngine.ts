@@ -57,15 +57,22 @@ export async function writeAutoAISettings(settings: AutoAISettings): Promise<voi
 export async function startAutoAIEngine(): Promise<void> {
   await stopAutoAIEngine()
 
-  const settings = await readAutoAISettings()
-  if (!settings || !settings.enabled) {
-    log.info('[AutoAI] disabled or no vault open, skipping')
-    return
-  }
-
   const vaultPath = getVaultPath()
   if (!vaultPath) {
     log.info('[AutoAI] no vault open, skipping')
+    return
+  }
+
+  let settings = await readAutoAISettings()
+  if (!settings) {
+    // Create default settings on first run
+    settings = { enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true }
+    await writeAutoAISettings(settings)
+    log.info('[AutoAI] created default settings (interval=60min)')
+  }
+
+  if (!settings.enabled) {
+    log.info('[AutoAI] disabled, skipping')
     return
   }
 

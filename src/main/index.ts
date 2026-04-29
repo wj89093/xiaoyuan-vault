@@ -475,6 +475,18 @@ AI 自动维护反向链接。
     }
   })
 
+  // Format converter handlers (P0-3 fix)
+  ipcMain.handle('converter:convert', async (_, filePath: string) => {
+    return convertWithJS(filePath)
+  })
+  ipcMain.handle('converter:supported', async () => {
+    return getSupportedExtensions()
+  })
+  ipcMain.handle('converter:transcribe', async (_, filePath: string) => {
+    if (!canTranscribeAudio(filePath)) return { success: false, error: '不支持的音频格式' }
+    return { success: false, error: 'Whisper 模型未配置' }
+  })
+
   ipcMain.handle('folder:create', async (_, folderPath: string) => {
     return createFolder(folderPath)
   })

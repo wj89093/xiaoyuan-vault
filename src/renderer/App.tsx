@@ -334,6 +334,15 @@ function App(): JSX.Element {
             messages={messages}
             onSend={handleSendMessage}
             loading={chatLoading}
+            onLoadSession={async (sessionId: string) => {
+              const api = window.api as any
+              const msgs = await api.chatLoad?.(sessionId) || []
+              setMessages(msgs.map((m: any) => ({
+                id: m.id || crypto.randomUUID(),
+                role: m.role,
+                content: m.content,
+              })))
+            }}
             onSaveToVault={async (msgId: string) => {
               const msg = messages.find((m: any) => m.id === msgId || m.id === undefined)
               if (msg) await handleSaveAIMessage(msg.content)

@@ -293,7 +293,7 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
 function forceCluster(folderIndex: Map<string, number>) {
   const clusters = new Map<string, { cx: number; cy: number }>()
   const CLUSTER_RADIUS = 200
-  let radius = 0
+  let radius = CLUSTER_RADIUS
 
   for (const [, idx] of folderIndex) {
     const angle = (2 * Math.PI * idx) / folderIndex.size

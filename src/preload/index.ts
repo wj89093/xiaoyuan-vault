@@ -115,6 +115,15 @@ const api = {
   providerSet: (provider: string): Promise<boolean> =>
     ipcRenderer.invoke('provider:set', provider),
 
+  folderMapLoad: (): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('folderMap:load'),
+  folderMapSave: (map: Record<string, string>): Promise<boolean> =>
+    ipcRenderer.invoke('folderMap:save', map),
+  graphLoad: (): Promise<any> =>
+    ipcRenderer.invoke('graph:load'),
+  graphRebuild: (): Promise<{nodes: number; edges: number}> =>
+    ipcRenderer.invoke('graph:rebuild'),
+
   runMaintenance: (): Promise<any> =>
     ipcRenderer.invoke('maintain:run')
 }
