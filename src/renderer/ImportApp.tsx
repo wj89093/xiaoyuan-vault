@@ -11,13 +11,8 @@ interface ImportResult {
   error?: string
 }
 
-declare global {
-  interface Window {
-    importFile: (vaultPath: string, filePaths: string[]) => Promise<ImportResult[]>
-    fetchUrl: (url: string) => Promise<{ title: string; content: string }>
-    saveUrlContent: (vaultPath: string, title: string, content: string) => Promise<string>
-  }
-}
+// ImportApp uses window.api methods exposed by preload
+// (importFiles, fetchUrl, saveUrlContent)
 
 export function ImportApp(): JSX.Element {
   const [isDragging, setIsDragging] = useState(false)
@@ -47,7 +42,7 @@ export function ImportApp(): JSX.Element {
   const handleFileImport = async (filePaths: string[]) => {
     setImporting(true)
     try {
-      const res = await window.importFile('', filePaths)
+      const res = await (window.api as any).importFiles('', filePaths)
       setResults(prev => [...prev, ...res])
     } finally {
       setImporting(false)
@@ -90,8 +85,8 @@ export function ImportApp(): JSX.Element {
     setFetching(true)
     setUrlError(null)
     try {
-      const { title, content } = await window.fetchUrl(url)
-      const path = await window.saveUrlContent('', title, content)
+      const { title, content } = await (window.api as any).fetchUrl(url)
+      const path = await (window.api as any).saveUrlContent('', title, content)
       setResults(prev => [...prev, { type: 'url', name: title, path, status: 'ok' }])
       setUrlInput('')
     } catch (err: any) {

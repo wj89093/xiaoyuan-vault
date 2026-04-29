@@ -65,8 +65,12 @@ function App(): JSX.Element {
     try {
       let response: string
       if (selectedFile && content) {
-        // File-focused Q&A
-        response = await window.api.aiReason(text, [content])
+        // File-focused Q&A with conversation history
+        const historyContext = messages.slice(-4).map(m => `${m.role}: ${m.content.slice(0, 200)}`).join('\n')
+        response = await window.api.aiReason(
+          `对话历史:\n${historyContext}\n\n当前问题: ${text}`,
+          [content]
+        )
       } else {
         // Vault-wide RAG
         const rag = await (window.api as any).chatAsk?.(text, messages.slice(-6))
@@ -75,9 +79,13 @@ function App(): JSX.Element {
           : '抱歉，未找到相关信息。'
       }
       setMessages(prev => [...prev, { role: 'assistant', content: response }])
-    } catch (err) {
-      console.error('AI chat error:', err)
-      setMessages(prev => [...prev, { role: 'assistant', content: '抱歉，处理请求时出错。' }])
+    } catch (err: any) {
+      const msg = err?.message || String(err)
+      const fallback = msg.includes('key') || msg.includes('401') ? 'API Key 未配置或无效'
+        : msg.includes('timeout') || msg.includes('ETIMEDOUT') ? '请求超时，请稍后重试'
+        : msg.includes('network') || msg.includes('ECONNREFUSED') ? '网络连接失败'
+        : '抱歉，处理请求时出错。'
+      setMessages(prev => [...prev, { role: 'assistant', content: fallback }])
     } finally {
       setChatLoading(false)
     }
