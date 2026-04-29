@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { X, Clock, Sparkles, Tag, FileText } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Clock, Sparkles, Tag, FileText, Cpu } from 'lucide-react'
 
 interface SettingsPanelProps {
   onClose: () => void
@@ -28,6 +28,11 @@ const aiTasks = [
 
 export function SettingsPanel({ onClose, autoAI, onUpdate }: SettingsPanelProps): JSX.Element {
   const [settings, setSettings] = useState(autoAI)
+  const [provider, setProvider] = useState('qwen')
+
+  useEffect(() => {(async () => {
+    try { const p = await (window.api as any).providerGet?.(); if (p) setProvider(p) } catch {}
+  })()}, [])
 
   const update = (patch: Partial<typeof settings>) => {
     const next = { ...settings, ...patch }
@@ -113,6 +118,27 @@ export function SettingsPanel({ onClose, autoAI, onUpdate }: SettingsPanelProps)
                 ))}
               </>
             )}
+          </div>
+
+          <div className="settings-section">
+            <div className="settings-section-title">
+              <Cpu size={14} />
+              AI 模型
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-label">
+                <span>默认模型</span>
+                <span className="settings-row-desc">需要配置对应的 API Key</span>
+              </div>
+              <select className="select" value={provider} onChange={e => {
+                setProvider(e.target.value)
+                ;(window.api as any).providerSet?.(e.target.value)
+              }} style={{ width: 180 }}>
+                <option value="qwen">通义千问 (Qwen3.6)</option>
+                <option value="minimax">MiniMax M2.7</option>
+                <option value="deepseek">DeepSeek V4</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

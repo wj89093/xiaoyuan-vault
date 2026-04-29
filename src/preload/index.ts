@@ -109,6 +109,12 @@ const api = {
     ipcRenderer.invoke('import:open'),
   queryVault: (question: string): Promise<any> =>
     ipcRenderer.invoke('query:vault', question),
+
+  providerGet: (): Promise<string> =>
+    ipcRenderer.invoke('provider:get'),
+  providerSet: (provider: string): Promise<boolean> =>
+    ipcRenderer.invoke('provider:set', provider),
+
   runMaintenance: (): Promise<any> =>
     ipcRenderer.invoke('maintain:run')
 }
