@@ -1,7 +1,7 @@
 # 晓园 Vault 数据库设计
 
 > 版本：v1.0
-> 更新：2026-04-27
+> 更新：2026-04-29
 
 ---
 
@@ -131,10 +131,10 @@ frontmatter 存储为 JSON 字符串，示例：
   "summary": "某公司创始人",
   "confidence": "high",
   "tags": ["创始人", "AI"],
-  "created": "2026-04-27",
-  "updated": "2026-04-27",
+  "created": "2026-04-29",
+  "updated": "2026-04-29",
   "openThreads": [
-    { "content": "待确认教育背景", "status": "open", "created": "2026-04-27" }
+    { "content": "待确认教育背景", "status": "open", "created": "2026-04-29" }
   ],
   "seeAlso": ["相关公司A", "相关公司B"],
   "relationships": [

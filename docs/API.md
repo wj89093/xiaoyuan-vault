@@ -1,7 +1,7 @@
 # 晓园 Vault API 文档
 
-> 版本：v1.0
-> 更新：2026-04-27
+> 版本：v1.1
+> 更新：2026-04-29
 
 ---
 
@@ -296,8 +296,8 @@ confidence: low
 tags: []
 openThreads: []
 seeAlso: []
-created: 2026-04-27
-updated: 2026-04-27
+created: 2026-04-29
+updated: 2026-04-29
 ---
 
 # 标题
@@ -314,7 +314,7 @@ updated: 2026-04-27
 
 ## 时间线
 
-## [2026-04-27] 创建 | 页面初始化
+## [2026-04-29] 创建 | 页面初始化
 ```
 
 ### 5.5 ai:classify
@@ -577,3 +577,53 @@ created: 1745760000000
 ```
 
 **自动触发**：enrich 流程（分类/标签/摘要）
+
+## v1.1 新增接口
+
+### Chat (RAG 问答)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `chat:ask` | RAG 三阶段问答 | `question, history[]` | `{answer, sources[], confidence}` |
+| `chat:sessions` | 会话列表 | — | `ChatSession[]` |
+| `chat:create` | 创建会话 | `firstQuestion` | `ChatSession` |
+| `chat:load` | 加载消息 | `sessionId` | `ChatMessage[]` |
+| `chat:save` | 保存消息 | `sessionId, messages[]` | `boolean` |
+| `chat:delete` | 删除会话 | `sessionId` | `boolean` |
+
+### Graph (知识图谱)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `graph:load` | 加载图谱数据 | — | `{nodes[], edges[]}` |
+| `graph:rebuild` | 重建图谱 | — | `{nodes, edges}` |
+
+### Clipboard (悬浮球捕获)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `clipboard:start` | 显示悬浮球 | `vaultPath` | `boolean` |
+| `clipboard:stop` | 隐藏悬浮球 | — | `boolean` |
+| `clipboard:setVaultPath` | 设置路径 | `vaultPath` | `boolean` |
+
+### Converter (格式转换)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `converter:convert` | 文件转 Markdown | `filePath` | `{success, markdown?}` |
+| `converter:supported` | 支持格式列表 | — | `string[]` |
+| `converter:transcribe` | 音频转写 | `filePath` | `{success, text?}` |
+
+### Provider (AI 模型)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `provider:get` | 获取当前 AI 模型 | — | `string` |
+| `provider:set` | 设置 AI 模型 | `provider` | `boolean` |
+
+### Folder Map (目录映射)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `folderMap:load` | 加载目录映射 | — | `Record<string,string>` |
+| `folderMap:save` | 保存目录映射 | `map` | `boolean` |
+
+### File Move (文件移动)
+| 接口 | 说明 | 参数 | 返回 |
+|------|------|------|------|
+| `file:move` | 移动文件到文件夹 | `filePath, newParentDir` | `boolean` |
+
