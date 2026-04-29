@@ -256,6 +256,7 @@ async function processFile(
 
 async function scanVaultFiles(vaultPath: string, relDir = '', excludeSystemFiles = true): Promise<string[]> {
   const results: string[] = []
+  const seen = new Set<string>()
   const fullDir = relDir ? join(vaultPath, relDir) : vaultPath
 
   let entries: string[]
@@ -266,27 +267,23 @@ async function scanVaultFiles(vaultPath: string, relDir = '', excludeSystemFiles
   }
 
   for (const name of entries.sort()) {
-    // Skip hidden files and system directories
     if (name.startsWith('.') || name === 'node_modules') continue
-
     const relPath = relDir ? `${relDir}/${name}` : name
     const fullPath = join(fullDir, name)
 
-    // Skip AI data dir
     if (relDir === '' && name === '.xiaoyuan') continue
 
     try {
       const fstat = await stat(fullPath)
       if (fstat.isDirectory()) {
-        // Recurse into non-hidden directories (except .xiaoyuan)
         const subFiles = await scanVaultFiles(vaultPath, relPath)
-        results.push(...subFiles)
+        for (const sf of subFiles) {
+          if (!seen.has(sf)) { seen.add(sf); results.push(sf) }
+        }
       } else if (name.endsWith('.md') && (!excludeSystemFiles || !SYSTEM_FILES.has(name))) {
-        results.push(fullPath)
+        if (!seen.has(fullPath)) { seen.add(fullPath); results.push(fullPath) }
       }
-    } catch {
-      // Skip inaccessible files
-    }
+    } catch {}
   }
 
   return results
