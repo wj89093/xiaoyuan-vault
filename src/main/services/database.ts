@@ -29,7 +29,7 @@ export async function initDatabase(vault: string): Promise<void> {
   // Enable WAL for better concurrency
   db.pragma('journal_mode = WAL')
 
-  // Create FTS5 table for full-text search
+  // FTS5 全文索引 (content_rowid references SQLite implicit rowid, not files.id)
   db.exec(`
     CREATE TABLE IF NOT EXISTS files (
       id TEXT PRIMARY KEY,

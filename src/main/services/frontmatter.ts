@@ -413,7 +413,7 @@ export function generateFileTemplate(title: string, type?: string): string {
   const now = new Date().toISOString().split('T')[0]
   const frontmatter: Frontmatter = {
     title,
-    type: type || 'collection',
+    type: type || 'note',  // Default to 'note', resolver will reassign via enrich
     status: 'active',
     summary: '',
     confidence: 'low',
