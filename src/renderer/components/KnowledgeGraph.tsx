@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
 import { FileText, Folder } from 'lucide-react'
 import type { FileInfo } from '../types'
@@ -37,6 +37,8 @@ const COLORS = {
 export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: KnowledgeGraphProps): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: GraphLink[] }>({ nodes: [], links: [] })
+  const [loading, setLoading] = useState(true)
 
   const flatFiles = useMemo(() => {
     const result: FileInfo[] = []
@@ -50,56 +52,104 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
     return result
   }, [files])
 
-  const graphData = useMemo(() => {
-    const nodes: GraphNode[] = []
-    const links: GraphLink[] = []
-    const nodeMap = new Map<string, GraphNode>()
+  // Load file contents and build graph data
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
 
-    // Build nodes
-    for (const file of flatFiles) {
-      const parts = file.path.split('/')
-      const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : ''
-      const node: GraphNode = {
-        id: file.path,
-        name: file.name,
-        path: file.path,
-        isDirectory: file.isDirectory,
-        tags: file.tags ? file.tags.split(',').map(t => t.trim()) : [],
-        folder
+    ;(async () => {
+      if (flatFiles.length === 0) {
+        if (!cancelled) { setGraphData({ nodes: [], links: [] }); setLoading(false) }
+        return
       }
-      nodes.push(node)
-      nodeMap.set(file.path, node)
-    }
 
-    // Build links from wiki links [[...]]
-    for (const file of flatFiles) {
-      const content = (file as any).content || ''
-      const wikiLinks = content.match(/\[\[([^\]]+)\]\]/g) || []
-      for (const link of wikiLinks) {
-        const targetName = link.slice(2, -2).trim()
-        const target = nodeMap.get(targetName) || nodeMap.get(targetName + '.md')
-        if (target && target.id !== file.path) {
-          links.push({ source: file.path, target: target.id, type: 'link' })
+      const nodes: GraphNode[] = []
+      const links: GraphLink[] = []
+      const nodeMap = new Map<string, GraphNode>()
+      const titleToPath = new Map<string, string>()
+
+      // Build nodes
+      for (const file of flatFiles) {
+        const parts = file.path.split('/')
+        const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : ''
+        const node: GraphNode = {
+          id: file.path,
+          name: file.name,
+          path: file.path,
+          isDirectory: file.isDirectory,
+          tags: file.tags ? file.tags.split(',').map((t: string) => t.trim()) : [],
+          folder
+        }
+        nodes.push(node)
+        nodeMap.set(file.path, node)
+        // Also index by name (for wiki link resolution)
+        titleToPath.set(file.name.replace(/\.md$/, ''), file.path)
+      }
+
+      // Async: read file contents to extract Wiki links + tags
+      const wikiLinksFound: Array<{ source: string; target: string }> = []
+      for (const file of flatFiles) {
+        if (cancelled) return
+        try {
+          const content = await window.api.readFile(file.path)
+          
+          // Extract Wiki links [[...]]
+          const wikiLinks = content.match(/\[\[([^\]]+)\]\]/g) || []
+          for (const link of wikiLinks) {
+            const targetName = link.slice(2, -2).trim()
+            // Resolve target: try exact path, then name match
+            let targetPath = nodeMap.get(targetName)?.id
+              || nodeMap.get(targetName + '.md')?.id
+              || titleToPath.get(targetName)
+            if (targetPath && targetPath !== file.path) {
+              wikiLinksFound.push({ source: file.path, target: targetPath })
+            }
+          }
+
+          // Extract tags from frontmatter
+          const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/)
+          if (fmMatch) {
+            const tagsMatch = fmMatch[1].match(/^tags:\s*\[(.+)\]/m)
+            if (tagsMatch) {
+              const fmTags = tagsMatch[1].split(',').map((t: string) => t.trim().replace(/['"]/g, ''))
+              const node = nodeMap.get(file.path)
+              if (node && fmTags.length > node.tags.length) {
+                node.tags = fmTags
+              }
+            }
+          }
+        } catch {
+          // Skip files that can't be read
         }
       }
-    }
 
-    // Build folder co-occurrence links
-    const folderGroups = new Map<string, GraphNode[]>()
-    for (const node of nodes) {
-      if (!node.folder) continue
-      if (!folderGroups.has(node.folder)) folderGroups.set(node.folder, [])
-      folderGroups.get(node.folder)!.push(node)
-    }
-    for (const group of folderGroups.values()) {
-      for (let i = 0; i < group.length; i++) {
-        for (let j = i + 1; j < group.length; j++) {
-          links.push({ source: group[i].id, target: group[j].id, type: 'folder' })
+      // Build Wiki link edges
+      for (const { source, target } of wikiLinksFound) {
+        links.push({ source, target, type: 'link' })
+      }
+
+      // Build folder co-occurrence links
+      const folderGroups = new Map<string, GraphNode[]>()
+      for (const node of nodes) {
+        if (!node.folder) continue
+        if (!folderGroups.has(node.folder)) folderGroups.set(node.folder, [])
+        folderGroups.get(node.folder)!.push(node)
+      }
+      for (const group of folderGroups.values()) {
+        for (let i = 0; i < group.length; i++) {
+          for (let j = i + 1; j < group.length; j++) {
+            links.push({ source: group[i].id, target: group[j].id, type: 'folder' })
+          }
         }
       }
-    }
 
-    return { nodes, links }
+      if (!cancelled) {
+        setGraphData({ nodes, links })
+        setLoading(false)
+      }
+    })()
+
+    return () => { cancelled = true }
   }, [flatFiles])
 
   useEffect(() => {
@@ -218,7 +268,12 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
           </svg>
         </button>
       </div>
-      {graphData.nodes.length === 0 ? (
+      {loading ? (
+        <div className="kg-empty">
+          <FileText size={32} style={{ color: 'var(--color-text-tertiary)' }} />
+          <span>正在分析文件关系...</span>
+        </div>
+      ) : graphData.nodes.length === 0 ? (
         <div className="kg-empty">
           <FileText size={32} style={{ color: 'var(--color-text-tertiary)' }} />
           <span>没有可显示的文件</span>
