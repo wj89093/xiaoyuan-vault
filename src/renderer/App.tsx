@@ -451,14 +451,12 @@ function App(): JSX.Element {
                       <button className="btn" onClick={handleSave}>保存</button>
                     </div>
                   </div>
-                  <div className="editor-wrapper">
-                    <Editor
-                      value={content}
-                      onChange={handleContentChange}
-                      nativePreview={nativePreview}
-                      isNativePreview={isNativePreview}
-                    />
-                  </div>
+                  <Editor
+                    value={content}
+                    onChange={handleContentChange}
+                    nativePreview={nativePreview}
+                    isNativePreview={isNativePreview}
+                  />
                 </>
               ) : (
                 <div className="welcome-screen">
