@@ -135,13 +135,16 @@ npm run package    # 打包安装包
 - 双层页面模板
 - vault:create 最小化
 
-### Phase 1 进行中
-- [ ] index.md 自动更新
-- [ ] log.md 操作日志
-- [ ] RESOLVER.md 决策树
-- [ ] 技能框架 enrich/query/ingest
+### Phase 1 ✅ 已完成
+- [x] index.md 自动更新
+- [x] log.md 操作日志
+- [x] RESOLVER.md 决策树
+- [x] 技能框架 enrich/query/ingest/maintain
+- [x] AIChat 对话式交互
+- [x] autoAIEngine 自动化引擎
+- [x] URL 内容抓取
 
-### Phase 2
+### Phase 2 📋 规划
 - [ ] Typed links + 关系抽取
 - [ ] Embedding 搜索
 - [ ] RRF 综合排名

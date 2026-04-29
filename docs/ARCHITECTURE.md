@@ -52,7 +52,7 @@
 | **数据库** | SQLite + better-sqlite3 + FTS5 | 本地全文搜索 |
 | **图谱** | D3.js | 力导向知识图谱 |
 | **AI** | 通义千问 API (Qwen3.5-Flash) | 文字处理 |
-| **剪贴板** | electron clipboard + iohook | 系统级复制监听 |
+| **剪贴板** | electron clipboard + iohook | 系统级复制监听（📋 Phase 2 规划） |
 | **URL 抓取** | axios + cheerio + readability | 网页内容提取 |
 | **日志** | electron-log | 日志记录 |
 | **构建** | electron-vite + electron-builder | 打包发布 |
@@ -306,7 +306,7 @@ interface AutoAISettings {
 | autoAIEngine | ✅ 已实现 | 定时自动执行引擎 |
 | **技能系统** | | |
 | RESOLVER.md | ⚠️ 骨架已建 | 决策树文件已创建，代码路由未实现 |
-| enrich / query / ingest / maintain | 📋 Phase 1 | 文档设计完成，代码未实现 |
+| enrich / query / maintain | ✅ v1.0 | 已实现（代码完成） |
 | **协作** | | |
 | Git 协同 / 权限 / 团队 | 📋 Phase 3 | |
 | **企业** | | |

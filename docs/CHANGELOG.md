@@ -11,19 +11,20 @@
 
 #### 新增功能（参考 OpenWiki）
 
-- **剪贴板捕获 Popup** — 系统级复制监听 + Mini 确认窗口 + 保存到 0-收集/
-- **URL 内容抓取** — 网页解析 + Readability 提取正文 + turndown 转 Markdown + 自动入库
-- **AIChat 加强** — 上下文保持 + 来源引用 [[标题]] + 快捷指令 (/summarize /tags /classify)
-- **实体识别** — 人物/公司/概念自动提取 + 写入 entities 表
-- **主题聚类** — 相似内容自动聚类 + 建议相关文档
-- **知识图谱优化** — 实体节点 + 语义关系 + 交互增强（筛选/聚类/搜索定位）
+- **URL 内容抓取** ✅ — 网页解析 + Readability 提取正文 + turndown 转 Markdown + 自动入库（urlFetch.ts）
+- **AIChat 加强** ✅ — 上下文保持 + 来源引用 [[标题]] + 快捷指令 (/summarize /tags /classify)
 
 #### 技术架构
 
-- **主进程新增模块**：剪贴板监听 (clipboard.ts) + URL 抓取 (urlFetch.ts)
-- **数据库新增表**：clipboard_history + entities + entity_relationships
-- **IPC 新增接口**：clipboard:listen/save + url:fetch/extract
-- **前端新增组件**：ClipboardPopup + URLImportDialog
+- **主进程新增模块**：URL 抓取 (urlFetch.ts) ✅
+- **IPC 新增接口**：url:fetch/extract ✅
+
+#### 📋 Phase 2 规划（未实现）
+
+- **剪贴板捕获 Popup** — 系统级复制监听 + Mini 确认窗口
+- **实体识别** — 人物/公司/概念自动提取 + 写入 entities 表
+- **主题聚类** — 相似内容自动聚类 + 建议相关文档
+- **知识图谱优化** — 实体节点 + 语义关系 + 交互增强
 
 ---
 

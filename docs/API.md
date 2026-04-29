@@ -51,6 +51,8 @@
 | `vault:create` | 新建 Vault | - | `string \| null` (路径) |
 | `vault:open` | 打开 Vault | - | `string \| null` (路径) |
 | `vault:getLast` | 获取最近 Vault | - | `string \| null` |
+| `vault:clear` | 清除 Vault 记录 | - | `boolean` |
+| `vault:path` | 获取当前 Vault 路径 | - | `string \| null` |
 | `vault:clear` | 清除最近记录 | - | `boolean` |
 
 ### 3.2 文件操作
