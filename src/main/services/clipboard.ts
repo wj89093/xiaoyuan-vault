@@ -109,9 +109,12 @@ document.addEventListener('drop', e => {
     } else if (action && action.startsWith('DROP:')) {
       try {
         const data = JSON.parse(action.replace('DROP:', ''))
-        handleDropOnBubble(data)
-      } catch {}
-      respawnBubble()
+        const pos = screen.getCursorScreenPoint()
+        // Show card with dropped content pre-filled
+        showCaptureCard(pos.x - 250, pos.y + 10, data)
+      } catch {
+        respawnBubble()
+      }
     } else {
       console.log('[Bubble] respawning (no action)')
       respawnBubble()
@@ -144,9 +147,33 @@ export function hideBubble(): void {
 
 // ============ Capture Card (expanded view) ============
 
-function showCaptureCard(centerX: number, centerY: number): void {
+function showCaptureCard(centerX: number, centerY: number, dropData?: { filePaths?: string[]; text?: string }): void {
   if (cardWindow && !cardWindow.isDestroyed()) {
     cardWindow.focus()
+    // Send drop data to existing card
+    if (dropData) {
+      cardWindow.webContents.executeJavaScript(`
+        (function() {
+          window.__droppedPaths = ${JSON.stringify(dropData.filePaths || [])};
+          var fpl = window.__droppedPaths;
+          var txt = ${JSON.stringify(dropData.text || '')};
+          if (fpl.length) {
+            var fl = document.getElementById('fileList');
+            if (fl) { fl.style.display='block'; fl.innerHTML = fpl.map(function(n){return '<div class="item"><span class="icon">📄</span>'+n.split('/').pop()+'</div>'}).join(''); }
+            var c = document.getElementById('content');
+            var dh = document.getElementById('dzHint');
+            if (c) { c.style.display='block'; c.value = fpl.map(function(n){return '📎 '+n.split('/').pop()}).join('\\n'); }
+            if (dh) dh.style.display = 'none';
+          }
+          if (txt) {
+            var c = document.getElementById('content');
+            var dh = document.getElementById('dzHint');
+            if (c) { c.style.display='block'; c.value = (c.value ? c.value+'\\n'+txt : txt); }
+            if (dh) dh.style.display = 'none';
+          }
+        })()
+      `).catch(() => {})
+    }
     return
   }
 
@@ -258,8 +285,13 @@ content.addEventListener('keydown', e => {
 function minimize() { document.title = 'MINIMIZE'; window.close() }
 function save() {
   const text = content.value.trim()
-  if (!text && droppedFiles.length === 0) return
-  const payload = { text, files: droppedFiles.filter(f => f.path).map(f => ({ name: f.name, path: f.path })) }
+  const bubblePaths = (window as any).__droppedPaths || []
+  if (!text && droppedFiles.length === 0 && bubblePaths.length === 0) return
+  const payload = {
+    text,
+    files: droppedFiles.filter(f => f.path).map(f => ({ name: f.name, path: f.path })),
+    bubblePaths
+  }
   document.title = 'SAVE:' + JSON.stringify(payload).slice(0, 300)
   toast.classList.add('show')
   setTimeout(() => window.close(), 800)
@@ -319,19 +351,19 @@ function save() {
     if (action.startsWith('SAVE:')) {
       try {
         const data = JSON.parse(action.replace('SAVE:', ''))
-        // Copy dropped files into vault
-        if (data.files && data.files.length > 0) {
+        const allPaths = [...(data.files || []).map((f: any) => f.path), ...(data.bubblePaths || [])]
+        // Move dropped files into vault
+        if (allPaths.length > 0) {
           const { rename } = await import('fs/promises')
           const { basename } = await import('path')
           const collectDir = join(vaultPath, '0-收集')
           if (!existsSync(collectDir)) await mkdir(collectDir, { recursive: true })
-          for (const f of data.files) {
-            if (!existsSync(f.path)) continue
-            await rename(f.path, join(collectDir, basename(f.path)))
-            enrichFile(join(collectDir, basename(f.path))).catch(() => {})
+          for (const srcPath of allPaths) {
+            if (!existsSync(srcPath)) continue
+            await rename(srcPath, join(collectDir, basename(srcPath)))
+            enrichFile(join(collectDir, basename(srcPath))).catch(() => {})
           }
         }
-        // Save text content
         if (data.text) saveToVault(data.text)
       } catch {}
     }

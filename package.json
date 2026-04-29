@@ -9,7 +9,11 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",
-    "package": "electron-vite build && electron-builder --config electron-builder.json"
+    "package": "electron-vite build && electron-builder --config electron-builder.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@codemirror/commands": "^6.7.1",
@@ -26,7 +30,6 @@
     "d3": "^7.9.0",
     "dotenv": "^17.4.2",
     "electron-log": "^5.2.4",
-    "jsdom": "^29.1.0",
     "lucide-react": "^1.9.0",
     "mammoth": "^1.12.0",
     "pdf-parse": "^2.4.5",
@@ -43,6 +46,8 @@
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.12",
     "@types/d3": "^7.4.3",
     "@types/node": "^22.10.7",
@@ -50,10 +55,14 @@
     "@types/react-dom": "^19.0.2",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/ui": "^4.1.5",
     "electron": "^34.0.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.0.0",
+    "happy-dom": "^20.9.0",
+    "jsdom": "^29.1.0",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^4.1.5"
   }
 }
