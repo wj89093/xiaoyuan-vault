@@ -20,6 +20,11 @@ const VALID_TYPES = ['person', 'company', 'project', 'meeting', 'deal', 'concept
 // ─── Read RESOLVER.md from vault ─────────────────────────────────────
 
 async function readResolverRules(): Promise<string> {
+  // Return cached if still fresh
+  if (_rulesCache && Date.now() - _rulesCache.loadedAt < RULES_CACHE_TTL_MS) {
+    return _rulesCache.content
+  }
+
   const vaultPath = getVaultPath()
   if (!vaultPath) return DEFAULT_RULES
 
@@ -27,7 +32,9 @@ async function readResolverRules(): Promise<string> {
   if (!existsSync(resolverPath)) return DEFAULT_RULES
 
   try {
-    return await readFile(resolverPath, 'utf-8')
+    const content = await readFile(resolverPath, 'utf-8')
+    _rulesCache = { content, loadedAt: Date.now() }
+    return content
   } catch {
     return DEFAULT_RULES
   }
@@ -44,6 +51,11 @@ const DEFAULT_RULES = `# RESOLVER - 内容路由决策树
 - 有方法论/框架/模型 → type: concept
 - 有研究方法+结论+数据 → type: research
 - 无法判断 → type: collection（进 0-收集/）`
+
+// ─── In-memory cache (avoids repeated disk reads per enrich call) ───
+
+let _rulesCache: { content: string; loadedAt: number } | null = null
+const RULES_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 // ─── Resolve content to type ─────────────────────────────────────────
 

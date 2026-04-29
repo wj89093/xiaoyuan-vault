@@ -35,7 +35,12 @@ interface TFIDFDocument {
   tokens: Map<string, number>
 }
 
-// ============ Stopwords ============
+// ============ Constants ============
+
+const SIMILARITY_THRESHOLD = 0.15
+const MAX_EDGES = 200
+const MIN_TOKENS_FOR_SIMILARITY = 5 // Skip very short documents in content similarity
+const COSINE_EARLY_ZERO = 0.001    // Early exit if dot/norm ratio < this (min possible value)
 
 const STOPWORDS = new Set([
   '的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一',
@@ -330,8 +335,11 @@ export function buildEdges(
   }
 
   // Content-based edges (TF-IDF cosine similarity)
+  // Only consider doc pairs where both have enough tokens (skip snippets)
   for (let i = 0; i < vectors.length && edges.length < MAX_EDGES; i++) {
+    if (documents[i].tokens.size < MIN_TOKENS_FOR_SIMILARITY) continue
     for (let j = i + 1; j < vectors.length && edges.length < MAX_EDGES; j++) {
+      if (documents[j].tokens.size < MIN_TOKENS_FOR_SIMILARITY) continue
       // Skip if already connected by tag
       const alreadyConnected = edges.some(
         e =>
@@ -363,18 +371,37 @@ export function cosineSimilarity(
   let normA = 0
   let normB = 0
 
-  for (const [term, valueA] of vecA) {
-    const valueB = vecB.get(term) || 0
+  // Single pass: accumulate from smaller vector
+  const smaller = vecA.size <= vecB.size ? vecA : vecB
+  const larger = vecA.size <= vecB.size ? vecB : vecA
+
+  for (const [term, valueA] of smaller) {
+    const valueB = larger.get(term) || 0
     dotProduct += valueA * valueB
     normA += valueA * valueA
-  }
-
-  for (const [, valueB] of vecB) {
     normB += valueB * valueB
   }
 
+  // If vectors are very different sizes, accumulate remaining normB
+  if (smaller === vecA) {
+    // smaller = vecA, larger = vecB — already counted vecB for matching terms
+    for (const [, valueB] of larger) {
+      normB += valueB * valueB
+    }
+  } else {
+    // smaller = vecB, larger = vecA — need vecA remaining terms
+    for (const [term, valueA] of vecA) {
+      if (!vecB.has(term)) normA += valueA * valueA
+    }
+  }
+
   if (normA === 0 || normB === 0) return 0
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
+
+  const denominator = Math.sqrt(normA) * Math.sqrt(normB)
+  // Early exit if even max possible dot product is below threshold
+  if (dotProduct < COSINE_EARLY_ZERO * denominator) return 0
+
+  return dotProduct / denominator
 }
 
 // ============ Helpers ============

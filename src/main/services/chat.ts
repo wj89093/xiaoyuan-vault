@@ -330,11 +330,11 @@ export async function createSession(firstQuestion: string): Promise<ChatSession>
   const id = createHash('sha256')
     .update(Date.now().toString() + Math.random().toString())
     .digest('hex')
-    .slice(0, 12)
+    .slice(0, SHA256_SLICE)
 
   const session: ChatSession = {
     id,
-    title: firstQuestion.slice(0, 50),
+    title: firstQuestion.slice(0, SESSION_TITLE_MAX_LEN),
     created_at: Date.now(),
     updated_at: Date.now(),
   }
