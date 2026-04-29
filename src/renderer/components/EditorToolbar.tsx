@@ -1,15 +1,16 @@
-import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns } from 'lucide-react'
+import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns, BookOpen } from 'lucide-react'
 import React from 'react'
 
 interface EditorToolbarProps {
-  view: any  // CodeMirror EditorView
+  view: any
   previewMode: boolean
   onTogglePreview: () => void
   onToggleSplit: () => void
   splitView?: boolean
+  readingModeActive?: boolean
 }
 
-export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSplit, splitView }: EditorToolbarProps): JSX.Element {
+export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSplit, splitView, readingModeActive }: EditorToolbarProps): JSX.Element {
   const insert = (template: string, cursorOffset?: number) => {
     if (!view) return
     const selection = view.state.selection.main
@@ -44,9 +45,10 @@ export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSpli
     { type: 'divider' as const },
     { icon: <Columns size={15} />, label: splitView ? '关闭分屏' : '分屏', action: onToggleSplit, active: splitView },
     { type: 'divider' as const },
-    { icon: previewMode ? <EyeOff size={15} /> : <Eye size={15} />,
-      label: previewMode ? '编辑' : '预览',
+    { icon: readingModeActive ? <EyeOff size={15} /> : <BookOpen size={15} />,
+      label: readingModeActive ? '编辑模式' : '阅读模式',
       action: onTogglePreview,
+      active: readingModeActive,
     },
   ]
 
