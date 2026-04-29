@@ -1,12 +1,11 @@
-import { BrowserWindow, globalShortcut } from 'electron'
+import { BrowserWindow, globalShortcut, screen, ipcMain } from 'electron'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { enrichFile } from './enrich'
 
-// ============ Config ============
-
-let spotlightWindow: BrowserWindow | null = null
+let bubbleWindow: BrowserWindow | null = null
+let cardWindow: BrowserWindow | null = null
 let vaultPath = ''
 
 // ============ Public API ============
@@ -16,214 +15,364 @@ export function setVaultPath(path: string): void {
 }
 
 /**
- * Register global shortcut Cmd+Shift+C (OpenWiki-style spotlight capture)
+ * Show the floating bubble (persistent, always-on-top)
  */
-export function registerSpotlightShortcut(): void {
-  const registered = globalShortcut.register('CommandOrControl+Shift+C', () => {
-    toggleSpotlight()
-  })
-  console.log('[Spotlight] Shortcut Cmd+Shift+C registered:', registered)
-}
-
-export function unregisterSpotlightShortcut(): void {
-  globalShortcut.unregisterAll()
-}
-
-export function toggleSpotlight(): void {
-  if (spotlightWindow && !spotlightWindow.isDestroyed()) {
-    spotlightWindow.focus()
+export function showBubble(): void {
+  if (bubbleWindow && !bubbleWindow.isDestroyed()) {
+    bubbleWindow.show()
     return
   }
-  showSpotlight()
-}
 
-export function closeSpotlight(): void {
-  if (spotlightWindow && !spotlightWindow.isDestroyed()) {
-    spotlightWindow.close()
-  }
-}
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  const bubbleSize = 48
 
-// ============ Spotlight Window ============
-
-function showSpotlight(): void {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:transparent;overflow:hidden}
-.spotlight{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
-.card{width:540px;background:rgba(30,30,32,0.92);border-radius:16px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,0.5);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px)}
-.header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.header-icon{font-size:20px}
-.header-title{font-size:14px;font-weight:600;color:#f5f5f7;flex:1}
-.header-hint{font-size:11px;color:#a1a1a6;background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:8px}
-#dropzone{position:relative;width:100%;min-height:120px;margin-bottom:16px;border:2px dashed rgba(255,255,255,0.12);border-radius:12px;background:rgba(255,255,255,0.03);transition:all .2s;cursor:text}
-#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.08)}
-#dropzone.drag-over .dz-hint{color:#007aff}
-.dz-hint{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#6e6e73;font-size:13px;pointer-events:none;transition:color .2s}
-.dz-hint .icon{font-size:28px;opacity:0.5}
-#content{width:100%;min-height:120px;padding:14px;background:transparent;border:none;outline:none;color:#f5f5f7;font-size:14px;line-height:1.6;resize:none;font-family:inherit}
-#content::placeholder{color:#6e6e73}
-.actions{display:flex;justify-content:flex-end;gap:8px}
-.btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .15s}
-.btn-primary{background:#007aff;color:#fff}.btn-primary:hover{background:#0071e3}
-.btn-secondary{background:rgba(255,255,255,0.08);color:#a1a1a6}.btn-secondary:hover{background:rgba(255,255,255,0.12);color:#f5f5f7}
-.status{font-size:11px;color:#30d158;text-align:right;margin-top:8px;opacity:0;transition:opacity .3s}
-.status.show{opacity:1}
-</style></head><body><div class="spotlight"><div class="card">
-<div class="header">
-  <span class="header-icon">✨</span>
-  <span class="header-title">快速捕获</span>
-  <span class="header-hint">Cmd+Shift+C</span>
-</div>
-<div id="dropzone">
-  <textarea id="content" placeholder="输入或拖拽内容到此处...&#10;&#10;支持：文本 / 链接 / Markdown"></textarea>
-  <div class="dz-hint"><span class="icon">📥</span>拖拽文件到此自动保存</div>
-</div>
-<div class="actions">
-  <button class="btn btn-secondary" onclick="closeSpotlight()">Esc 关闭</button>
-  <button class="btn btn-primary" onclick="save()">⏎ 保存到 Vault</button>
-</div>
-<div class="status" id="status">✅ 已保存</div>
-</div></div>
+body{background:transparent;overflow:hidden;cursor:grab}
+body:active{cursor:grabbing}
+.bubble{
+  width:${bubbleSize}px;height:${bubbleSize}px;
+  border-radius:50%;
+  background:rgba(30,30,32,0.88);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.1);
+  transition:transform .2s,box-shadow .2s;
+  font-size:22px;color:#f5f5f7;
+  -webkit-app-region:no-drag;
+}
+.bubble:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,0,0,0.4)}
+.bubble.drag-over{transform:scale(1.15);box-shadow:0 0 0 4px #007aff,0 8px 32px rgba(0,122,255,0.4)}
+</style></head><body>
+<div class="bubble" id="bubble">📥</div>
 <script>
-const dz = document.getElementById('dropzone')
-const textarea = document.getElementById('content')
-const hint = dz.querySelector('.dz-hint')
-const status = document.getElementById('status')
+const bubble = document.getElementById('bubble')
+let filesInDrop = []
 
-textarea.addEventListener('input', () => {
-  hint.style.display = textarea.value.trim() ? 'none' : 'flex'
+// Click to expand
+bubble.addEventListener('click', () => {
+  document.title = 'EXPAND'
+  window.close()
 })
 
-textarea.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeSpotlight()
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') save()
-})
-
-// Drag-and-drop from Finder
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over') })
-dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'))
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('drag-over')
-  const files = e.dataTransfer.files
+// Drag-over to accept files
+document.addEventListener('dragover', e => { e.preventDefault(); bubble.classList.add('drag-over') })
+document.addEventListener('dragleave', () => bubble.classList.remove('drag-over'))
+document.addEventListener('drop', e => {
+  e.preventDefault(); bubble.classList.remove('drag-over')
+  filesInDrop = Array.from(e.dataTransfer.files || [])
   const text = e.dataTransfer.getData('text/plain')
   const uri = e.dataTransfer.getData('text/uri-list')
-  
-  if (files && files.length > 0) {
-    const names = Array.from(files).map(f => f.name).join(', ')
-    textarea.value = textarea.value 
-      ? textarea.value + '\\n📎 拖入文件: ' + names
-      : '📎 拖入文件: ' + names
-    hint.style.display = 'none'
-  } else if (text) {
-    textarea.value = textarea.value 
-      ? textarea.value + '\\n' + text
-      : text
-    hint.style.display = 'none'
-  } else if (uri) {
-    textarea.value = textarea.value 
-      ? textarea.value + '\\n' + uri
-      : uri
-    hint.style.display = 'none'
-  }
+  document.title = 'DROP:' + JSON.stringify({
+    fileCount: filesInDrop.length,
+    fileNames: filesInDrop.map(f => f.name),
+    text: text ? text.slice(0, 200) : '',
+    uri: uri || ''
+  })
+  window.close()
 })
-
-function closeSpotlight() { document.title = 'CLOSE'; window.close() }
-function save() {
-  const text = textarea.value.trim()
-  if (!text) return
-  document.title = 'SAVE:' + text.slice(0, 200)
-  status.classList.add('show')
-  setTimeout(() => window.close(), 600)
-}
 </script></body></html>`
 
-  spotlightWindow = new BrowserWindow({
-    width: 600, height: 400,
+  bubbleWindow = new BrowserWindow({
+    width: bubbleSize + 16, height: bubbleSize + 16,
+    x: width - 80, y: height - 120,
     frame: false, transparent: true,
     alwaysOnTop: true, resizable: false,
-    skipTaskbar: true,
-    center: true,
-    vibrancy: 'fullscreen-ui',
-    visualEffectState: 'active',
+    skipTaskbar: true, hasShadow: false,
+    type: 'panel',
+    paintWhenInitiallyHidden: true,
     webPreferences: {
       sandbox: false, contextIsolation: false,
       nodeIntegration: false,
     },
   })
 
-  spotlightWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  bubbleWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  bubbleWindow.setVisibleOnAllWorkspaces(true)
+  bubbleWindow.setAlwaysOnTop(true, 'floating')
 
-  spotlightWindow.on('closed', () => {
-    const title = spotlightWindow?.getTitle() || ''
-    spotlightWindow = null
-    if (title.startsWith('SAVE:') && vaultPath) {
-      const content = title.replace('SAVE:', '')
-      saveToVault(content).catch(e => console.warn('[Spotlight] save failed:', e))
+  bubbleWindow.on('closed', () => {
+    const title = bubbleWindow?.getTitle() || ''
+    bubbleWindow = null
+
+    if (title === 'EXPAND') {
+      // Clicked → show expanded card
+      const pos = screen.getCursorScreenPoint()
+      showCaptureCard(pos.x - 260, pos.y + 10)
+    } else if (title.startsWith('DROP:')) {
+      // File dropped on bubble → process
+      try {
+        const data = JSON.parse(title.replace('DROP:', ''))
+        handleDropOnBubble(data)
+      } catch {}
+      // Respawn bubble
+      setTimeout(showBubble, 100)
+    } else {
+      // Respawn bubble
+      setTimeout(showBubble, 100)
     }
   })
 
-  // Auto-hide on blur (OpenWiki-style: 2s delay)
-  spotlightWindow.on('blur', () => {
-    setTimeout(() => {
-      const text = (spotlightWindow as any)?.webContents?.executeJavaScript
-      // Only close if no content was typed (empty state)
-      if (spotlightWindow && !spotlightWindow.isDestroyed()) {
-        const title = spotlightWindow.getTitle()
-        if (!title.startsWith('SAVE:')) {
-          // User might be interacting — check if content is empty
-          spotlightWindow.webContents.executeJavaScript(
-            'document.getElementById("content").value.trim()'
-          ).then((val: string) => {
-            if (!val && spotlightWindow && !spotlightWindow.isDestroyed()) {
-              spotlightWindow.close()
-            }
-          }).catch(() => {})
-        }
-      }
-    }, 3000)
+  bubbleWindow.on('blur', () => {
+    // Keep bubble visible, don't close on blur
   })
 }
 
-// ============ Save ============
+export function hideBubble(): void {
+  if (bubbleWindow && !bubbleWindow.isDestroyed()) {
+    bubbleWindow.close()
+    bubbleWindow = null
+  }
+}
 
-async function saveToVault(content: string): Promise<void> {
+// ============ Capture Card (expanded view) ============
+
+function showCaptureCard(centerX: number, centerY: number): void {
+  if (cardWindow && !cardWindow.isDestroyed()) {
+    cardWindow.focus()
+    return
+  }
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+.card{width:480px;margin:0 auto;background:rgba(30,30,32,0.94);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px)}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.header-title{font-size:14px;font-weight:600;color:#f5f5f7;flex:1}
+.header-hint{font-size:11px;color:#a1a1a6}
+#dropzone{position:relative;border:2px dashed rgba(255,255,255,0.12);border-radius:12px;margin-bottom:14px;background:rgba(255,255,255,0.02);transition:border-color .2s,background .2s;min-height:100px}
+#dropzone.drag-over{border-color:#007aff;background:rgba(0,122,255,0.06)}
+.dz-hint{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px;color:#6e6e73;font-size:13px;pointer-events:none;transition:color .2s}
+.dz-hint .icon{font-size:28px;opacity:0.4}
+#content{width:100%;min-height:100px;padding:14px;background:transparent;border:none;outline:none;color:#f5f5f7;font-size:14px;line-height:1.6;resize:none;font-family:inherit;display:none}
+#content::placeholder{color:#6e6e73}
+.actions{display:flex;justify-content:flex-end;gap:8px}
+.btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .15s}
+.btn-primary{background:#007aff;color:#fff}.btn-primary:hover{background:#0071e3}
+.btn-secondary{background:rgba(255,255,255,0.08);color:#a1a1a6}.btn-secondary:hover{background:rgba(255,255,255,0.12);color:#f5f5f7}
+.file-list{display:none;font-size:12px;color:#a1a1a6;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:14px}
+.file-list .item{display:flex;align-items:center;gap:6px;padding:3px 0}
+.file-list .icon{font-size:14px}
+.saved-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#30d158;color:#000;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none}
+.saved-toast.show{opacity:1}
+</style></head><body>
+<div class="card">
+<div class="header">
+  <span style="font-size:16px">✨</span>
+  <span class="header-title">快速捕获</span>
+  <span class="header-hint">点击悬浮球打开</span>
+</div>
+<div class="file-list" id="fileList"></div>
+<div id="dropzone">
+  <textarea id="content" placeholder="输入内容或粘贴链接..."></textarea>
+  <div class="dz-hint" id="dzHint"><span class="icon">📥</span>点击输入文字，或拖拽文件/文字到此</div>
+</div>
+<div class="actions">
+  <button class="btn btn-secondary" onclick="minimize()">收起</button>
+  <button class="btn btn-primary" onclick="save()">⏎ 保存到 Vault</button>
+</div>
+</div>
+<div class="saved-toast" id="toast">✅ 已保存到 0-收集/</div>
+<script>
+const dz = document.getElementById('dropzone')
+const content = document.getElementById('content')
+const hint = document.getElementById('dzHint')
+const fileList = document.getElementById('fileList')
+const toast = document.getElementById('toast')
+let droppedFiles = []
+let droppedText = ''
+
+// Show textarea when clicked
+dz.addEventListener('click', () => {
+  content.style.display = 'block'
+  hint.style.display = 'none'
+  content.focus()
+})
+
+content.addEventListener('input', () => {
+  if (content.value.trim()) {
+    hint.style.display = 'none'
+  } else {
+    content.style.display = 'none'
+    hint.style.display = 'flex'
+  }
+})
+
+// Drag-and-drop
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over') })
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'))
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over')
+  
+  // Files from Finder
+  if (e.dataTransfer.files.length > 0) {
+    droppedFiles = Array.from(e.dataTransfer.files)
+    fileList.style.display = 'block'
+    fileList.innerHTML = droppedFiles.map(f => '<div class="item"><span class="icon">📄</span>' + f.name + '</div>').join('')
+    content.style.display = 'block'
+    hint.style.display = 'none'
+    if (!content.value.trim()) {
+      content.value = droppedFiles.map(f => '📎 ' + f.name).join('\\n')
+    }
+  }
+  
+  // Text content
+  const text = e.dataTransfer.getData('text/plain')
+  const uri = e.dataTransfer.getData('text/uri-list')
+  if (text || uri) {
+    const val = text || uri
+    droppedText = val
+    content.style.display = 'block'
+    hint.style.display = 'none'
+    if (!content.value.trim()) {
+      content.value = val
+    } else {
+      content.value += '\\n' + val
+    }
+  }
+})
+
+content.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') save()
+})
+
+function minimize() { document.title = 'MINIMIZE'; window.close() }
+function save() {
+  const text = content.value.trim()
+  if (!text && droppedFiles.length === 0) return
+  const payload = { text, fileCount: droppedFiles.length, fileNames: droppedFiles.map(f => f.name) }
+  document.title = 'SAVE:' + JSON.stringify(payload).slice(0, 300)
+  toast.classList.add('show')
+  setTimeout(() => window.close(), 800)
+}
+</script></body></html>`
+
+  const cardWidth = 500
+  const cardHeight = 320
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const maxX = primaryDisplay.workAreaSize.width - cardWidth
+  const maxY = primaryDisplay.workAreaSize.height - cardHeight
+  const x = Math.max(0, Math.min(centerX - cardWidth / 2, maxX))
+  const y = Math.max(0, Math.min(centerY, maxY))
+
+  cardWindow = new BrowserWindow({
+    width: cardWidth, height: cardHeight,
+    x, y,
+    frame: false, transparent: true,
+    alwaysOnTop: true, resizable: false,
+    skipTaskbar: true, hasShadow: false,
+    type: 'panel',
+    webPreferences: {
+      sandbox: false, contextIsolation: false,
+      nodeIntegration: false,
+    },
+  })
+
+  cardWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  cardWindow.setVisibleOnAllWorkspaces(true)
+
+  cardWindow.on('closed', () => {
+    const title = cardWindow?.getTitle() || ''
+    cardWindow = null
+
+    if (title.startsWith('SAVE:')) {
+      try {
+        const data = JSON.parse(title.replace('SAVE:', ''))
+        if (data.text) saveToVault(data.text)
+      } catch {}
+    }
+    // Always respawn bubble
+    setTimeout(showBubble, 200)
+  })
+
+  cardWindow.on('blur', () => {
+    // Auto-minimize on blur
+    if (cardWindow && !cardWindow.isDestroyed()) {
+      cardWindow.close()
+    }
+  })
+}
+
+// ============ Drop on bubble (direct file drop) ============
+
+async function handleDropOnBubble(data: any): Promise<void> {
   if (!vaultPath) return
-
   const collectDir = join(vaultPath, '0-收集')
   if (!existsSync(collectDir)) {
     await mkdir(collectDir, { recursive: true })
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+
+  if (data.fileCount > 0) {
+    // Save file reference
+    const content = data.fileNames.map((n: string) => `📎 ${n}`).join('\n')
+    const filename = `drop-${timestamp}.md`
+
+    const frontmatter = [
+      '---',
+      `title: "拖入文件 ${data.fileNames[0] || 'files'}"`,
+      `type: note`,
+      `source: bubble-drop`,
+      `created: ${new Date().toISOString().slice(0, 10)}`,
+      `tags: [drop-import]`,
+      '---', '', content,
+    ].join('\n')
+
+    const filePath = join(collectDir, filename)
+    await writeFile(filePath, frontmatter, 'utf-8')
+    enrichFile(filePath).catch(() => {})
+    console.log('[Bubble] File drop saved:', filename)
+  }
+
+  if (data.text) {
+    const filename = `drop-${timestamp}.md`
+    const frontmatter = [
+      '---',
+      `title: "${data.text.slice(0, 40).replace(/"/g, '\\"')}"`,
+      `type: note`,
+      `source: bubble-drop`,
+      `created: ${new Date().toISOString().slice(0, 10)}`,
+      `tags: [drop-import]`,
+      '---', '', data.text,
+    ].join('\n')
+
+    const filePath = join(collectDir, filename)
+    await writeFile(filePath, frontmatter, 'utf-8')
+    enrichFile(filePath).catch(() => {})
+  }
+}
+
+// ============ Save from card ============
+
+async function saveToVault(content: string): Promise<void> {
+  if (!vaultPath) return
+  const collectDir = join(vaultPath, '0-收集')
+  if (!existsSync(collectDir)) await mkdir(collectDir, { recursive: true })
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const isURL = /^https?:\/\/[^\s]+$/i.test(content.trim())
-  const prefix = isURL ? 'web' : 'spotlight'
+  const prefix = isURL ? 'web' : 'clip'
   const filename = `${prefix}-${timestamp}.md`
 
-  const title = content.split('\n')[0].slice(0, 60).replace(/["#*`\[\]]/g, '')
-  const typeTag = isURL ? 'web-clip' : 'note'
-  const date = new Date().toISOString().slice(0, 10)
-
+  const title = content.split('\n')[0].slice(0, 50).replace(/["#*`\[\]]/g, '')
   const frontmatter = [
-    '---',
-    `title: "${title || 'Spotlight 捕获'}"`,
-    `type: ${typeTag}`,
-    `source: spotlight`,
-    `created: ${date}`,
-    `tags: [spotlight, ${isURL ? 'url' : 'note'}]`,
+    '---', `title: "${title || '快速捕获'}"`,
+    `type: ${isURL ? 'web-clip' : 'note'}`,
+    `source: bubble-card`, `created: ${new Date().toISOString().slice(0, 10)}`,
+    `tags: [quick-capture, ${isURL ? 'url' : 'note'}]`,
     '---', '', content,
   ].join('\n')
 
   const filePath = join(collectDir, filename)
   await writeFile(filePath, frontmatter, 'utf-8')
-
   enrichFile(filePath).catch(() => {})
-  console.log('[Spotlight] Saved:', filename)
+  console.log('[Bubble] Saved:', filename)
 }
 
-// ============ Legacy clipboard watcher (keep but simplified) ============
-
-let isRunning = false
-let pollTimer: NodeJS.Timeout | null = null
-
-export function startClipboardWatcher(): void {} // No-op: clipboard auto-capture removed
+// ============ Legacy stubs ============
+export function startClipboardWatcher(): void {}
 export function stopClipboardWatcher(): void {}
+export function registerSpotlightShortcut(): void {}
+export function unregisterSpotlightShortcut(): void {}
+export function closeSpotlight(): void {}
