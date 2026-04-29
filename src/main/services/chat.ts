@@ -1,6 +1,6 @@
 import { getVaultPath, searchFiles } from './database'
 import { callAI } from './aiService'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, readFileSync, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { createHash } from 'crypto'
@@ -78,6 +78,77 @@ export async function askQuestion(
       sources: [],
       confidence: 0,
     }
+  }
+}
+
+export async function askQuestionStream(
+  question: string,
+  contextMessages: ChatMessage[] = []
+): Promise<{ results: RAGResult[]; confidence: number }> {
+  const vaultPath = getVaultPath()
+  if (!vaultPath) {
+    return { results: [], confidence: 0 }
+  }
+
+  try {
+    const searchQuery = await rewriteQuery(question, contextMessages)
+    const results = await retrieveRelevantPages(searchQuery)
+    log.info(`[RAG] stream found ${results.length} pages for: ${question.slice(0, 50)}`)
+    return {
+      results,
+      confidence: Math.min(0.3 + results.length * 0.15, 1.0),
+    }
+  } catch (err: any) {
+    log.error('[RAG] stream retrieve failed:', err.message)
+    return { results: [], confidence: 0 }
+  }
+}
+
+/**
+ * Build system + user prompts for streaming answer generation.
+ */
+export async function buildAnswerPrompt(
+  question: string,
+  results: RAGResult[],
+  history: ChatMessage[]
+): Promise<{ systemPrompt: string; userPrompt: string }> {
+  const contextParts: string[] = []
+  let totalChars = 0
+
+  for (const r of results) {
+    const fullContent = existsSync(r.file)
+      ? (await readFile(r.file, 'utf-8')).slice(0, 1000)
+      : r.snippet
+    const block = `[来源: ${r.title}]\n${fullContent}`
+    if (totalChars + block.length > MAX_CONTEXT_LENGTH) break
+    contextParts.push(block)
+    totalChars += block.length
+  }
+
+  const context = contextParts.join('\n\n---\n\n')
+  const recentHistory = history.slice(-3)
+    .map(m => `${m.role}: ${m.content.slice(0, 300)}`)
+    .join('\n')
+
+  const systemPrompt = `你是晓园 Vault 的知识助手。基于知识库中的内容回答问题。
+
+规则：
+1. 优先使用知识库内容回答
+2. 如果知识库没有相关信息，诚实说明
+3. 引用来源时使用 [[文件名]] 格式
+4. 回答简洁，不超过 500 字
+5. 可以结合对话历史理解上下文
+
+对话历史：
+${recentHistory || '(无)'}
+
+
+知识库内容：
+${context || '(无相关结果)'}`
+
+  return {
+    systemPrompt,
+    userPrompt: question,
   }
 }
 

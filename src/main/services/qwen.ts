@@ -15,6 +15,89 @@ interface QwenRequest {
   max_tokens?: number
 }
 
+/**
+ * Stream a single message to a callback as chunks arrive.
+ * Yields partial markdown chunks for real-time display.
+ */
+export async function streamQwenAI(
+  systemPrompt: string,
+  userPrompt: string,
+  onChunk: (text: string) => void,
+  signal?: AbortSignal
+): Promise<void> {
+  if (!QWEN_API_KEY) {
+    onChunk('请配置 QWEN_API_KEY')
+    return
+  }
+
+  try {
+    const response = await fetch(QWEN_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${QWEN_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: QWEN_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 2000,
+      } as QwenRequest),
+      signal,
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      log.error('Qwen stream error:', response.status, error.slice(0, 200))
+      onChunk(`API 错误: ${response.status}`)
+      return
+    }
+
+    if (!response.body) {
+      onChunk('流式响应为空')
+      return
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || '' // keep incomplete line
+
+      for (const line of lines) {
+        if (!line.trim() || !line.startsWith('data:')) continue
+        const data = line.slice(5).trim()
+        if (data === '[DONE]') break
+
+        try {
+          const parsed = JSON.parse(data)
+          const delta = parsed.choices?.[0]?.delta?.content
+          if (delta) onChunk(delta)
+        } catch {
+          // skip malformed lines
+        }
+      }
+    }
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      log.info('[Qwen] stream aborted')
+    } else {
+      log.error('Qwen stream exception:', err)
+      onChunk(`网络错误: ${err.message}`)
+    }
+  }
+}
+
 export async function callQwenAI(action: string, params: Record<string, any>): Promise<any> {
   if (!QWEN_API_KEY) {
     log.warn('QWEN_API_KEY not set')
@@ -45,8 +128,8 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
       break
 
     case 'reason':
-      systemPrompt = `你是一个问答助手。基于提供的文档内容片段回答用户问题。
-如果文档中没有相关内容，说明"我没有在文档中找到相关信息"。
+      systemPrompt = params.systemPrompt || `你是一个问答助手。基于提供的文档内容片段回答用户问题。
+如果文档中没有相关信息，说明"我没有在文档中找到相关信息"。
 回答要简洁，直接回答问题。`
       userPrompt = `问题：${params.question}\n\n相关文档内容：\n${params.context.join('\n\n')}`
       break
@@ -59,7 +142,6 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
       break
 
     case 'resolve':
-      // RESOLVER classification — prompt already includes rules + content
       systemPrompt = `你是一个知识内容分类助手。严格按照提供的决策树规则进行分类。只返回 JSON，不要解释。`
       userPrompt = params.prompt
       break
@@ -76,7 +158,7 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
         'Authorization': `Bearer ${QWEN_API_KEY}`
       },
       body: JSON.stringify({
-        model: process.env.QWEN_MODEL || 'qwen3.6-flash',
+        model: QWEN_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

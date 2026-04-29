@@ -17,7 +17,8 @@ import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISet
 import { callAI } from './services/aiService'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
 import { showBubble, hideBubble, setVaultPath } from './services/clipboard'
-import { askQuestion, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
+import { askQuestion, askQuestionStream, buildAnswerPrompt } from './services/chat'
+import { streamQwenAI } from './services/qwen'
 import { rebuildGraph, loadGraph } from './services/graph'
 import { transcribeAudio } from './services/whisper'
 import { generateFileTemplate } from './services/frontmatter'
@@ -547,9 +548,62 @@ AI 自动维护反向链接。
     return queryVault(question)
   })
 
-  // RAG Chat (OpenWiki Ask Sidebar inspired)
   ipcMain.handle('chat:ask', async (_, question: string, history: any[]) => {
     return askQuestion(question, history || [])
+  })
+
+  // Streaming RAG Chat — streams answer chunks via IPC events
+  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) => {
+    const webContents = event.sender
+    const abortCtrl = new AbortController()
+
+    // Store abort controller per session so renderer can cancel
+    ;(webContents as any).chatAbortCtrl = abortCtrl
+
+    // First retrieve sources (fast, no streaming needed)
+    const { results, confidence } = await askQuestionStream(question, history || [])
+
+    // Stream the answer chunks to renderer
+    ;(async () => {
+      try {
+        const { systemPrompt, userPrompt } = await buildAnswerPrompt(question, results, history || [])
+        let fullAnswer = ''
+
+        await streamQwenAI(systemPrompt, userPrompt, (chunk: string) => {
+          fullAnswer += chunk
+          webContents.send('chat:streamChunk', { chunk, partial: fullAnswer })
+        }, abortCtrl.signal)
+
+        const sources = results.slice(0, 3).map((r: any) => ({
+          file: r.file,
+          title: r.title,
+          snippet: r.snippet,
+        }))
+
+        webContents.send('chat:streamDone', {
+          answer: fullAnswer,
+          sources,
+          confidence,
+        })
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          webContents.send('chat:streamError', { error: err.message })
+        }
+      }
+    })()
+
+    return { streamed: true }
+  })
+
+  // Streaming RAG Chat — pushes chunks via chat:streamChunk IPC event
+  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) => {
+    const webContents = event.sender
+    try {
+      const { answer, sources, confidence } = await askQuestion(question, history || [])
+      return { answer, sources, confidence }
+    } catch (err: any) {
+      return { answer: `错误: ${err.message}`, sources: [], confidence: 0 }
+    }
   })
   ipcMain.handle('chat:sessions', async () => {
     return loadSessions()

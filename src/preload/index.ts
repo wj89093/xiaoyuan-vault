@@ -87,6 +87,23 @@ const api = {
   aiWrite: (outline: string): Promise<string> => ipcRenderer.invoke('ai:write', outline),
   chatAsk: (question: string, history?: any[]): Promise<any> =>
     ipcRenderer.invoke('chat:ask', question, history || []),
+  chatAskStream: (question: string, history?: any[]) =>
+    ipcRenderer.invoke('chat:askStream', question, history || []),
+  onChatStreamChunk: (callback: (data: { chunk: string; partial: string }) => void) => {
+    const sub = (_: any, data: any) => callback(data)
+    ipcRenderer.on('chat:streamChunk', sub)
+    return () => ipcRenderer.removeListener('chat:streamChunk', sub)
+  },
+  onChatStreamDone: (callback: (data: { answer: string; sources: any[]; confidence: number }) => void) => {
+    const sub = (_: any, data: any) => callback(data)
+    ipcRenderer.on('chat:streamDone', sub)
+    return () => ipcRenderer.removeListener('chat:streamDone', sub)
+  },
+  onChatStreamError: (callback: (data: { error: string }) => void) => {
+    const sub = (_: any, data: any) => callback(data)
+    ipcRenderer.on('chat:streamError', sub)
+    return () => ipcRenderer.removeListener('chat:streamError', sub)
+  },
   chatSessions: (): Promise<any[]> =>
     ipcRenderer.invoke('chat:sessions'),
   chatCreate: (firstQuestion: string): Promise<any> =>

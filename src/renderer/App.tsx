@@ -61,25 +61,87 @@ function App(): JSX.Element {
 
   // AI Chat (RAG-enhanced: file-context when selected, vault-wide when not)
   const handleSendMessage = useCallback(async (text: string) => {
-    setMessages(prev => [...prev, { role: 'user', content: text }])
+    const userMsg = { role: 'user' as const, content: text }
+    setMessages(prev => [...prev, userMsg])
     setChatLoading(true)
+
     try {
-      let response: string
       if (selectedFile && content) {
-        // File-focused Q&A with conversation history
+        // File-focused Q&A — not streamed (simpler, single file)
         const historyContext = messages.slice(-4).map(m => `${m.role}: ${m.content.slice(0, 200)}`).join('\n')
-        response = await window.api.aiReason(
+        const response = await window.api.aiReason(
           `对话历史:\n${historyContext}\n\n当前问题: ${text}`,
           [content]
         )
+        setMessages(prev => [...prev, { role: 'assistant', content: response }])
       } else {
-        // Vault-wide RAG
-        const rag = await (window.api as any).chatAsk?.(text, messages.slice(-6))
-        response = rag?.answer
-          ? `${rag.answer}\n\n---\n${rag.sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`
-          : '抱歉，未找到相关信息。'
+        // Vault-wide RAG — stream the answer
+        const placeholderId = `stream-${Date.now()}`
+        const placeholder = { id: placeholderId, role: 'assistant' as const, content: '正在思考...', sources: [] as any[], sourceMode: 'knowledge_base' as const }
+        setMessages(prev => [...prev, placeholder as any])
+
+        const api = window.api as any
+        const history = messages.slice(-6).map((m: any) => ({ role: m.role, content: m.content }))
+
+        // Set up stream listeners
+        let unsubChunk: () => void
+        let unsubDone: () => void
+        let unsubError: () => void
+        let settled = false
+
+        const cleanup = () => {
+          unsubChunk?.()
+          unsubDone?.()
+          unsubError?.()
+          setChatLoading(false)
+        }
+
+        unsubChunk = api.onChatStreamChunk?.(({ chunk, partial }: any) => {
+          setMessages(prev => prev.map((m: any) =>
+            m.id === placeholderId ? { ...m, content: partial } : m
+          ))
+        })
+
+        unsubDone = api.onChatStreamDone?.(({ answer, sources, confidence }: any) => {
+          settled = true
+          setMessages(prev => prev.map((m: any) =>
+            m.id === placeholderId
+              ? {
+                  ...m,
+                  content: `${answer}\n\n---\n${sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`,
+                  sources: sources?.map((s: any) => s.title) || [],
+                }
+              : m
+          ))
+          cleanup()
+        })
+
+        unsubError = api.onChatStreamError?.(({ error }: any) => {
+          settled = true
+          setMessages(prev => prev.map((m: any) =>
+            m.id === placeholderId
+              ? { ...m, content: `抱歉，搜索时出现错误：${error}` }
+              : m
+          ))
+          cleanup()
+        })
+
+        // Kick off streaming
+        const result = await api.chatAskStream?.(text, history)
+        // If result returns immediately (non-stream), finalize
+        if (result && !result.streamed && !settled) {
+          cleanup()
+          setMessages(prev => prev.map((m: any) =>
+            m.id === placeholderId
+              ? {
+                  ...m,
+                  content: `${result.answer}\n\n---\n${result.sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`,
+                  sources: result.sources?.map((s: any) => s.title) || [],
+                }
+              : m
+          ))
+        }
       }
-      setMessages(prev => [...prev, { role: 'assistant', content: response }])
     } catch (err: any) {
       const msg = err?.message || String(err)
       const fallback = msg.includes('key') || msg.includes('401') ? 'API Key 未配置或无效'
@@ -87,7 +149,6 @@ function App(): JSX.Element {
         : msg.includes('network') || msg.includes('ECONNREFUSED') ? '网络连接失败'
         : '抱歉，处理请求时出错。'
       setMessages(prev => [...prev, { role: 'assistant', content: fallback }])
-    } finally {
       setChatLoading(false)
     }
   }, [content, selectedFile, messages])
