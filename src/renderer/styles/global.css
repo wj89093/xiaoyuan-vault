@@ -440,8 +440,7 @@ body {
 
 .ai-chat-input {
   flex: 1;
-  min-width: 0;
-  width: 0; /* force browser to shrink to flex分配的宽度 */
+  min-width: 0; /* allow shrinking below intrinsic width */
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
