@@ -82,12 +82,13 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
   }
 
   const handleDelete = async (file: FileInfo) => {
+    console.log('[FileTree] handleDelete called:', file.path, 'isDirectory:', file.isDirectory)
     setContextMenu(null)
-    if (file.isDirectory) {
-      await window.api.deleteFolder(file.path)
-    } else {
-      await window.api.deleteFile(file.path)
-    }
+    const api = window.api as any
+    const result = file.isDirectory
+      ? await api.deleteFolder(file.path)
+      : await api.deleteFile(file.path)
+    console.log('[FileTree] delete result:', result)
     onRefresh?.()
   }
 
@@ -156,7 +157,7 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
     <div className="file-tree">
       {files.length === 0 ? (
         <div className="file-tree-empty">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="1.2">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" strokeWidth="1.2">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
           </svg>
           <p>知识库还是空的</p>

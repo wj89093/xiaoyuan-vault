@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { join } from 'path'
 import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
-import { mkdir, readFile, writeFile, copyFile } from 'fs/promises'
+import { mkdir, readFile, writeFile, copyFile, rename } from 'fs/promises'
 import { existsSync } from 'fs'
 import { basename } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -447,7 +447,21 @@ AI 自动维护反向链接。
       try {
         const name = basename(filePath)
         const dest = join(rawDir, name)
-        await copyFile(filePath, dest)
+        // Move the file to vault (not copy) so original disappears
+        try {
+          await rename(filePath, dest)
+          log.info(`[Import] moved: ${filePath} → ${dest}`)
+        } catch (renErr: any) {
+          // Cross-device or permission error — fall back to copy+delete
+          if (renErr.code === 'EXDEV' || renErr.code === 'EPERM') {
+            await copyFile(filePath, dest)
+            const { unlink } = await import('fs/promises')
+            await unlink(filePath)
+            log.warn(`[Import] cross-device, copied then deleted: ${filePath}`)
+          } else {
+            throw renErr
+          }
+        }
 
         // Try JS conversion for supported formats
         if (canConvertWithJS(filePath)) {
@@ -707,14 +721,14 @@ app.whenReady().then(() => {
 
   // Global shortcuts
   globalShortcut.register('CommandOrControl+Shift+O', () => {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.show()
       mainWindow.focus()
     }
   })
   globalShortcut.register('CommandOrControl+Shift+F', () => {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.show()
       mainWindow.focus()

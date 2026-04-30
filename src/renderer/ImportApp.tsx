@@ -42,7 +42,8 @@ export function ImportApp(): JSX.Element {
   const handleFileImport = async (filePaths: string[]) => {
     setImporting(true)
     try {
-      const res = await (window.api as any).importFiles('', filePaths)
+      const vaultPath = await (window.api as any).getVaultPath()
+      const res = await (window.api as any).importFiles(vaultPath || '', filePaths)
       setResults(prev => [...prev, ...res])
     } finally {
       setImporting(false)
@@ -86,7 +87,8 @@ export function ImportApp(): JSX.Element {
     setUrlError(null)
     try {
       const { title, content } = await (window.api as any).fetchUrl(url)
-      const path = await (window.api as any).saveUrlContent('', title, content)
+      const vaultPath = await (window.api as any).getVaultPath()
+      const path = await (window.api as any).saveUrlContent(vaultPath || '', title, content)
       setResults(prev => [...prev, { type: 'url', name: title, path, status: 'ok' }])
       setUrlInput('')
     } catch (err: any) {

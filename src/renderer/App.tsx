@@ -411,12 +411,22 @@ function App(): JSX.Element {
                 className="sidebar-title sidebar-title-btn"
                 onClick={() => setShowVaultMenu(v => !v)}
                 title="点击切换知识库"
-              >{vaultPath?.split('/').pop()}</span>
+              >
+                {vaultPath?.split('/').pop()}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 4, opacity: 0.5 }}>
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
             </div>
 
             {/* Vault switch menu */}
             {showVaultMenu && (
               <div className="vault-menu">
+                <div className="vault-menu-header">知识库操作</div>
+                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); handleNewVault() }}>
+                  <FolderPlus size={13} />
+                  新建知识库
+                </div>
                 <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); handleOpenVault() }}>
                   <FolderOpen size={13} />
                   打开其他知识库

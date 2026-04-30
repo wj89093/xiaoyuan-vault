@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;user-select:none}
+.bubble{
+  width:48px;height:48px;border-radius:50%;
+  background:#ffffff;
+  position:absolute;top:8px;left:8px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.04);
+  transition:transform .15s,box-shadow .15s;
+  color:#515154;
+  cursor:pointer;
+}
+.bubble:hover{transform:scale(1.08);box-shadow:0 4px 20px rgba(0,0,0,0.12),0 0 0 1px rgba(0,122,255,0.15)}
+.bubble.drag-over{transform:scale(1.15);box-shadow:0 0 0 3px #007aff,0 6px 24px rgba(0,122,255,0.2)}
+</style></head><body>
+<div class="bubble" id="bubble"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+<script>
+var ipc = require('electron').ipcRenderer
+var b = document.getElementById('bubble')
+
+// Drag to move
+var sx, sy, dragging = false, moved = false
+b.addEventListener('mousedown', function(e) { sx=e.screenX; sy=e.screenY; dragging=true; moved=false; e.preventDefault() })
+document.addEventListener('mousemove', function(e) {
+  if(!dragging) return
+  if(Math.abs(e.screenX-sx)>2||Math.abs(e.screenY-sy)>2) moved=true
+  if(moved){
+    ipc.send('bubble:move', e.screenX-sx, e.screenY-sy)
+    sx=e.screenX; sy=e.screenY
+  }
+})
+document.addEventListener('mouseup', function() { dragging=false })
+
+// Click to expand (only if not dragged)
+b.addEventListener('click', function() { if(!moved) ipc.send('bubble:expand') })
+
+// File drop
+document.addEventListener('dragover', function(e) {
+  e.preventDefault(); e.stopPropagation()
+  b.classList.add('drag-over')
+  document.body.style.background = 'rgba(0,122,255,0.08)'
+})
+document.addEventListener('dragleave', function(e) {
+  if (e.target === document.body || !document.body.contains(e.relatedTarget)) {
+    b.classList.remove('drag-over')
+    document.body.style.background = 'transparent'
+  }
+})
+document.addEventListener('drop', function(e) {
+  e.preventDefault(); e.stopPropagation()
+  b.classList.remove('drag-over')
+  document.body.style.background = 'transparent'
+  var files = Array.from(e.dataTransfer.files || [])
+  console.log('[Bubble renderer] drop, files:', files.length)
+  if (files.length === 0) {
+    var txt = e.dataTransfer.getData('text/plain') || ''
+    console.log('[Bubble renderer] text/plain length:', txt.length)
+    if (txt) ipc.send('bubble:drop', { filePaths: [], text: txt })
+    return
+  }
+  var paths = files.map(function(f){ return f.path || '' }).filter(Boolean)
+  console.log('[Bubble renderer] paths:', paths)
+  ipc.send('bubble:drop', { filePaths: paths, text: '' })
+  b.style.background = '#34c759'; b.style.color = '#fff'
+  setTimeout(function(){ b.style.background = '#ffffff'; b.style.color = '#515154' }, 600)
+})
+</script></body></html>

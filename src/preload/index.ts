@@ -144,7 +144,14 @@ const api = {
     ipcRenderer.invoke('graph:rebuild'),
 
   runMaintenance: (): Promise<any> =>
-    ipcRenderer.invoke('maintain:run')
+    ipcRenderer.invoke('maintain:run'),
+
+  // Bubble window controls
+  bubbleExpand: (): void => { ipcRenderer.send('bubble:expand') },
+  bubbleMove: (dx: number, dy: number): void => { ipcRenderer.send('bubble:move', dx, dy) },
+  bubbleDrop: (data: any): void => { ipcRenderer.send('bubble:drop', data) },
+  bubbleSave: (data: { files: string[]; text: string }): Promise<{ok: boolean; error?: string}> =>
+    ipcRenderer.invoke('bubble:save', data),
 }
 
 contextBridge.exposeInMainWorld('api', api)

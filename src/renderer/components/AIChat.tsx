@@ -325,6 +325,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
+              style={{ height: '36px' }}
             />
             <button
               className="ai-chat-send"

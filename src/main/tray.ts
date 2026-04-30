@@ -26,14 +26,16 @@ export function createTray(mainWindow: Electron.BrowserWindow): Electron.Tray {
     {
       label: '打开晓园 Vault',
       click: () => {
-        mainWindow.show()
-        mainWindow.focus()
+        if (!mainWindow.isDestroyed()) {
+          mainWindow.show()
+          mainWindow.focus()
+        }
       }
     },
     {
       label: '快速导入文件...',
       click: () => {
-        openImportWindow(mainWindow)
+        if (!mainWindow.isDestroyed()) openImportWindow(mainWindow)
       }
     },
     { type: 'separator' },
@@ -55,6 +57,7 @@ export function createTray(mainWindow: Electron.BrowserWindow): Electron.Tray {
       mainWindow.focus()
     }
   })
+
 
   tray.on('double-click', () => {
     if (!mainWindow.isDestroyed()) {
