@@ -22,6 +22,11 @@ const api = {
     ipcRenderer.on("shortcut:quick-switch", handler)
     return () => ipcRenderer.removeListener("shortcut:quick-switch", handler)
   },
+  onGotoImport: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on("shortcut:goto-import", handler)
+    return () => ipcRenderer.removeListener("shortcut:goto-import", handler)
+  },
   // URL operations
   fetchURL: (url: string): Promise<{ title: string; content: string; author?: string; date?: string; url: string; source: string }> =>
     ipcRenderer.invoke('url:fetch', url),

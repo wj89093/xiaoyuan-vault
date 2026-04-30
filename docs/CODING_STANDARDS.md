@@ -339,18 +339,31 @@ log.info('API called', { key: apiKey.slice(0, 8) + '...' })
 
 ### 7.1 ESLint + Prettier
 
-项目使用 ESLint + Prettier：
+项目使用 ESLint 10 + Prettier 进行代码检查和格式化：
 
 ```bash
-# 检查
+# 类型检查
+npm run typecheck
+
+# 代码规范检查
 npm run lint
 
 # 自动修复
 npm run lint:fix
 
-# 格式化
+# 代码格式化
 npm run format
+
+# 格式检查
+npm run format:check
+
+# 一键全量检查（类型 + lint + 格式 + 测试）
+npm run check
 ```
+
+配置文件：
+- ESLint: `eslint.config.ts`（基于 typescript-eslint flat config）
+- Prettier: `.prettierrc`
 
 ### 7.2 Git Hooks
 

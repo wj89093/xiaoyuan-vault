@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Plus, FolderPlus, Network, Settings } from 'lucide-react'
+import { Plus, FolderPlus, Network, Settings, RefreshCw } from 'lucide-react'
 import type { FileInfo } from '../types'
 
 interface ToolbarProps {
@@ -7,11 +7,12 @@ interface ToolbarProps {
   onNewFolder: (parentPath: string, folderName: string) => void
   onOpenGraph: () => void
   onOpenSettings: () => void
+  onRefresh: () => void
   vaultPath: string
   files: FileInfo[]
 }
 
-export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, vaultPath, files }: ToolbarProps): JSX.Element {
+export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, onRefresh, vaultPath, files }: ToolbarProps): JSX.Element {
   const [showNewFile, setShowNewFile] = useState(false)
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [fileName, setFileName] = useState('')
@@ -114,6 +115,13 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, v
         title="知识图谱"
       >
         <Network size={16} />
+      </button>
+      <button
+        className="btn btn-icon"
+        onClick={onRefresh}
+        title="刷新文件列表"
+      >
+        <RefreshCw size={16} />
       </button>
       <button
         className="btn btn-icon"

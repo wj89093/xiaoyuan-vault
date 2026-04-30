@@ -735,7 +735,15 @@ app.whenReady().then(() => {
       mainWindow.webContents.send('shortcut:quick-switch')
     }
   })
-  log.info('[GlobalShortcut] Cmd+Shift+O (show), Cmd+Shift+F (search) registered')
+  globalShortcut.register('CommandOrControl+Shift+I', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+      mainWindow.webContents.send('shortcut:goto-import')
+    }
+  })
+  log.info('[GlobalShortcut] Cmd+Shift+O (show), Cmd+Shift+F (search), Cmd+Shift+I (import) registered')
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

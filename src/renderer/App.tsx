@@ -10,6 +10,7 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { Toolbar } from './components/Toolbar'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
+import { ImportApp } from './ImportApp'
 import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
 
@@ -55,6 +56,12 @@ function App(): JSX.Element {
   const { toasts, dismiss: dismissToast } = useToasts()
   const [nativePreview, setNativePreview] = useState<any>(null)
   const [isNativePreview, setIsNativePreview] = useState(false)
+
+  // Hash-based routing for import window
+  const hash = typeof window !== 'undefined' ? window.location.hash : ''
+  if (hash === '#/import') {
+    return <ImportApp />
+  }
 
   // New vault
   const handleNewVault = useCallback(async () => {
@@ -286,6 +293,12 @@ function App(): JSX.Element {
     setFiles(fileList)
   }, [])
 
+  // Refresh file list
+  const handleRefresh = useCallback(async () => {
+    const fileList = await window.api.listFiles()
+    setFiles(fileList)
+  }, [])
+
   // Content change
   const handleContentChange = useCallback((value: string) => {
     setContent(value)
@@ -378,6 +391,13 @@ function App(): JSX.Element {
       if (vaultPath) setShowQuickSwitch(true)
     })
   }, [vaultPath])
+
+  // Global shortcut Cmd+Shift+I → Import panel
+  useEffect(() => {
+    return (window.api as any).onGotoImport?.(() => {
+      window.location.hash = '#/import'
+    })
+  }, [])
 
   // Display files (search results or all files)
   const displayFiles = showSearchResults ? searchResults : files
@@ -486,6 +506,7 @@ function App(): JSX.Element {
                   onNewFolder={handleNewFolder}
                   onOpenGraph={() => setShowGraph(true)}
                   onOpenSettings={() => setShowSettings(true)}
+                  onRefresh={handleRefresh}
                   vaultPath={vaultPath}
                   files={files}
                 />

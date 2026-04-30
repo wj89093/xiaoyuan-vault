@@ -6,14 +6,20 @@
   "author": "Xiaoyuan Team",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "electron-vite build && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs out/renderer/assets/",
     "preview": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",
     "package": "electron-vite build && electron-builder --config electron-builder.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
     "@codemirror/commands": "^6.7.1",
@@ -46,6 +52,7 @@
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.12",
@@ -56,12 +63,20 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/ui": "^4.1.5",
-    "electron": "^34.0.0",
+    "electron": "^33.4.11",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.0.0",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "eslint-plugin-security": "^4.0.0",
+    "globals": "^17.5.0",
     "happy-dom": "^20.9.0",
+    "jiti": "^2.6.1",
     "jsdom": "^29.1.0",
+    "prettier": "^3.8.3",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.59.1",
     "vite": "^6.0.7",
     "vitest": "^4.1.5"
   }

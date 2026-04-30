@@ -43,8 +43,14 @@ export function ImportApp(): JSX.Element {
     setImporting(true)
     try {
       const vaultPath = await (window.api as any).getVaultPath()
-      const res = await (window.api as any).importFiles(vaultPath || '', filePaths)
-      setResults(prev => [...prev, ...res])
+      if (!vaultPath) {
+        setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: '未打开知识库' }])
+        return
+      }
+      const res = await (window.api as any).importFiles(vaultPath, filePaths)
+      setResults(prev => [...prev, ...res.map((r: any) => ({ type: 'file' as const, ...r }))])
+    } catch (err: any) {
+      setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: err.message || '导入失败' }])
     } finally {
       setImporting(false)
     }
@@ -58,7 +64,8 @@ export function ImportApp(): JSX.Element {
     const files = Array.from(e.dataTransfer.files)
     if (files.length === 0) return
 
-    const paths = files.map((f: any) => f.path).filter(Boolean)
+    // Use webUtils.getPathForFile via preload (File.path is undefined under contextIsolation)
+    const paths = files.map(f => (window.api as any).getPathForFile?.(f)).filter(Boolean)
     if (paths.length > 0) {
       await handleFileImport(paths)
     }
@@ -70,7 +77,7 @@ export function ImportApp(): JSX.Element {
     input.multiple = true
     input.onchange = async () => {
       if (input.files) {
-        const paths = Array.from(input.files).map((f: any) => f.path).filter(Boolean)
+        const paths = Array.from(input.files).map(f => (window.api as any).getPathForFile?.(f)).filter(Boolean)
         if (paths.length > 0) {
           await handleFileImport(paths)
         }

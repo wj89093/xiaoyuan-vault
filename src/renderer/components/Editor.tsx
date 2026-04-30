@@ -44,7 +44,7 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
       try {
         const pdfjsLib = await import('pdfjs-dist')
         // Set worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+        pdfjsLib.GlobalWorkerOptions.workerSrc = './assets/pdf.worker.min.mjs'
 
         const loadingTask = pdfjsLib.getDocument(dataUrl)
         const pdf = await loadingTask.promise
@@ -97,7 +97,7 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
 }
 
 export function Editor({ value, onChange, nativePreview, isNativePreview = false }: EditorProps): JSX.Element {
-  const [mode, setMode] = useState<Mode>('source')
+  const [mode, setMode] = useState<Mode>('reading')
   const [splitView, setSplitView] = useState(false)
   const editorViewRef = useRef<EditorView | null>(null)
   const [activeSheet, setActiveSheet] = useState(0)

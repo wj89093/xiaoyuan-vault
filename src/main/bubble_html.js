@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+export const BUBBLE_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:transparent;overflow:hidden;user-select:none}
@@ -21,7 +21,6 @@ var ipc = require('electron').ipcRenderer
 var spawn = require('child_process').spawn
 var b = document.getElementById('bubble')
 
-// Drag to move
 var sx, sy, dragging = false, moved = false
 b.addEventListener('mousedown', function(e) { sx=e.screenX; sy=e.screenY; dragging=true; moved=false; e.preventDefault() })
 document.addEventListener('mousemove', function(e) {
@@ -33,11 +32,8 @@ document.addEventListener('mousemove', function(e) {
   }
 })
 document.addEventListener('mouseup', function() { dragging=false })
-
-// Click to expand (only if not dragged)
 b.addEventListener('click', function() { if(!moved) ipc.send('bubble:expand') })
 
-// File drop
 document.addEventListener('dragover', function(e) {
   e.preventDefault(); e.stopPropagation()
   b.classList.add('drag-over')
@@ -56,36 +52,25 @@ document.addEventListener('drop', function(e) {
   document.body.style.background = 'transparent'
 
   var files = Array.from(e.dataTransfer.files || [])
-  console.log('[Bubble renderer] drop event, files.length:', files.length)
-  if (files.length > 0) {
-    files.forEach(function(f, i) {
-      console.log('[Bubble renderer] file[' + i + ']: name=' + f.name + ' path=\"' + f.path + '\" type=' + f.type + ' size=' + f.size)
-    })
-  }
   var paths = files.map(function(f){ return f.path || '' }).filter(Boolean)
-  console.log('[Bubble renderer] paths after filter:', paths)
 
   if (paths.length === 0) {
-    console.log('[Bubble renderer] standard paths empty, trying osascript...')
-    var proc = spawn('/usr/bin/osascript', ['-e', 'tell application "SystemEvents" to POSIX path of (the clipboard as alias)'], {timeout: 1000})
+    var proc = spawn('/usr/bin/osascript', ['-e', 'tell application "SystemEvents" to POSIX path of (the clipboard as alias)'], {timeout: 500})
     var chunks = []
     proc.stdout.on('data', function(d){ chunks.push(d) })
     proc.on('close', function(code){
-      console.log('[Bubble renderer] osascript code:', code, 'chunks:', chunks.length)
       if (code === 0 && chunks.length) {
         var raw = Buffer.concat(chunks).toString().trim()
-        console.log('[Bubble renderer] osascript raw:', raw)
         var lines = raw.split('\n').filter(Boolean)
         if (lines.length > 0) {
-          paths = lines.map(function(p){ return decodeURIComponent(p.replace(/^file:\/\//, '').replace(/^\/Volumes\//, '/')) })
+          paths = lines.map(function(p){ return decodeURIComponent(p.replace(/^file:\\/\\//, '').replace(/^\\/Volumes\\//, '/')) })
           console.log('[Bubble renderer] osascript got paths:', paths)
           if (paths.length) { ipc.send('bubble:drop', { filePaths: paths, text: '' }); flashGreen(); return }
         }
       }
       var txt = e.dataTransfer.getData('text/plain') || ''
-      console.log('[Bubble renderer] text fallback, length:', txt.length)
       if (txt) ipc.send('bubble:drop', { filePaths: [], text: txt })
-      else console.log('[Bubble renderer] drop: no files, no text, no clipboard')
+      else console.log('[Bubble renderer] drop: no files, no text')
     })
     return
   }
@@ -98,4 +83,4 @@ function flashGreen() {
   b.style.background = '#34c759'; b.style.color = '#fff'
   setTimeout(function(){ b.style.background = '#ffffff'; b.style.color = '#515154' }, 600)
 }
-</script></body></html>
+</script></body></html>`
