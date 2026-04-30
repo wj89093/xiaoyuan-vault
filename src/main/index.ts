@@ -647,16 +647,6 @@ AI 自动维护反向链接。
     return { streamed: true }
   })
 
-  // Streaming RAG Chat — pushes chunks via chat:streamChunk IPC event
-  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) => {
-    const webContents = event.sender
-    try {
-      const { answer, sources, confidence } = await askQuestion(question, history || [])
-      return { answer, sources, confidence }
-    } catch (err: any) {
-      return { answer: `错误: ${err.message}`, sources: [], confidence: 0 }
-    }
-  })
   ipcMain.handle('chat:sessions', async () => {
     return loadSessions()
   })
