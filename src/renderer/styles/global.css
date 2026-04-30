@@ -764,6 +764,7 @@ body {
 .context-menu-item:hover { background: #f0f0f2; }
 .context-menu-item.danger { color: #ff3b30; }
 .context-menu-item.danger:hover { background: #fff0f0; }
+.context-menu-separator { height: 1px; background: #e5e5e5; margin: 4px 0; }
 
 /* File Preview Tooltip */
 .file-preview-tooltip {

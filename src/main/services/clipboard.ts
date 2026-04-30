@@ -51,7 +51,7 @@ export function showBubble(): void {
   })
 
   // Load bubble HTML from local file so File.path is accessible in drag events
-  bubbleWindow.loadURL(`data:text/html;charset=utf-8,<!DOCTYPE html>
+  bubbleWindow.loadFile(join(__dirname, '../../src/bubble.html'))
 <html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:transparent;overflow:hidden;user-select:none}
@@ -323,13 +323,26 @@ function ensureIPC(): void {
       console.log('[Bubble] vaultPath set to:', resolvedVaultPath)
     }
 
+    // Send feedback to bubble window so it can show color
     if (data.filePaths && data.filePaths.length > 0) {
       console.log('[Bubble] importing', data.filePaths.length, 'files')
       try {
         const result = await importFilesToVault(data.filePaths)
         console.log('[Bubble] import result:', result)
+        if (bubbleWindow && !bubbleWindow.isDestroyed()) {
+          bubbleWindow.webContents.executeJavaScript(`
+            var b = document.getElementById('bubble')
+            if (b) { b.style.background='#34c759'; b.style.color='#fff' }
+          `).catch(() => {})
+        }
       } catch (e) {
         console.error('[Bubble] importFilesToVault error:', e)
+        if (bubbleWindow && !bubbleWindow.isDestroyed()) {
+          bubbleWindow.webContents.executeJavaScript(`
+            var b = document.getElementById('bubble')
+            if (b) { b.style.background='#ff3b30'; b.style.color='#fff' }
+          `).catch(() => {})
+        }
       }
     }
 

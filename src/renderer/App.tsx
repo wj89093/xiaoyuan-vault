@@ -494,9 +494,14 @@ function App(): JSX.Element {
                     files={displayFiles}
                     selectedFile={selectedFile}
                     onSelect={handleSelectFile}
-                    onNewFile={() => {
-                      const name = prompt('文件名:')
-                      if (name) handleNewFile('', name.endsWith('.md') ? name : name + '.md')
+                    onNewFile={(folderPath) => {
+                      const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
+                      const name = `Untitled`
+                      handleNewFile(base, name)
+                    }}
+                    onNewFolder={(parentPath) => {
+                      const base = (parentPath === vaultPath || !parentPath) ? '' : parentPath
+                      handleNewFolder(base, 'Untitled')
                     }}
                     vaultPath={vaultPath}
                   />

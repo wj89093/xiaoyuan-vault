@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Trash2, Pencil, MoveRight } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Trash2, Pencil, MoveRight, Plus, FolderPlus } from 'lucide-react'
 import type { FileInfo } from '../types'
 
 interface FileTreeProps {
@@ -7,11 +7,12 @@ interface FileTreeProps {
   selectedFile: string | null
   onSelect: (path: string) => void
   onRefresh?: () => void
-  onNewFile?: () => void
+  onNewFile?: (folderPath: string) => void
+  onNewFolder?: (parentPath: string) => void
   vaultPath: string
 }
 
-export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, vaultPath }: FileTreeProps): JSX.Element {
+export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, onNewFolder, vaultPath }: FileTreeProps): JSX.Element {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set([vaultPath]))
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileInfo } | null>(null)
   const [hoverPreview, setHoverPreview] = useState<{ x: number; y: number; name: string; summary: string } | null>(null)
@@ -111,6 +112,8 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
           <div
             className={`file-tree-item ${dropTarget === file.path ? 'drop-target' : ''}`}
             style={{ paddingLeft: depth * 16 + 16 }}
+            draggable
+            onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.path); e.dataTransfer.effectAllowed = 'move' }}
             onClick={() => toggleFolder(file.path)}
             onContextMenu={(e) => handleContextMenu(e, file)}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropTarget(file.path) }}
@@ -137,10 +140,24 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
     return (
       <div
         key={file.path}
-        className={`file-tree-item ${isSelected ? 'active' : ''}`}
+        className={`file-tree-item ${isSelected ? 'active' : ''} ${dropTarget === file.path ? 'drop-target' : ''}`}
         style={{ paddingLeft: depth * 16 + 36 }}
         draggable
         onDragStart={(e) => { e.dataTransfer.setData('text/plain', file.path); e.dataTransfer.effectAllowed = 'move' }}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropTarget(file.path) }}
+        onDragLeave={() => setDropTarget(null)}
+        onDrop={async (e) => {
+          e.preventDefault(); setDropTarget(null)
+          const srcPath = e.dataTransfer.getData('text/plain')
+          if (srcPath && srcPath !== file.path) {
+            // Drop on file: move to same parent directory as target
+            const parentDir = file.path.includes('/')
+              ? file.path.substring(0, file.path.lastIndexOf('/'))
+              : ''
+            await window.api.moveFile(srcPath, parentDir)
+            onRefresh?.()
+          }
+        }}
         onClick={() => onSelect(file.path)}
         onContextMenu={(e) => handleContextMenu(e, file)}
         onMouseEnter={(e) => handleMouseEnter(e, file)}
@@ -174,6 +191,17 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
       {/* Context Menu */}
       {contextMenu && (
         <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={e => e.stopPropagation()}>
+          {contextMenu.file.isDirectory && (
+            <>
+              <div className="context-menu-item" onClick={() => { setContextMenu(null); onNewFile?.(contextMenu.file.path) }}>
+                <Plus size={14} /> 新建文件
+              </div>
+              <div className="context-menu-item" onClick={() => { setContextMenu(null); onNewFolder?.(contextMenu.file.path) }}>
+                <FolderPlus size={14} /> 新建文件夹
+              </div>
+              <div className="context-menu-separator" />
+            </>
+          )}
           <div className="context-menu-item" onClick={() => handleRename(contextMenu.file)}>
             <Pencil size={14} /> 重命名
           </div>
