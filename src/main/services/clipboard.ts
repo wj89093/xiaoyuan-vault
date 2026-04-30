@@ -51,76 +51,7 @@ export function showBubble(): void {
   })
 
   // Load bubble HTML from local file so File.path is accessible in drag events
-  bubbleWindow.loadFile(join(__dirname, '../../src/bubble.html'))
-<html><head><meta charset="utf-8"><style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:transparent;overflow:hidden;user-select:none}
-.bubble{
-  width:48px;height:48px;border-radius:50%;
-  background:#ffffff;
-  position:absolute;top:8px;left:8px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 12px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.04);
-  transition:transform .15s,box-shadow .15s;
-  color:#515154;
-  cursor:pointer;
-}
-.bubble:hover{transform:scale(1.08);box-shadow:0 4px 20px rgba(0,0,0,0.12),0 0 0 1px rgba(0,122,255,0.15)}
-.bubble.drag-over{transform:scale(1.15);box-shadow:0 0 0 3px #007aff,0 6px 24px rgba(0,122,255,0.2)}
-</style></head><body>
-<div class="bubble" id="bubble"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-<script>
-var ipc = require('electron').ipcRenderer
-var b = document.getElementById('bubble')
-
-// Drag to move
-var sx, sy, dragging = false, moved = false
-b.addEventListener('mousedown', function(e) { sx=e.screenX; sy=e.screenY; dragging=true; moved=false; e.preventDefault() })
-document.addEventListener('mousemove', function(e) {
-  if(!dragging) return
-  if(Math.abs(e.screenX-sx)>2||Math.abs(e.screenY-sy)>2) moved=true
-  if(moved){
-    ipc.send('bubble:move', e.screenX-sx, e.screenY-sy)
-    sx=e.screenX; sy=e.screenY
-  }
-})
-document.addEventListener('mouseup', function() { dragging=false })
-
-// Click to expand (only if not dragged)
-b.addEventListener('click', function() { if(!moved) ipc.send('bubble:expand') })
-
-// File drop
-document.addEventListener('dragover', function(e) {
-  e.preventDefault(); e.stopPropagation()
-  b.classList.add('drag-over')
-  document.body.style.background = 'rgba(0,122,255,0.08)'
-})
-document.addEventListener('dragleave', function(e) {
-  if (e.target === document.body || !document.body.contains(e.relatedTarget)) {
-    b.classList.remove('drag-over')
-    document.body.style.background = 'transparent'
-  }
-})
-document.addEventListener('drop', function(e) {
-  e.preventDefault(); e.stopPropagation()
-  b.classList.remove('drag-over')
-  document.body.style.background = 'transparent'
-  var files = Array.from(e.dataTransfer.files || [])
-  console.log('[Bubble renderer] drop, files:', files.length)
-  if (files.length === 0) {
-    var txt = e.dataTransfer.getData('text/plain') || ''
-    console.log('[Bubble renderer] text/plain length:', txt.length)
-    if (txt) ipc.send('bubble:drop', { filePaths: [], text: txt })
-    return
-  }
-  var paths = files.map(function(f){ return f.path || '' }).filter(Boolean)
-  console.log('[Bubble renderer] paths:', paths)
-  ipc.send('bubble:drop', { filePaths: paths, text: '' })
-  b.style.background = '#34c759'; b.style.color = '#fff'
-  setTimeout(function(){ b.style.background = '#ffffff'; b.style.color = '#515154' }, 600)
-})
-</script></body></html>
-`)
+  bubbleWindow.loadURL(`data:text/html;charset=utf-8,${getBubbleHTML()}`)
 
   bubbleWindow.once('ready-to-show', () => {
     bubbleLocked = false
@@ -283,7 +214,7 @@ function ensureIPC(): void {
         const { copyFile } = await import('fs/promises')
         const { basename } = await import('path')
         for (const srcPath of data.files) {
-          if (!existsSync(srcPath)) { log.info('[Bubble] file not found:', srcPath); continue }
+          if (!existsSync(srcPath)) { console.log('[Bubble] file not found:', srcPath); continue }
           const dest = join(collectDir, basename(srcPath))
           await copyFile(srcPath, dest)
           enrichFile(dest).catch(() => {})
@@ -302,47 +233,33 @@ function ensureIPC(): void {
   })
 
   ipcMain.on('bubble:drop', async (_event, data: { filePaths: string[]; text: string }) => {
-    log.info('[Bubble] bubble:drop received:', JSON.stringify(data))
-    if (!bubbleWindow) { log.info('[Bubble] no bubble window'); return }
+    console.log('[Bubble] bubble:drop received:', JSON.stringify(data))
+    if (!bubbleWindow) { console.log('[Bubble] no bubble window'); return }
 
-    // Resolve vaultPath if not set yet
-    let resolvedVaultPath = vaultPath
-    if (!resolvedVaultPath) {
+    // vaultPath not set yet — open vault picker first
+    if (!vaultPath) {
       const { dialog } = await import('electron')
       const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
       if (result.canceled || !result.filePaths[0]) {
-        log.info('[Bubble] vault picker cancelled')
+        console.log('[Bubble] vault picker cancelled')
         return
       }
-      resolvedVaultPath = result.filePaths[0]
+      const p = result.filePaths[0]
       const { initDatabase } = await import('./database')
       const { writeConfig } = await import('../index')
-      await initDatabase(resolvedVaultPath)
-      await writeConfig({ lastVaultPath: resolvedVaultPath })
-      setVaultPath(resolvedVaultPath)
-      log.info('[Bubble] vaultPath set to:', resolvedVaultPath)
+      await initDatabase(p)
+      await writeConfig({ lastVaultPath: p })
+      setVaultPath(p)
+      console.log('[Bubble] vaultPath set to:', p)
     }
 
-    // Send feedback to bubble window so it can show color
     if (data.filePaths && data.filePaths.length > 0) {
-      log.info('[Bubble] importing', data.filePaths.length, 'files')
+      console.log('[Bubble] importing', data.filePaths.length, 'files')
       try {
         const result = await importFilesToVault(data.filePaths)
-        log.info('[Bubble] import result:', result)
-        if (bubbleWindow && !bubbleWindow.isDestroyed()) {
-          bubbleWindow.webContents.executeJavaScript(`
-            var b = document.getElementById('bubble')
-            if (b) { b.style.background='#34c759'; b.style.color='#fff' }
-          `).catch(() => {})
-        }
+        console.log('[Bubble] import result:', result)
       } catch (e) {
-        log.error('[Bubble] importFilesToVault error:', e)
-        if (bubbleWindow && !bubbleWindow.isDestroyed()) {
-          bubbleWindow.webContents.executeJavaScript(`
-            var b = document.getElementById('bubble')
-            if (b) { b.style.background='#ff3b30'; b.style.color='#fff' }
-          `).catch(() => {})
-        }
+        console.error('[Bubble] importFilesToVault error:', e)
       }
     }
 
@@ -560,7 +477,7 @@ async function importFilesToVault(filePaths: string[]): Promise<{imported: numbe
     console.log('[Bubble] importFilesToVault: no vaultPath or empty filePaths', { vaultPath, filePaths })
     return { imported: 0, vaultPath, collectDir: '' }
   }
-  log.info('[Bubble] importFilesToVault: starting', { vaultPath, filePaths })
+  console.log('[Bubble] importFilesToVault: starting', { vaultPath, filePaths })
   const collectDir = join(vaultPath, '0-收集')
   try {
     if (!existsSync(collectDir)) await mkdir(collectDir, { recursive: true })
@@ -569,7 +486,7 @@ async function importFilesToVault(filePaths: string[]): Promise<{imported: numbe
     let imported = 0
     for (const srcPath of filePaths) {
       if (!existsSync(srcPath)) {
-        log.info('[Bubble] file not found:', srcPath)
+        console.log('[Bubble] file not found:', srcPath)
         continue
       }
       const dest = join(collectDir, basename(srcPath))
@@ -584,10 +501,10 @@ async function importFilesToVault(filePaths: string[]): Promise<{imported: numbe
       imported++
       console.log('[Bubble] copied:', srcPath, '->', dest)
     }
-    log.info('[Bubble] Imported', imported, 'files to', collectDir)
+    console.log('[Bubble] Imported', imported, 'files to', collectDir)
     return { imported, vaultPath, collectDir }
   } catch (e) {
-    log.error('[Bubble] importFilesToVault error:', e)
+    console.error('[Bubble] importFilesToVault error:', e)
     return { imported: 0, vaultPath, collectDir }
   }
 }
