@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Plus, FolderPlus, Network, Settings } from 'lucide-react'
 import type { FileInfo } from '../types'
 
@@ -27,12 +27,15 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, v
   useEffect(() => {
     if (showNewFile && fileInputRef.current) {
       fileInputRef.current.focus()
+      fileInputRef.current.select()
     }
   }, [showNewFile])
+
 
   useEffect(() => {
     if (showNewFolder && folderInputRef.current) {
       folderInputRef.current.focus()
+      folderInputRef.current.select()
     }
   }, [showNewFolder])
 
@@ -48,6 +51,30 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, v
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Obsidian-style: click + or + button → instant create with default name, no dialog
+  const handleNewFileInstant = useCallback(() => {
+    // Generate default name: "Untitled" / "Untitled 1" / ...
+    const existing = files.filter(f => !f.isDirectory)
+    let baseName = 'Untitled'
+    let counter = 0
+    while (existing.some(f => f.name === `${baseName}${counter > 0 ? ' ' + counter : ''}.md`)) {
+      counter++
+    }
+    const name = counter === 0 ? `${baseName}.md` : `${baseName} ${counter}.md`
+    // Strip .md for the file creation (handleNewFile appends .md)
+    onNewFile(targetFolder, counter === 0 ? baseName : `${baseName} ${counter}`)
+  }, [files, targetFolder, onNewFile])
+
+  const handleNewFolderInstant = useCallback(() => {
+    const existing = folders
+    let baseName = 'Untitled'
+    let counter = 0
+    while (existing.some(f => f.name === `${baseName}${counter > 0 ? ' ' + counter : ''}`)) {
+      counter++
+    }
+    onNewFolder(targetFolder, counter === 0 ? baseName : `${baseName} ${counter}`)
+  }, [folders, targetFolder, onNewFolder])
 
   const handleCreateFile = () => {
     if (fileName.trim()) {
@@ -69,14 +96,14 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, v
     <div className="toolbar">
       <button
         className="btn btn-icon"
-        onClick={() => setShowNewFile(!showNewFile)}
+        onClick={handleNewFileInstant}
         title="新建文件"
       >
         <Plus size={16} />
       </button>
       <button
         className="btn btn-icon"
-        onClick={() => setShowNewFolder(!showNewFolder)}
+        onClick={handleNewFolderInstant}
         title="新建文件夹"
       >
         <FolderPlus size={16} />

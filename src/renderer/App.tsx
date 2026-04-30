@@ -266,7 +266,9 @@ function App(): JSX.Element {
 
   // Create new file
   const handleNewFile = useCallback(async (folderPath: string, fileName: string) => {
-    const filePath = `${folderPath}/${fileName}.md`
+    // If folderPath is the vault itself, use empty string (root)
+    const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
+    const filePath = `${base}/${fileName}.md`
     await window.api.saveFile(filePath, `# ${fileName}\n\n`)
     const fileList = await window.api.listFiles()
     setFiles(fileList)
@@ -277,7 +279,8 @@ function App(): JSX.Element {
 
   // Create folder
   const handleNewFolder = useCallback(async (parentPath: string, folderName: string) => {
-    const folderPath = `${parentPath}/${folderName}`
+    const base = (parentPath === vaultPath || !parentPath) ? '' : parentPath
+    const folderPath = `${base}/${folderName}`
     await window.api.createFolder(folderPath)
     const fileList = await window.api.listFiles()
     setFiles(fileList)
