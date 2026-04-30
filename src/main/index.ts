@@ -17,7 +17,7 @@ import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISet
 import { callAI } from './services/aiService'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
 import { showBubble, hideBubble, setVaultPath } from './services/clipboard'
-import { askQuestion, askQuestionStream, buildAnswerPrompt } from './services/chat'
+import { askQuestion, askQuestionStream, buildAnswerPrompt, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
 import { streamQwenAI } from './services/qwen'
 import { rebuildGraph, loadGraph } from './services/graph'
 import { transcribeAudio } from './services/whisper'
