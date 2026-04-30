@@ -10,7 +10,7 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { Toolbar } from './components/Toolbar'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
-import { Search, FolderOpen } from 'lucide-react'
+import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
 
 declare global {
@@ -213,7 +213,19 @@ function App(): JSX.Element {
     }
 
     // Regular markdown file
-    const fileContent = await window.api.readFile(filePath)
+    let fileContent = ''
+    try {
+      fileContent = await window.api.readFile(filePath)
+    } catch (e: any) {
+      // Check code on error itself or nested cause (Node.js fs errors may lose code across IPC)
+      const code = e?.code ?? e?.cause?.code
+      const msg = e?.message ?? ''
+      if (code === 'ENOENT' || msg.includes('ENOENT') || msg.includes('no such file')) {
+        console.warn('[FileTree] file no longer exists, skipping:', filePath)
+        return
+      }
+      throw e  // re-throw other errors
+    }
     setNativePreview(null)
     setIsNativePreview(false)
     setSelectedFile(filePath)

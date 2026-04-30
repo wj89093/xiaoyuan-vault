@@ -236,21 +236,22 @@ function ensureIPC(): void {
     console.log('[Bubble] bubble:drop received:', JSON.stringify(data))
     if (!bubbleWindow) { console.log('[Bubble] no bubble window'); return }
 
-    // vaultPath not set yet — open vault picker first
-    if (!vaultPath) {
+    // Resolve vaultPath if not set yet
+    let resolvedVaultPath = vaultPath
+    if (!resolvedVaultPath) {
       const { dialog } = await import('electron')
       const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
       if (result.canceled || !result.filePaths[0]) {
         console.log('[Bubble] vault picker cancelled')
         return
       }
-      const p = result.filePaths[0]
+      resolvedVaultPath = result.filePaths[0]
       const { initDatabase } = await import('./database')
       const { writeConfig } = await import('../index')
-      await initDatabase(p)
-      await writeConfig({ lastVaultPath: p })
-      setVaultPath(p)
-      console.log('[Bubble] vaultPath set to:', p)
+      await initDatabase(resolvedVaultPath)
+      await writeConfig({ lastVaultPath: resolvedVaultPath })
+      setVaultPath(resolvedVaultPath)
+      console.log('[Bubble] vaultPath set to:', resolvedVaultPath)
     }
 
     if (data.filePaths && data.filePaths.length > 0) {

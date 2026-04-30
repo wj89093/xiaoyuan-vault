@@ -173,7 +173,7 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
 
       {/* Context Menu */}
       {contextMenu && (
-        <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
+        <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={e => e.stopPropagation()}>
           <div className="context-menu-item" onClick={() => handleRename(contextMenu.file)}>
             <Pencil size={14} /> 重命名
           </div>
