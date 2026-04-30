@@ -436,6 +436,8 @@ body {
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   flex-wrap: nowrap;
+  /* Prevent any child from taking more than its share */
+  overflow: hidden;
 }
 
 .ai-chat-input {
@@ -468,7 +470,9 @@ body {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
+  flex-grow: 0;
   min-width: 36px;
+  min-height: 36px;
   border: none;
   border-radius: var(--radius-md);
   background: var(--color-accent);
