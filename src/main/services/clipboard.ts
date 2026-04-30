@@ -283,7 +283,7 @@ function ensureIPC(): void {
         const { copyFile } = await import('fs/promises')
         const { basename } = await import('path')
         for (const srcPath of data.files) {
-          if (!existsSync(srcPath)) { console.log('[Bubble] file not found:', srcPath); continue }
+          if (!existsSync(srcPath)) { log.info('[Bubble] file not found:', srcPath); continue }
           const dest = join(collectDir, basename(srcPath))
           await copyFile(srcPath, dest)
           enrichFile(dest).catch(() => {})
@@ -302,8 +302,8 @@ function ensureIPC(): void {
   })
 
   ipcMain.on('bubble:drop', async (_event, data: { filePaths: string[]; text: string }) => {
-    console.log('[Bubble] bubble:drop received:', JSON.stringify(data))
-    if (!bubbleWindow) { console.log('[Bubble] no bubble window'); return }
+    log.info('[Bubble] bubble:drop received:', JSON.stringify(data))
+    if (!bubbleWindow) { log.info('[Bubble] no bubble window'); return }
 
     // Resolve vaultPath if not set yet
     let resolvedVaultPath = vaultPath
@@ -311,7 +311,7 @@ function ensureIPC(): void {
       const { dialog } = await import('electron')
       const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
       if (result.canceled || !result.filePaths[0]) {
-        console.log('[Bubble] vault picker cancelled')
+        log.info('[Bubble] vault picker cancelled')
         return
       }
       resolvedVaultPath = result.filePaths[0]
@@ -320,15 +320,15 @@ function ensureIPC(): void {
       await initDatabase(resolvedVaultPath)
       await writeConfig({ lastVaultPath: resolvedVaultPath })
       setVaultPath(resolvedVaultPath)
-      console.log('[Bubble] vaultPath set to:', resolvedVaultPath)
+      log.info('[Bubble] vaultPath set to:', resolvedVaultPath)
     }
 
     // Send feedback to bubble window so it can show color
     if (data.filePaths && data.filePaths.length > 0) {
-      console.log('[Bubble] importing', data.filePaths.length, 'files')
+      log.info('[Bubble] importing', data.filePaths.length, 'files')
       try {
         const result = await importFilesToVault(data.filePaths)
-        console.log('[Bubble] import result:', result)
+        log.info('[Bubble] import result:', result)
         if (bubbleWindow && !bubbleWindow.isDestroyed()) {
           bubbleWindow.webContents.executeJavaScript(`
             var b = document.getElementById('bubble')
@@ -336,7 +336,7 @@ function ensureIPC(): void {
           `).catch(() => {})
         }
       } catch (e) {
-        console.error('[Bubble] importFilesToVault error:', e)
+        log.error('[Bubble] importFilesToVault error:', e)
         if (bubbleWindow && !bubbleWindow.isDestroyed()) {
           bubbleWindow.webContents.executeJavaScript(`
             var b = document.getElementById('bubble')
@@ -560,7 +560,7 @@ async function importFilesToVault(filePaths: string[]): Promise<{imported: numbe
     console.log('[Bubble] importFilesToVault: no vaultPath or empty filePaths', { vaultPath, filePaths })
     return { imported: 0, vaultPath, collectDir: '' }
   }
-  console.log('[Bubble] importFilesToVault: starting', { vaultPath, filePaths })
+  log.info('[Bubble] importFilesToVault: starting', { vaultPath, filePaths })
   const collectDir = join(vaultPath, '0-收集')
   try {
     if (!existsSync(collectDir)) await mkdir(collectDir, { recursive: true })
@@ -569,7 +569,7 @@ async function importFilesToVault(filePaths: string[]): Promise<{imported: numbe
     let imported = 0
     for (const srcPath of filePaths) {
       if (!existsSync(srcPath)) {
-        console.log('[Bubble] file not found:', srcPath)
+        log.info('[Bubble] file not found:', srcPath)
         continue
       }
       const dest = join(collectDir, basename(srcPath))
@@ -584,10 +584,10 @@ async function importFilesToVault(filePaths: string[]): Promise<{imported: numbe
       imported++
       console.log('[Bubble] copied:', srcPath, '->', dest)
     }
-    console.log('[Bubble] Imported', imported, 'files to', collectDir)
+    log.info('[Bubble] Imported', imported, 'files to', collectDir)
     return { imported, vaultPath, collectDir }
   } catch (e) {
-    console.error('[Bubble] importFilesToVault error:', e)
+    log.error('[Bubble] importFilesToVault error:', e)
     return { imported: 0, vaultPath, collectDir }
   }
 }
