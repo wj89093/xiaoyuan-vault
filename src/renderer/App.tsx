@@ -91,10 +91,10 @@ function App(): JSX.Element {
         const api = window.api as any
         const history = messages.slice(-6).map((m: any) => ({ role: m.role, content: m.content }))
 
-        // Set up stream listeners
-        let unsubChunk: () => void
-        let unsubDone: () => void
-        let unsubError: () => void
+        // Set up stream listeners before kicking off the request
+        let unsubChunk: (() => void) | undefined
+        let unsubDone: (() => void) | undefined
+        let unsubError: (() => void) | undefined
         let settled = false
 
         const cleanup = () => {

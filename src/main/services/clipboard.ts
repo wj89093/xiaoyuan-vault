@@ -94,6 +94,8 @@ document.addEventListener('drop', e => {
     // data: URLs return the URL as title — ignore those
     bubbleAction = raw && !raw.startsWith('data:') ? raw : ''
     console.log('[Bubble] close raw:', raw, '→ action:', bubbleAction)
+    // Release lock so respawn can show a fresh bubble
+    bubbleLocked = false
   })
 
   bubbleWindow.on('closed', () => {
