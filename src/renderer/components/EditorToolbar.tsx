@@ -1,4 +1,4 @@
-import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns, BookOpen } from 'lucide-react'
+import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns, BookOpen, Undo2, Redo2 } from 'lucide-react'
 import React from 'react'
 
 interface EditorToolbarProps {
@@ -26,6 +26,21 @@ export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSpli
   }
 
   const actions = [
+    { icon: <Undo2 size={15} />, label: '撤销', action: () => {
+      const state = view?.state
+      if (state) {
+        const tr = state.update({})
+        view?.dispatch(tr)
+      }
+    }},
+    { icon: <Redo2 size={15} />, label: '重做', action: () => {
+      const state = view?.state
+      if (state) {
+        const tr = state.update({})
+        view?.dispatch(tr)
+      }
+    }},
+    { type: 'divider' as const },
     { icon: <Bold size={15} />, label: '粗体', action: () => insert('**$TEXT**', 2) },
     { icon: <Italic size={15} />, label: '斜体', action: () => insert('*$TEXT*', 1) },
     { type: 'divider' as const },

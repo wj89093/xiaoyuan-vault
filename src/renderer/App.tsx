@@ -9,6 +9,7 @@ import { KnowledgeGraph } from './components/KnowledgeGraph'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Toolbar } from './components/Toolbar'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
+import { ShortcutGuide } from './components/ShortcutGuide'
 import { Search, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
 
@@ -47,6 +48,7 @@ function App(): JSX.Element {
   const [showQuickSwitch, setShowQuickSwitch] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
@@ -319,7 +321,7 @@ function App(): JSX.Element {
     })
   }, [])
 
-  // Cmd+P / Ctrl+P Quick Switch + Cmd+F search focus
+  // Cmd+P Quick Switch + Cmd+F search + Cmd+D dark mode
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
@@ -327,12 +329,33 @@ function App(): JSX.Element {
         if (vaultPath) setShowQuickSwitch(v => !v)
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'f' && vaultPath) {
-        ;(document.querySelector('.search-input') as HTMLInputElement)?.focus()
+        // Only focus sidebar search if editor is not focused
+        if (!(document.activeElement?.closest('.cm-editor') || document.activeElement?.closest('.cm-content'))) {
+          ;(document.querySelector('.search-input') as HTMLInputElement)?.focus()
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+        e.preventDefault()
+        const html = document.documentElement
+        const current = html.getAttribute('data-theme')
+        const next = current === 'dark' ? '' : 'dark'
+        if (next) html.setAttribute('data-theme', next)
+        else html.removeAttribute('data-theme')
+        localStorage.setItem('theme', next || 'light')
+      }
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
+        setShowShortcuts(v => !v)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [vaultPath])
+
+  // Restore theme on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
+  }, [])
 
   // Global shortcut Cmd+Shift+F → Quick Switch
   useEffect(() => {
@@ -366,6 +389,9 @@ function App(): JSX.Element {
             onClose={() => setShowGraph(false)}
           />
         </div>
+      )}
+      {showShortcuts && (
+        <ShortcutGuide onClose={() => setShowShortcuts(false)} />
       )}
       {showSettings && vaultPath && (
         <SettingsPanel
