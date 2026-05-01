@@ -546,6 +546,7 @@ function App(): JSX.Element {
                     onChange={handleContentChange}
                     nativePreview={nativePreview}
                     isNativePreview={isNativePreview}
+                    onReference={handleReference}
                   />
                 </>
               ) : (

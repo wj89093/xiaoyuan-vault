@@ -21,6 +21,7 @@ interface EditorProps {
     sheetNames?: string[]
   }
   isNativePreview?: boolean
+  onReference?: (content: string) => void
 }
 
 type Mode = 'source' | 'reading'
@@ -96,7 +97,7 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
   )
 }
 
-export function Editor({ value, onChange, nativePreview, isNativePreview = false }: EditorProps): JSX.Element {
+export function Editor({ value, onChange, nativePreview, isNativePreview = false, onReference }: EditorProps): JSX.Element {
   const [mode, setMode] = useState<Mode>('reading')
   const [splitView, setSplitView] = useState(false)
   const editorViewRef = useRef<EditorView | null>(null)
@@ -252,6 +253,7 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
         onToggleSplit={() => setSplitView(s => !s)}
         splitView={splitView}
         readingModeActive={mode === 'reading'}
+        onReference={onReference}
       />
 
       {/* Frontmatter status bar */}

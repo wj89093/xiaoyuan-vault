@@ -1,4 +1,4 @@
-import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns, BookOpen, Undo2, Redo2 } from 'lucide-react'
+import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns, BookOpen, Undo2, Redo2, FileText } from 'lucide-react'
 import React from 'react'
 
 interface EditorToolbarProps {
@@ -8,9 +8,10 @@ interface EditorToolbarProps {
   onToggleSplit: () => void
   splitView?: boolean
   readingModeActive?: boolean
+  onReference?: (content: string, fileName: string) => void
 }
 
-export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSplit, splitView, readingModeActive }: EditorToolbarProps): JSX.Element {
+export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSplit, splitView, readingModeActive, onReference }: EditorToolbarProps): JSX.Element {
   const insert = (template: string, cursorOffset?: number) => {
     if (!view) return
     const selection = view.state.selection.main
@@ -59,6 +60,12 @@ export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSpli
     { icon: <Quote size={15} />, label: '引用', action: () => insert('> $TEXT\n') },
     { type: 'divider' as const },
     { icon: <Columns size={15} />, label: splitView ? '关闭分屏' : '分屏', action: onToggleSplit, active: splitView },
+    { type: 'divider' as const },
+    { icon: <FileText size={15} />, label: '引用到AI', action: () => {
+      if (!onReference || !view) return
+      const doc = view.state.doc.toString()
+      onReference(doc)
+    }},
     { type: 'divider' as const },
     { icon: readingModeActive ? <EyeOff size={15} /> : <BookOpen size={15} />,
       label: readingModeActive ? '编辑模式' : '阅读模式',
