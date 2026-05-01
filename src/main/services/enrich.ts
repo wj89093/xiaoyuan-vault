@@ -83,10 +83,22 @@ export async function enrichFile(
       log.info(`[Backlink] ${backlinksAdded} backlinks created from ${filePath}`)
     }
 
+    // Step 6: Phase 2 — enrich linked entity pages (append timeline + update related pages)
+    const { updated: updatedPages, pending: pendingPages } = await enrichLinkedEntityPages(
+      filePath,
+      newFrontmatter.title as string || basename(filePath, '.md'),
+      extractedRels
+    )
+    const phase2info = updatedPages.length > 0
+      ? `, 相关页面+${updatedPages.join(',')}`
+      : pendingPages.length > 0
+      ? `, 待建页面:${pendingPages.join(',')}`
+      : ''
+
     return {
       success: true,
       action: 'updated',
-      message: `类型设为 ${type}，${backlinksAdded > 0 ? `反向链接+${backlinksAdded}` : '建议目录 ' + suggestedFolder}`,
+      message: `类型设为 ${type}${phase2info}`,
       oldPath: filePath,
       frontmatter: newFrontmatter
     }
@@ -274,6 +286,146 @@ async function updateBacklinksForFile(filePath: string, fileTitle: string): Prom
     }
   }
   return added
+}
+
+
+
+
+// ─── Phase 2: Enrich 多页面联动 ─────────────────────────────────
+
+interface TimelineEntry {
+  date: string
+  type: string
+  content: string
+  source?: string
+}
+
+/**
+ * Parse a timeline entry from the "## 时间线" section of a page
+ */
+function parseTimeline(raw: string): TimelineEntry[] {
+  const entries: TimelineEntry[] = []
+  const match = raw.match(/##\s*时间线[\s\S]*$/m)
+  if (!match) return entries
+  // Match "## [YYYY-MM-DD] TYPE | Content" entries
+  const entryRe = /##\s*\[(\d{4}-\d{2}-\d{2})\]\s*([^|]+)\|\s*(.+)/g
+  let m
+  while ((m = entryRe.exec(match[0])) !== null) {
+    entries.push({ date: m[1], type: m[2].trim(), content: m[3].trim() })
+  }
+  return entries
+}
+
+/**
+ * Check if vault has a wiki page for a given entity name
+ * Looks in: vault/{TYPE}/{name}.md or vault/{folder}/{name}.md
+ */
+async function findEntityPage(vaultPath: string, entityName: string): Promise<string | null> {
+  const { readdir, stat } = await import('fs/promises')
+  const nameLower = entityName.toLowerCase()
+
+  async function search(dir: string): Promise<string | null> {
+    let entries: string[]
+    try { entries = await readdir(dir) } catch { return null }
+    for (const name of entries.sort()) {
+      if (name.startsWith('.')) continue
+      const fullPath = join(dir, name)
+      try {
+        const fstat = await stat(fullPath)
+        if (fstat.isDirectory()) {
+          const found = await search(fullPath)
+          if (found) return found
+        } else if (name.endsWith('.md')) {
+          const baseName = name.replace(/\.md$/, '').toLowerCase()
+          if (baseName === nameLower || baseName.replace(/\s+/g, '') === nameLower.replace(/\s+/g, '')) {
+            return fullPath
+          }
+        }
+      } catch {}
+    }
+    return null
+  }
+
+  return search(vaultPath)
+}
+
+/**
+ * Append a timeline entry to an existing wiki page
+ */
+async function appendTimelineEntry(
+  filePath: string,
+  entry: TimelineEntry
+): Promise<boolean> {
+  try {
+    const raw = await readFile(filePath, 'utf-8')
+    const { frontmatter } = parseFrontmatter(raw)
+    const now = entry.date || new Date().toISOString().slice(0, 10)
+    const entryLine = `## [${now}] ${entry.type} | ${entry.content}${entry.source ? '  \n   来源: ' + entry.source : ''}`
+
+    // Append to end of content (after --- separator if present, otherwise at end)
+    const sepIdx = raw.indexOf('---', 4) // skip first frontmatter separator
+    let insertIdx = raw.length
+    if (sepIdx !== -1) {
+      // Find second --- that ends frontmatter
+      const sep2 = raw.indexOf('---', sepIdx + 3)
+      if (sep2 !== -1) insertIdx = sep2 + 3
+    }
+
+    const newRaw = raw.slice(0, insertIdx) + '\n' + entryLine + raw.slice(insertIdx)
+    await writeFile(filePath, newRaw, 'utf-8')
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Enrich all entity pages mentioned in this file's typed links.
+ * - If entity page exists → append timeline + update updated date
+ * - If not exists → log as "待建页面" (for inbox processing)
+ */
+async function enrichLinkedEntityPages(
+  filePath: string,
+  fileTitle: string,
+  typedLinks: Relationship[]
+): Promise<{ updated: string[]; pending: string[] }> {
+  const vaultPath = getVaultPath()
+  if (!vaultPath) return { updated: [], pending: [] }
+  if (typedLinks.length === 0) return { updated: [], pending: [] }
+
+  const updated: string[] = []
+  const pending: string[] = []
+
+  // Group typed links by entity name (avoid processing same entity twice)
+  const seen = new Set<string>()
+  const uniqueEntities = typedLinks.filter(r => {
+    if (seen.has(r.target)) return false
+    seen.add(r.target); return true
+  })
+
+  for (const rel of uniqueEntities) {
+    const entityPage = await findEntityPage(vaultPath, rel.target)
+    if (!entityPage) {
+      pending.push(rel.target)
+      log.info(`[Phase2] ${rel.target}: 无已有页面，进入 inbox`)
+      continue
+    }
+
+    const entry: TimelineEntry = {
+      date: new Date().toISOString().slice(0, 10),
+      type: 'related',
+      content: `在「${fileTitle}」中提到: ${rel.source || rel.target}`,
+      source: fileTitle
+    }
+
+    const ok = await appendTimelineEntry(entityPage, entry)
+    if (ok) {
+      updated.push(rel.target)
+      log.info(`[Phase2] 更新实体页面 ${rel.target}: timeline 追加条目`)
+    }
+  }
+
+  return { updated, pending }
 }
 
 
