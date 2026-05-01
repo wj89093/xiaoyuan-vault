@@ -6,7 +6,6 @@ import { SearchResults } from './components/SearchResults'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { QuickSwitch } from './components/QuickSwitch'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
-import { SettingsPanel } from './components/SettingsPanel'
 import { Toolbar } from './components/Toolbar'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
@@ -50,7 +49,6 @@ function App(): JSX.Element {
   const [showGraph, setShowGraph] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
-  const [autoAI, setAutoAI] = useState({ enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true })
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
   const { toasts, dismiss: dismissToast } = useToasts()
@@ -429,13 +427,7 @@ function App(): JSX.Element {
       {showShortcuts && (
         <ShortcutGuide onClose={() => setShowShortcuts(false)} />
       )}
-      {showSettings && vaultPath && (
-        <SettingsPanel
-          onClose={() => setShowSettings(false)}
-          autoAI={autoAI}
-          onUpdate={(s) => { setAutoAI(s); window.api.saveAutoAISettings?.(s as any) }}
-        />
-      )}
+
       {!vaultPath ? (
         <WelcomeScreen onOpenVault={handleOpenVault} onNewVault={handleNewVault} />
       ) : (
