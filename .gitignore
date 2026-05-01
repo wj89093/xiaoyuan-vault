@@ -9,3 +9,7 @@ dist/
 !.env.example
 ai-engineering/
 ai-engineering/
+chi_sim.traineddata
+eng.traineddata
+*.db-shm
+*.db-wal
