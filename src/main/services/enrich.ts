@@ -5,7 +5,7 @@ import { join, dirname, basename } from 'path'
 import { resolveContentType, ResolverResult } from './resolver'
 import { rebuildIndexFile, appendToOperationLog } from './autoAIEngine'
 import { getVaultPath } from './database'
-import { parseFrontmatter, applyFrontmatter, generateFileTemplate } from './frontmatter'
+import { parseFrontmatter, applyFrontmatter, generateFileTemplate, extractTypedLinks, Relationship } from './frontmatter'
 
 export interface EnrichResult {
   success: boolean
@@ -55,6 +55,18 @@ export async function enrichFile(
       if (classification.reason) updates.summary = classification.reason
       if (classification.extractedNames?.length) {
         updates.tags = [...(frontmatter.tags || []), ...classification.extractedNames]
+      }
+    }
+
+    // Step 3b: Extract typed links from content (GBrain format: [[公司:中科国生]])
+    const extractedRels = extractTypedLinks(content)
+    if (extractedRels.length > 0) {
+      const existingRels = Array.isArray(frontmatter.relationships) ? frontmatter.relationships : []
+      const existingTargets = new Set(existingRels.map((r: Relationship) => `${r.type}:${r.target}`))
+      const newRels = extractedRels.filter((r: Relationship) => !existingTargets.has(`${r.type}:${r.target}`))
+      if (newRels.length > 0) {
+        updates.relationships = [...existingRels, ...newRels]
+        log.info(`[Enrich] typed links: ${newRels.map((r: Relationship) => r.target).join(', ')}`)
       }
     }
 

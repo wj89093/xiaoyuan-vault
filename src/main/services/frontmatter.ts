@@ -406,6 +406,87 @@ export function extractWikiLinks(content: string): string[] {
   return [...new Set(links)] // Deduplicate
 }
 
+// ─── Typed Links extractor (GBrain format) ───────────────────────────────────
+
+const ENTITY_TYPES = new Set([
+  'person', 'persons',
+  'company', 'companies',
+  'project', 'projects',
+  'meeting', 'meetings',
+  'deal', 'deals',
+  'concept', 'concepts',
+  'research', 'researches',
+  'event', 'events',
+  'institution', 'institutions',
+  'product', 'products',
+  'technology', 'technologies',
+])
+
+/**
+ * Extract typed links from content: [[公司:中科国生]] → Relationship[]
+ * Supports: person/company/project/meeting/deal/concept/research/event 等实体类型
+ * GBrain format: [[ENTITY_TYPE:ENTITY_NAME]]
+ *
+ * Returns structured Relationship[] with:
+ * - type: inferred relationship type (related_to / mentions / etc.)
+ * - target: the entity name extracted from the typed link
+ * - confidence: always EXTRACTED (directly mentioned)
+ * - source: surrounding context snippet
+ */
+export function extractTypedLinks(content: string): Relationship[] {
+  const typedLinkRegex = /\[\[([^\]:]+):([^\]]+)\]\]/g
+  const seen = new Set<string>()
+  const relationships: Relationship[] = []
+
+  let match: RegExpExecArray | null
+  while ((match = typedLinkRegex.exec(content)) !== null) {
+    const rawType = match[1].trim().toLowerCase()
+    const entityName = match[2].trim()
+
+    // Normalize entity type: companies→company, persons→person, etc.
+    const entityType = rawType.replace(/s$/, '')
+
+    // Skip if not a known entity type (might be a normal wiki link)
+    if (!ENTITY_TYPES.has(entityType)) continue
+
+    const key = `${entityType}:${entityName}`
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    // Extract surrounding context (±60 chars)
+    const start = Math.max(0, match.index - 60)
+    const end = Math.min(content.length, match.index + match[0].length + 60)
+    let context = content.slice(start, end).replace(/\n+/g, ' ').trim()
+    if (start > 0) context = '…' + context
+    if (end < content.length) context = context + '…'
+
+    // Infer relationship type from entity type
+    const RELATION_MAP: Record<string, string> = {
+      person:     'mentions',
+      company:    'mentions',
+      project:    'involves',
+      meeting:    'involves',
+      deal:       'involves',
+      concept:    'relates_to',
+      research:   'cites',
+      event:      'participated_in',
+      institution:'partnered_with',
+      product:    'develops',
+      technology: 'applies',
+    }
+    const relType = RELATION_MAP[entityType] || 'mentions'
+
+    relationships.push({
+      type: relType,
+      target: entityName,
+      confidence: 'EXTRACTED',
+      source: context,
+    })
+  }
+
+  return relationships
+}
+
 /**
  * Generate a new file template with dual-layer structure
  */
