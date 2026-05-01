@@ -88,3 +88,131 @@
 - CodeMirror 6
 - D3.js
 - electron-vite + electron-builder
+
+---
+
+## 晓园产品精简（2026-05-01）
+- ✅ SettingsPanel 删减为仅 AI 模型选择（删除 AutoAI 分类/标签/摘要）
+- ✅ Auth Gateway 完成（localhost:3000 + ngrok 外网穿透）
+- ✅ 引用按钮功能完成（今天早些时候）
+- ✅ 构建已通过
+
+
+---
+
+## Phase 0-2: LLM-Wiki 核心能力落地（2026-05-01）
+
+### Phase 0: Typed Links 提取 ✅
+- `extractTypedLinks(content)` — 解析 GBrain 格式 `[[类型:名称]]`
+- 支持: person/company/project/meeting/deal/concept/research/event 等实体类型
+- 自动推断关系类型(mentions/involves/related_to 等)
+- 追加 `relationships` 字段, `confidence=EXTRACTED`
+
+### Phase 1: Bidirectional Links ✅
+- `updateBacklinksForFile()` — enrich 后自动补充反向链接
+- `addBacklink(target, title, source)` — 向目标文件 seeAlso 追加(去重)
+- `findFilesMentioningEntity()` — 扫描所有文件查找引用某 entity 的页面
+
+### Phase 2: Enrich 多页面联动 ✅
+- `enrichLinkedEntityPages()` — enrich 时联动更新关联实体页面
+- `findEntityPage()` — vault 中查找 entity 已有 wiki 页面
+- `appendTimelineEntry()` — 向已有页面追加时间线条目
+- 有页面 → 追加 timeline; 无页面 → 记录待建
+
+**效果示例:**
+```
+收到一篇关于"中科国生"的文章,含 [[公司:中科国生]] + [[人物:王五]]
+→ 自动提取 relationships
+→ 在红杉资本页面补充反向链接
+→ 在中科国生已有页面的 timeline 追加条目
+```
+
+---
+
+## LLM-first RESOLVER 升级（2026-05-01）
+
+### 核心改变：从规则判断 → LLM 决定 action plan
+
+**之前**：规则提取 typed links → 硬编码更新逻辑
+**现在**：LLM 读完内容 → 返回完整 action plan → 代码执行
+
+**resolver.ts** 全面重写：
+- `resolveContentType()` 返回 LLM 决策的完整 plan：intent / entities / updates / summary / tags
+- SYSTEM_PROMPT 让 LLM 做完整判断（不只是 type）
+
+**enrich.ts** 接入 LLM plan：
+- 用 `classification.entities` 替代 `extractTypedLinks()` 规则
+- 用 `classification.updates` 替代硬编码更新逻辑
+- 用 `classification.summary` / `classification.tags` 替代 reason/names
+
+**效果**：内容来了，LLM 决定更新哪些页面、做什么动作
+
+---
+
+## LLM-first 迭代完成（2026-05-01）
+
+### RESOLVER 升级：LLM 决定完整 action plan
+- 不再规则分类 → LLM 读完内容返回 intent/entities/updates/summary/tags
+- enrich.ts 接入 LLM plan：用 entities 替代规则提取
+
+### Maintain + 矛盾检测
+- `maintain.ts` 新增 LLM 矛盾检测
+- `detectContradictions()`: 抽样页面，LLM 对比时间线 vs summary
+- `Contradiction{oldValue, newValue, source, severity}`
+
+### Daily/Weekly Briefing
+- `briefing.ts`: 读取 log.md + index.md + recent changes
+- `generateLLMBriefing()`: LLM 生成 newPages/updatedPages/entities/highlights/health
+- IPC `briefing:get`: renderer 调用
+
+### Signal Auto-Enrich（无感持续）
+- `file:save` → 后台自动 enrich
+- clipboard/import/url → 已有 enrich
+- 效果：wiki 自己长出来，用户无感
+
+### LLM-first 开发模式
+- Typed Links 提取：LLM 解析 [[类型:名称]]
+- Bidirectional Links：LLM 补充反向链接
+- Enrich 多页面联动：LLM 判断相关页面 + 追加 timeline
+
+---
+
+## 平台统一 AI + 登录系统（2026-05-01）
+
+### Auth Gateway（晓园账户系统）
+
+**新增服务**：`auth-gateway/` 独立 Node.js 服务
+
+- `/auth/email/login` GET 登录页（桌面 App 用）
+- `/auth/email/send` / `/auth/email/verify` 邮箱验证码登录
+- `/ai/query` AI 代理（JWT 验证 + Quota 扣减 + DeepSeek）
+- JWT token + Quota 配额控制
+- 免费用户 10次/天
+
+### Electron 端登录集成
+
+**新增 IPC routes**: auth:getToken / auth:getEmail / auth:clear / auth:openLogin
+
+**electron-store 存储 JWT token**
+
+**URL Scheme**: `xiaoyuan://` 注册，OAuth 回调捕获
+
+**SettingsPanel 重写**：登录/登出按钮 + 账户状态显示
+
+### AI 模型切换
+
+- 默认模型：**DeepSeek V4 Flash**（¥1/M，比 Qwen 便宜 100x）
+- 模型名称硬编码，SettingsPanel 不再可选
+- AI 调用：有 token 时走 Auth Gateway（扣 quota），无 token 时直接调用
+
+### 文件格式转换器修复
+
+- PDF：`pdf-parse` v2 不兼容 → 改用 `pdftotext` 命令行
+- XLSX：`XLSX.readFile` → `XLSX.default.readFile`（ESM 兼容）
+- 图片 OCR：tesseract.js v7 API 变更 → `createWorker()` + `worker.recognize()`
+
+### 代码清理
+
+- 109 个 `any` 类型（待清理）
+- 54 个 IPC handler 无权限控制（生产环境需加）
+- 18 个空 catch 块（待处理）
