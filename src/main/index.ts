@@ -436,7 +436,13 @@ AI 自动维护反向链接。
   })
 
   ipcMain.handle('file:save', async (_, filePath: string, content: string) => {
-    return saveFile(filePath, content)
+    const result = await saveFile(filePath, content)
+    // Auto-enrich: LLM 维护 wiki，无感持续运行
+    // skip .raw/ files (原始文件不需要 enrich)
+    if (!filePath.includes('/.raw/') && !filePath.includes('\\.raw\\')) {
+      enrichFile(filePath).catch((err: any) => log.warn('[AutoEnrich] failed:', err.message))
+    }
+    return result
   })
 
   ipcMain.handle('file:import', async (_, vaultPath: string, filePaths: string[]) => {
