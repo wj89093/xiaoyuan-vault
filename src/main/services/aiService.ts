@@ -199,3 +199,37 @@ export function getDefaultProvider(): AIProvider {
   if (PROVIDERS.deepseek.apiKey) return 'deepseek'
   return 'qwen'
 }
+
+// ─── Auth Gateway AI 调用 ───────────────────────────────────────
+// 用于：Electron app 调 Auth Gateway（平台统一提供 AI）
+// Gateway 验证 token + 扣 quota + 调 DeepSeek
+const AUTH_GATEWAY_URL = process.env.AUTH_GATEWAY_URL || 'https://chance-unnamed-camera.ngrok-free.dev'
+
+export async function callAIGateway(
+  question: string,
+  context?: string[],
+  userToken?: string
+): Promise<{ answer: string; used?: number; limit?: number; tokens?: number }> {
+  const url = `${AUTH_GATEWAY_URL}/ai/query`
+  const body: any = { question }
+  if (context) body.context = context
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (userToken) headers['Authorization'] = `Bearer ${userToken}`
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  })
+
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error || `Gateway error: ${res.status}`)
+  }
+  return data
+}
+
+export function getGatewayUrl(): string {
+  return AUTH_GATEWAY_URL
+}
