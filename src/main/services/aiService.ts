@@ -29,7 +29,7 @@ const PROVIDERS: Record<AIProvider, ProviderConfig> = {
     name: 'DeepSeek V4',
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     apiUrl: 'https://api.deepseek.com/chat/completions',
-    model: 'deepseek-v4',
+    model: 'deepseek-v4-flash',
   },
 }
 
