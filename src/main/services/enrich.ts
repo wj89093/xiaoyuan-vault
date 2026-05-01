@@ -77,10 +77,16 @@ export async function enrichFile(
     await writeFile(filePath, newContent, 'utf-8')
     log.info(`[Enrich] updated frontmatter: ${filePath} → type=${type}`)
 
+    // Step 5: Bidirectional links — update backlinks for this file's typed links
+    const backlinksAdded = await updateBacklinksForFile(filePath, newFrontmatter.title as string || basename(filePath, '.md'))
+    if (backlinksAdded > 0) {
+      log.info(`[Backlink] ${backlinksAdded} backlinks created from ${filePath}`)
+    }
+
     return {
       success: true,
       action: 'updated',
-      message: `类型设为 ${type}，建议目录 ${suggestedFolder}`,
+      message: `类型设为 ${type}，${backlinksAdded > 0 ? `反向链接+${backlinksAdded}` : '建议目录 ' + suggestedFolder}`,
       oldPath: filePath,
       frontmatter: newFrontmatter
     }
@@ -148,6 +154,128 @@ function getDefaultFolder(type: string): string {
   if (!_folderMap) return DEFAULT_FOLDER_MAP[type] || '0-收集'
   return _folderMap[type] || '0-收集'
 }
+
+
+// ─── Phase 1: Bidirectional Links ──────────────────────────────────
+
+/**
+ * Scan all markdown files in vault (recursive)
+ */
+async function scanAllMarkdownFiles(vaultPath: string): Promise<string[]> {
+  const results: string[] = []
+  const seen = new Set<string>()
+
+  async function scan(dir: string) {
+    const { readdir, stat } = await import('fs/promises')
+    let entries: string[]
+    try { entries = await readdir(dir) } catch { return }
+    for (const name of entries.sort()) {
+      if (name.startsWith('.')) continue
+      const fullPath = join(dir, name)
+      try {
+        const fstat = await stat(fullPath)
+        if (fstat.isDirectory()) {
+          await scan(fullPath)
+        } else if (name.endsWith('.md')) {
+          if (!seen.has(fullPath)) { seen.add(fullPath); results.push(fullPath) }
+        }
+      } catch {}
+    }
+  }
+
+  await scan(vaultPath)
+  return results
+}
+
+/**
+ * Find all files that mention a given entity name (case-insensitive)
+ * Scans for: entity name in content OR [[TYPE:ENTITY_NAME]] typed links
+ */
+async function findFilesMentioningEntity(
+  vaultPath: string,
+  entityName: string
+): Promise<string[]> {
+  const files = await scanAllMarkdownFiles(vaultPath)
+  const nameLower = entityName.toLowerCase()
+  const results: string[] = []
+
+  for (const filePath of files) {
+    try {
+      const raw = await readFile(filePath, 'utf-8')
+      // Check in content (plain mention) or typed link format
+      const plainRe = new RegExp(entityName.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&'), 'i')
+      const typedRe = /\[\[[^\]:]+:/g  // just check for typed link presence, we'll check name separately
+      if (plainRe.test(raw) || typedRe.test(raw)) {
+        results.push(filePath)
+      }
+    } catch {}
+  }
+  return results
+}
+
+/**
+ * Add a backlink to target file's seeAlso field
+ * Returns true if backlink was actually added (not duplicate)
+ */
+async function addBacklink(
+  targetPath: string,
+  sourceTitle: string,
+  sourcePath: string
+): Promise<boolean> {
+  if (targetPath === sourcePath) return false
+  try {
+    const raw = await readFile(targetPath, 'utf-8')
+    const { frontmatter } = parseFrontmatter(raw)
+    const seeAlso: string[] = Array.isArray(frontmatter.seeAlso) ? frontmatter.seeAlso : []
+
+    // Deduplicate by page title or path
+    const alreadyLinked = seeAlso.some(s => {
+      const norm = s.replace(/\s+/g, '').toLowerCase()
+      return norm === sourceTitle.replace(/\s+/g, '').toLowerCase() ||
+             norm === sourcePath.replace(/\s+/g, '').toLowerCase()
+    })
+    if (alreadyLinked) return false
+
+    seeAlso.push(sourceTitle)
+    const updates = { seeAlso }
+    const newFrontmatter = { ...frontmatter, ...updates }
+    const newContent = applyFrontmatter(raw, newFrontmatter)
+    await writeFile(targetPath, newContent, 'utf-8')
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Update all backlinks for a file's typed links.
+ * For each entity mentioned, find pages that reference it and add this page to their seeAlso.
+ */
+async function updateBacklinksForFile(filePath: string, fileTitle: string): Promise<number> {
+  const vaultPath = getVaultPath()
+  if (!vaultPath) return 0
+
+  const raw = await readFile(filePath, 'utf-8')
+  const { content } = parseFrontmatter(raw)
+  const typedLinks = extractTypedLinks(content)
+  if (typedLinks.length === 0) return 0
+
+  let added = 0
+  for (const rel of typedLinks) {
+    const targetName = rel.target
+    // Find all files mentioning this entity
+    const mentioning = await findFilesMentioningEntity(vaultPath, targetName)
+    for (const targetPath of mentioning) {
+      const added_one = await addBacklink(targetPath, fileTitle, filePath)
+      if (added_one) {
+        added++
+        log.info(`[Backlink] ${fileTitle} → ${targetName} (via ${targetPath})`)
+      }
+    }
+  }
+  return added
+}
+
 
 // ─── Batch enrich inbox ──────────────────────────────────────────────
 
