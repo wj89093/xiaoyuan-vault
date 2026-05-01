@@ -10,10 +10,12 @@ import { createTray, destroyTray } from './tray'
 import { openImportWindow } from './importWindow'
 import { initDatabase, searchFiles, getFileContent, saveFile, createFolder, listVaultFiles, renameFile, deleteFile, deleteFolder, moveFile, getVaultPath } from './services/database'
 import { enrichFile, enrichInbox, enrichFileWithConfirmation, loadFolderMap, saveFolderMap } from './services/enrich'
+import { generateBriefing } from './services/briefing'
 import { queryVault } from './services/query'
 import { runMaintenance } from './services/maintain'
 import { resolveContentType } from './services/resolver'
 import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISettings } from './services/autoAIEngine'
+import { startAgentAdapter } from './services/agentAdapter'
 import { callAI } from './services/aiService'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
 import { showBubble, hideBubble, setVaultPath } from './services/clipboard'
@@ -716,6 +718,7 @@ app.whenReady().then(() => {
   })
 
   setupIpcHandlers()
+  startAgentAdapter().catch(e => log.warn('[AgentAdapter] start failed:', e))
   createWindow()
   createTray(mainWindow!)
 
