@@ -81,11 +81,12 @@ export async function convertWithJS(filePath: string): Promise<string> {
 // ─── Individual converters ────────────────────────────────────────────────
 
 async function convertPdf(filePath: string): Promise<string> {
-  log.info(`[JS] converting PDF: ${filePath}`)
-  const pdfParse = (await import('pdf-parse')).default
-  const data = await readFile(filePath)
-  const parsed = await pdfParse(data)
-  return `# ${basename(filePath).replace('.pdf', '')}\n\n${parsed.text}`
+  log.info(`[exec] converting PDF: ${filePath}`)
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const execFileAsync = promisify(execFile)
+  const { stdout } = await execFileAsync('pdftotext', [filePath, '-'])
+  return `# ${basename(filePath).replace('.pdf', '')}\n\n${stdout}`
 }
 
 async function convertDocx(filePath: string): Promise<string> {
