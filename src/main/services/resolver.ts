@@ -5,128 +5,165 @@ import { join } from 'path'
 import { callAI } from './aiService'
 import { getVaultPath } from './database'
 
+// ─── LLM-first RESOLVER ─────────────────────────────────────────────
+//
+// gbrain 风格：不是规则判断，而是 LLM 读内容后决定动作。
+//
+// 核心改变：不再「AI 分类 → 规则决定动作」
+//           而是「LLM 读内容 → 返回完整 action plan → 执行 action」
+//
+// action plan 结构：
+// {
+//   intent: 'enrich' | 'query' | 'maintain' | 'unknown',
+//   type: 'person' | 'company' | ... (LLM 判断的内容类型),
+//   entities: [{ name: string, entityType: string, action: 'create' | 'update' | 'link' }],
+//   updates: [{ pageTitle: string, action: 'append_timeline' | 'add_seeAlso' | 'create' | 'noop', entry?: string }],
+//   summary: string,        // LLM 生成的摘要
+//   tags: string[],        // LLM 提取的标签
+//   needsUserConfirm: boolean,
+//   confidence: 'high' | 'medium' | 'low',
+//   reason: string,         // 为什么要这样做
+// }
+
 export interface ResolverResult {
-  type: string          // person/company/project/meeting/deal/concept/research/collection
+  intent: 'enrich' | 'query' | 'maintain' | 'unknown'
+  type: string
   confidence: 'high' | 'medium' | 'low'
-  reason: string        // 一句话解释
+  reason: string
   suggestedFolder: string
   needsUserConfirm: boolean
   extractedNames: string[]
   extractedCompanies: string[]
+  // LLM-first 新增字段
+  entities: Array<{ name: string; entityType: string; action: 'create' | 'update' | 'link' }>
+  updates: Array<{ pageTitle: string; action: 'append_timeline' | 'add_seeAlso' | 'create' | 'noop'; entry?: string }>
+  summary: string
+  tags: string[]
 }
 
-const VALID_TYPES = ['person', 'company', 'project', 'meeting', 'deal', 'concept', 'research', 'collection']
+// ─── System prompt：让 LLM 做完整判断 ───────────────────────────────────
 
-// ─── Read RESOLVER.md from vault ─────────────────────────────────────
+const SYSTEM_PROMPT = `你是晓园 Vault 的智能路由助手。
 
-async function readResolverRules(): Promise<string> {
-  // Return cached if still fresh
-  if (_rulesCache && Date.now() - _rulesCache.loadedAt < RULES_CACHE_TTL_MS) {
-    return _rulesCache.content
-  }
+收到一段内容后，你必须做出完整的判断并返回 JSON action plan。
 
-  const vaultPath = getVaultPath()
-  if (!vaultPath) return DEFAULT_RULES
+## 判断流程
 
-  const resolverPath = join(vaultPath, 'RESOLVER.md')
-  if (!existsSync(resolverPath)) return DEFAULT_RULES
+**第一步：判断意图（intent）**
+- 内容是「用户新建/导入/剪贴板的原始资料」吗？→ intent: "enrich"
+- 内容是「用户在问问题」吗？→ intent: "query"（当前 resolver 不处理 query，跳过）
+- 内容是「维护类请求」吗（检查、修复、整理）？→ intent: "maintain"
+- 无法判断 → intent: "unknown"
 
-  try {
-    const content = await readFile(resolverPath, 'utf-8')
-    _rulesCache = { content, loadedAt: Date.now() }
-    return content
-  } catch {
-    return DEFAULT_RULES
-  }
-}
+**第二步：识别实体（entities）**
+从内容中提取所有提到的实体（人名/公司/项目/事件等），每个实体判断：
+- action: "create"（需要新建页面）
+- action: "update"（需要更新已有页面）
+- action: "link"（只需要在 seeAlso 中关联）
 
-const DEFAULT_RULES = `# RESOLVER - 内容路由决策树
+**第三步：确定更新计划（updates）**
+对每个实体，决定 wiki 中应该做什么：
+- "append_timeline": 在该实体页面的时间线追加一条
+- "add_seeAlso": 在该实体页面添加引用来源
+- "create": 创建新的实体页面草稿
+- "noop": 已知信息已足够，不需要操作
 
-收到内容后，判断内容类型（type）：
-- 有人名 → type: person（和用户确认）
-- 有公司名 → type: company（和用户确认）
-- 有项目特征（里程碑/交付物/时间线）→ type: project
-- 有会议时间+参与方 → type: meeting
-- 有交易金额+条款 → type: deal
-- 有方法论/框架/模型 → type: concept
-- 有研究方法+结论+数据 → type: research
-- 无法判断 → type: collection（进 0-收集/）`
+**第四步：生成摘要和标签**
+- summary: 一句话描述这段内容（用于 frontmatter.summary）
+- tags: 3-5 个标签（人名/公司/事件类型等）
 
-// ─── In-memory cache (avoids repeated disk reads per enrich call) ───
+## 输出格式
 
-let _rulesCache: { content: string; loadedAt: number } | null = null
-const RULES_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+严格返回 JSON，不要有其他文字：
 
-// ─── Resolve content to type ─────────────────────────────────────────
+{
+  "intent": "enrich",
+  "type": "company|person|project|meeting|concept|collection",
+  "confidence": "high|medium|low",
+  "reason": "一句话说明判断理由",
+  "suggestedFolder": "1-人物|2-公司|0-收集 等",
+  "needsUserConfirm": true|false,
+  "extractedNames": ["人名列表"],
+  "extractedCompanies": ["公司名列表"],
+  "entities": [
+    {"name": "实体名", "entityType": "person|company|project|event", "action": "create|update|link"}
+  ],
+  "updates": [
+    {"pageTitle": "目标页面标题", "action": "append_timeline|add_seeAlso|create|noop", "entry": "时间线内容"}
+  ],
+  "summary": "一句话摘要",
+  "tags": ["标签1", "标签2"]
+}`
+
+// ─── RESOLVER 主函数 ─────────────────────────────────────────────
 
 export async function resolveContentType(
   content: string,
   contentTitle?: string
 ): Promise<ResolverResult> {
-  const rules = await readResolverRules()
-  const preview = content.slice(0, 3000)
-  const titleHint = contentTitle ? `\n标题: ${contentTitle}` : ''
+  const preview = content.slice(0, 4000)
+  const titleHint = contentTitle ? `\n内容标题：${contentTitle}` : ''
 
-  const prompt = `${rules}
+  const userPrompt = `请分析以下内容，返回完整的 action plan JSON：
 
----
+${titleHint}
 
-请根据上述决策树规则，分析以下内容。返回一个 JSON 对象：
-
-内容${titleHint}：
+内容：
 ${preview}
 
-返回格式（严格 JSON，不要多余文字）：
-{
-  "type": "person|company|project|meeting|deal|concept|research|collection",
-  "confidence": "high|medium|low",
-  "reason": "一句话解释为什么选择这个类型",
-  "suggestedFolder": "建议的文件夹名（如：1-人物、2-公司、0-收集等）",
-  "needsUserConfirm": true,
-  "extractedNames": ["识别的人名"],
-  "extractedCompanies": ["识别的公司名"]
-}`
+只返回 JSON，不要有解释或其他文字。`
 
   try {
-    const result = await callAI('resolve', { prompt })
-    const parsed = parseResolverResult(result as string)
-    return parsed
+    const result = await callAI('resolve', {
+      prompt: userPrompt,
+      systemPrompt: SYSTEM_PROMPT,
+    })
+    return parseResolverResult(result as string, contentTitle)
   } catch (err: any) {
-    log.error('[Resolver] classification failed:', err.message)
-    return {
-      type: 'collection',
-      confidence: 'low',
-      reason: `AI 分类失败，默认归入收集: ${err.message}`,
-      suggestedFolder: '0-收集',
-      needsUserConfirm: true,
-      extractedNames: [],
-      extractedCompanies: []
-    }
+    log.error('[Resolver] failed:', err.message)
+    return makeDefault()
   }
 }
 
-function parseResolverResult(raw: string): ResolverResult {
-  // Try to extract JSON from AI response
+function parseResolverResult(raw: string, fallbackTitle?: string): ResolverResult {
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    return { type: 'collection', confidence: 'low', reason: '无法解析 AI 返回', suggestedFolder: '0-收集', needsUserConfirm: true, extractedNames: [], extractedCompanies: [] }
-  }
+  if (!jsonMatch) return makeDefault(fallbackTitle)
 
   try {
-    const parsed = JSON.parse(jsonMatch[0])
-    const type = VALID_TYPES.includes(parsed.type) ? parsed.type : 'collection'
-    const confidence = ['high', 'medium', 'low'].includes(parsed.confidence) ? parsed.confidence : 'low'
-
+    const p = JSON.parse(jsonMatch[0])
     return {
-      type,
-      confidence: confidence as 'high' | 'medium' | 'low',
-      reason: parsed.reason || '',
-      suggestedFolder: parsed.suggestedFolder || '0-收集',
-      needsUserConfirm: parsed.needsUserConfirm !== false,
-      extractedNames: Array.isArray(parsed.extractedNames) ? parsed.extractedNames : [],
-      extractedCompanies: Array.isArray(parsed.extractedCompanies) ? parsed.extractedCompanies : []
+      intent: ['enrich', 'query', 'maintain'].includes(p.intent) ? p.intent : 'enrich',
+      type: p.type || 'collection',
+      confidence: ['high', 'medium', 'low'].includes(p.confidence) ? p.confidence : 'medium',
+      reason: p.reason || '',
+      suggestedFolder: p.suggestedFolder || '0-收集',
+      needsUserConfirm: p.needsUserConfirm !== false,
+      extractedNames: Array.isArray(p.extractedNames) ? p.extractedNames : [],
+      extractedCompanies: Array.isArray(p.extractedCompanies) ? p.extractedCompanies : [],
+      // LLM-first 新字段
+      entities: Array.isArray(p.entities) ? p.entities : [],
+      updates: Array.isArray(p.updates) ? p.updates : [],
+      summary: p.summary || '',
+      tags: Array.isArray(p.tags) ? p.tags : [],
     }
   } catch {
-    return { type: 'collection', confidence: 'low', reason: 'AI 返回格式异常', suggestedFolder: '0-收集', needsUserConfirm: true, extractedNames: [], extractedCompanies: [] }
+    return makeDefault(fallbackTitle)
+  }
+}
+
+function makeDefault(title?: string): ResolverResult {
+  return {
+    intent: 'enrich',
+    type: 'collection',
+    confidence: 'low',
+    reason: '解析失败，默认进入收集',
+    suggestedFolder: '0-收集',
+    needsUserConfirm: true,
+    extractedNames: [],
+    extractedCompanies: [],
+    entities: [],
+    updates: [],
+    summary: '',
+    tags: [],
   }
 }

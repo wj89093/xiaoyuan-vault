@@ -41,36 +41,43 @@ export async function enrichFile(
     }
 
     // Step 2: Determine type and folder
+    // LLM-first: Use resolver's action plan (entities + updates) instead of hardcoded logic
+    // classification now includes: entities[], updates[], summary, tags
     const type = confirmedType || classification?.type || frontmatter.type || 'collection'
     const suggestedFolder = confirmedFolder || classification?.suggestedFolder || getDefaultFolder(type)
 
-    // Step 3: Update frontmatter
-    const updates: Record<string, unknown> = {
+    // Build frontmatter updates from LLM's action plan
+    const enrichUpdates: Record<string, unknown> = {
       type,
       updated: new Date().toISOString().slice(0, 10)
     }
 
     if (classification) {
-      if (classification.confidence) updates.confidence = classification.confidence
-      if (classification.reason) updates.summary = classification.reason
-      if (classification.extractedNames?.length) {
-        updates.tags = [...(frontmatter.tags || []), ...classification.extractedNames]
+      if (classification.confidence) enrichUpdates.confidence = classification.confidence
+      // Use LLM-generated summary instead of raw reason
+      if (classification.summary) enrichUpdates.summary = classification.summary.slice(0, 200)
+      // Use LLM-extracted tags + existing tags
+      const llmTags = classification.tags || []
+      const existingTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : []
+      const newTags = llmTags.filter((t: string) => !existingTags.includes(t))
+      if (newTags.length > 0) enrichUpdates.tags = [...existingTags, ...newTags]
+      // Use LLM-decided entities for relationships (not regex extraction)
+      if (classification.entities?.length > 0) {
+        const rels = classification.entities.map((e: any) => ({
+          type: e.entityType || 'mentions',
+          target: e.name,
+          confidence: 'EXTRACTED' as const,
+          source: classification.reason || '',
+        }))
+        const existingRels = Array.isArray(frontmatter.relationships) ? frontmatter.relationships : []
+        const existingTargets = new Set(existingRels.map((r: Relationship) => `${r.type}:${r.target}`))
+        const newRels = rels.filter((r: any) => !existingTargets.has(`${r.type}:${r.target}`))
+        if (newRels.length > 0) enrichUpdates.relationships = [...existingRels, ...newRels]
+        log.info(`[Enrich-LLM] entities: ${newRels.map((r: any) => r.target).join(', ')}`)
       }
     }
 
-    // Step 3b: Extract typed links from content (GBrain format: [[公司:中科国生]])
-    const extractedRels = extractTypedLinks(content)
-    if (extractedRels.length > 0) {
-      const existingRels = Array.isArray(frontmatter.relationships) ? frontmatter.relationships : []
-      const existingTargets = new Set(existingRels.map((r: Relationship) => `${r.type}:${r.target}`))
-      const newRels = extractedRels.filter((r: Relationship) => !existingTargets.has(`${r.type}:${r.target}`))
-      if (newRels.length > 0) {
-        updates.relationships = [...existingRels, ...newRels]
-        log.info(`[Enrich] typed links: ${newRels.map((r: Relationship) => r.target).join(', ')}`)
-      }
-    }
-
-    const newFrontmatter = { ...frontmatter, ...updates }
+    const newFrontmatter = { ...frontmatter, ...enrichUpdates }
     const newContent = applyFrontmatter(raw, newFrontmatter)
 
     // Step 4: Update frontmatter in place (do NOT move file)
@@ -87,7 +94,7 @@ export async function enrichFile(
     const { updated: updatedPages, pending: pendingPages } = await enrichLinkedEntityPages(
       filePath,
       newFrontmatter.title as string || basename(filePath, '.md'),
-      extractedRels
+      classification?.entities || []
     )
     const phase2info = updatedPages.length > 0
       ? `, 相关页面+${updatedPages.join(',')}`
@@ -250,7 +257,7 @@ async function addBacklink(
 
     seeAlso.push(sourceTitle)
     const updates = { seeAlso }
-    const newFrontmatter = { ...frontmatter, ...updates }
+    const newFrontmatter = { ...frontmatter, ...enrichUpdates }
     const newContent = applyFrontmatter(raw, newFrontmatter)
     await writeFile(targetPath, newContent, 'utf-8')
     return true

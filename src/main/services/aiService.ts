@@ -106,9 +106,9 @@ async function callOpenAICompatible(
       break
 
     case 'resolve':
-      systemPrompt = `你是一个知识内容分类助手。严格按照提供的决策树规则进行分类。只返回 JSON，不要解释。`
-      userPrompt = params.prompt
-      maxTokens = 500
+      systemPrompt = params.systemPrompt || `你是一个知识助手。只返回 JSON，不要解释。`
+      userPrompt = params.prompt || ''
+      maxTokens = 800
       break
 
     default:
