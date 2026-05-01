@@ -29,7 +29,7 @@ const PROVIDERS: Record<AIProvider, ProviderConfig> = {
     name: 'DeepSeek V4',
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     apiUrl: 'https://api.deepseek.com/chat/completions',
-    model: 'deepseek-chat',
+    model: 'deepseek-v4',
   },
 }
 
@@ -40,11 +40,11 @@ export async function callAI(
   params: Record<string, any>,
   provider?: AIProvider
 ): Promise<any> {
-  const selectedProvider = provider || 'qwen'
+  const selectedProvider = provider || 'deepseek'
   const config = PROVIDERS[selectedProvider]
 
-  if (!config.apiKey && selectedProvider !== 'qwen') {
-    log.warn(`[AI] ${selectedProvider} API key not set, falling back to Qwen`)
+  if (!config.apiKey) {
+    log.warn(`[AI] ${selectedProvider} API key not set, falling back to qwen`)
     return callAI(action, params, 'qwen')
   }
 
