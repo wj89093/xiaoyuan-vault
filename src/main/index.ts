@@ -2,6 +2,40 @@ import 'dotenv/config'
 import Store from 'electron-store'
 
 const store = new Store()
+
+// ─── Auth Token Store ───────────────────────────────────────────
+
+function handleAuthCallback(url: string) {
+  try {
+    const parsed = new URL(url)
+    const token = parsed.searchParams.get('token')
+    const email = parsed.searchParams.get('email')
+    if (token) {
+      store.set('authToken', token)
+      if (email) store.set('authEmail', email)
+      log.info('[Auth] Token saved from OAuth callback')
+      BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('auth:tokenReceived', { token, email })
+      })
+    }
+  } catch (err) {
+    log.error('[Auth] Callback parse error:', err)
+  }
+}
+
+function getAuthToken(): string | null {
+  return store.get('authToken', null) as string | null
+}
+
+function getAuthEmail(): string | null {
+  return store.get('authEmail', null) as string | null
+}
+
+function clearAuthToken() {
+  store.delete('authToken')
+  store.delete('authEmail')
+}
+
 import { join } from 'path'
 import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
 import { mkdir, readFile, writeFile, copyFile, rename } from 'fs/promises'
@@ -739,6 +773,15 @@ AI 自动维护反向链接。
     return true
   })
 }
+
+// ─── URL Scheme 注册 ────────────────────────────────────────
+app.setAsDefaultProtocolClient('xiaoyuan')
+
+// 处理 xiaoyuan:// URL 回调（macOS）
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  handleAuthCallback(url)
+})
 
 app.whenReady().then(() => {
   log.info('App starting...')
