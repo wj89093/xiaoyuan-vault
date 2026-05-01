@@ -169,15 +169,11 @@ async function convertZip(filePath: string): Promise<string> {
 
 async function convertImageOCR(filePath: string): Promise<string> {
   log.info(`[JS] OCR image: ${filePath}`)
-  const Tesseract = await import('tesseract.js')
-  const result = await Tesseract.recognize(filePath, 'eng+chi_sim', {
-    logger: m => {
-      if (m.status === 'recognizing text') {
-        log.info(`[OCR] ${Math.round(m.progress * 100)}%`)
-      }
-    }
-  })
-  return `# ${basename(filePath)}\n\n${result.data.text}`
+  const { createWorker } = await import('tesseract.js')
+  const worker = await createWorker('eng+chi_sim')
+  const { data: { text } } = await worker.recognize(filePath)
+  await worker.terminate()
+  return `# ${basename(filePath)}\n\n${text}`
 }
 
 export function getSupportedExtensions(): string[] {
