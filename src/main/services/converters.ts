@@ -98,14 +98,14 @@ async function convertDocx(filePath: string): Promise<string> {
 async function convertXlsx(filePath: string): Promise<string> {
   log.info(`[JS] converting XLSX: ${filePath}`)
   const XLSX = await import('xlsx')
-  const workbook = XLSX.readFile(filePath)
+  const workbook = XLSX.default.readFile(filePath)
   const lines: string[] = []
 
   for (const sheetName of workbook.SheetNames) {
     lines.push(`## ${sheetName}`)
     const sheet = workbook.Sheets[sheetName]
-    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+    const range = XLSX.default.utils.decode_range(sheet['!ref'] || 'A1')
+    const data = XLSX.default.utils.sheet_to_json(sheet, { header: 1, defval: '' })
     for (const row of data as any[][]) {
       const filtered = row.filter((c: any) => c !== '')
       if (filtered.length > 0) {
