@@ -342,7 +342,8 @@ function App(): JSX.Element {
 
   // Refresh file list after import
   useEffect(() => {
-    return (window.api as any).onImportCompleted?.(async () => {
+    if (!window.api) return
+    return window.api.onImportCompleted?.(async () => {
       const fileList = await window.api.listFiles()
       setFiles(fileList)
       showToast('success', '文件导入成功')
