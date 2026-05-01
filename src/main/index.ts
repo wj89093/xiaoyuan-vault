@@ -19,7 +19,7 @@ import { runMaintenance } from './services/maintain'
 import { resolveContentType } from './services/resolver'
 import { startAutoAIEngine, stopAutoAIEngine, readAutoAISettings, writeAutoAISettings } from './services/autoAIEngine'
 import { startAgentAdapter } from './services/agentAdapter'
-import { callAI } from './services/aiService'
+import { callAI, callAIGateway } from './services/aiService'
 import { convertWithJS, canConvertWithJS, needsMarkitdownConversion, getSupportedExtensions, canTranscribeAudio } from './services/converters'
 import { showBubble, hideBubble, setVaultPath } from './services/clipboard'
 import { askQuestion, askQuestionStream, buildAnswerPrompt, createSession, loadSessions, deleteSession, loadMessages, saveMessages } from './services/chat'
@@ -600,6 +600,12 @@ AI 自动维护反向链接。
   })
 
   ipcMain.handle('ai:reason', async (_, question: string, context: string[]) => {
+    const token = getAuthToken()
+    if (token) {
+      // Logged in → use Auth Gateway (quota controlled)
+      return callAIGateway(question, context, token)
+    }
+    // No token → use direct API (deprecated, but allows offline use)
     return callAI('reason', { question, context })
   })
 
