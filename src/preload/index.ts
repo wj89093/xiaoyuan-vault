@@ -134,6 +134,21 @@ const api = {
   queryVault: (question: string): Promise<any> =>
     ipcRenderer.invoke('query:vault', question),
 
+  // Auth
+  authGetToken: (): Promise<string | null> =>
+    ipcRenderer.invoke('auth:getToken'),
+  authGetEmail: (): Promise<string | null> =>
+    ipcRenderer.invoke('auth:getEmail'),
+  authClear: (): Promise<boolean> =>
+    ipcRenderer.invoke('auth:clear'),
+  authOpenLogin: (): Promise<string> =>
+    ipcRenderer.invoke('auth:openLogin'),
+  onAuthTokenReceived: (callback: (data: { token: string; email: string }) => void) => {
+    const sub = (_: any, data: any) => callback(data)
+    ipcRenderer.on('auth:tokenReceived', sub)
+    return () => ipcRenderer.removeListener('auth:tokenReceived', sub)
+  },
+
   providerGet: (): Promise<string> =>
     ipcRenderer.invoke('provider:get'),
   providerSet: (provider: string): Promise<boolean> =>

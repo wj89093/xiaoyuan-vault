@@ -1,4 +1,7 @@
 import 'dotenv/config'
+import Store from 'electron-store'
+
+const store = new Store()
 import { join } from 'path'
 import { app, BrowserWindow, ipcMain, dialog, globalShortcut } from 'electron'
 import { mkdir, readFile, writeFile, copyFile, rename } from 'fs/promises'
@@ -352,6 +355,25 @@ AI 自动维护反向链接。
       await stopAutoAIEngine()
     }
     return true
+  })
+
+  // ─── Auth Token ─────────────────────────────────────────────
+  ipcMain.handle('auth:getToken', async () => {
+    return getAuthToken()
+  })
+  ipcMain.handle('auth:getEmail', async () => {
+    return getAuthEmail()
+  })
+  ipcMain.handle('auth:clear', async () => {
+    clearAuthToken()
+    return true
+  })
+  ipcMain.handle('auth:openLogin', async () => {
+    const gatewayUrl = process.env.AUTH_GATEWAY_URL || 'https://chance-unnamed-camera.ngrok-free.dev'
+    // Open login page - after login, redirect to xiaoyuan://auth/callback
+    const loginUrl = `${gatewayUrl}/auth/email/login?redirect_uri=xiaoyuan%3A%2F%2Fauth%2Fcallback`
+    require('electron').shell.openExternal(loginUrl)
+    return loginUrl
   })
 
   // AI Provider settings
