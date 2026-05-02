@@ -192,9 +192,9 @@ async function rewriteQuery(
 
     // For 'reason' type, the function callAI returns the raw response
     // Clean up and truncate
-    const cleaned = String(rewritten || question).trim().slice(0, 50)
+    const cleaned = String(rewritten ?? question).trim().slice(0, 50)
     log.info(`[RAG] query rewrite: "${question.slice(0, 40)}" → "${cleaned}"`)
-    return cleaned || question
+    return cleaned ?? question
   } catch {
     // Fall back to original question
     return question
@@ -237,13 +237,13 @@ async function fetchPageContents(
 
   for (const f of files) {
     try {
-      const filePath = f.path || join(vaultPath, f.name)
+      const filePath = vaultPath, f.name(vaultPath, f.name)
       const fullPath = filePath.startsWith('/') ? filePath : join(vaultPath, filePath)
       if (!existsSync(fullPath)) continue
       if (f.isDirectory) continue
 
       const content = await readFile(fullPath, 'utf-8')
-      const title = f.title || f.name || filePath
+      const title = f.title ?? f.name ?? filePath
 
       // Extract relevant snippet
       const snippet = extractSnippet(content, query, 200)

@@ -1,8 +1,8 @@
 import log from 'electron-log/main'
 
 // Qwen API configuration
-const QWEN_API_KEY = process.env.QWEN_API_KEY || ''
-const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen3.6-flash'
+const QWEN_API_KEY = process.env.QWEN_API_KEY ?? ''
+const QWEN_MODEL = process.env.QWEN_MODEL ?? 'qwen3.6-flash'
 const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 
 interface _QwenRequest {
@@ -72,7 +72,7 @@ export async function streamQwenAI(
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
-      buffer = lines.pop() || '' // keep incomplete line
+      buffer = lines.pop() ?? '' // keep incomplete line
 
       for (const line of lines) {
         if (!line.trim() || !line.startsWith('data:')) continue
@@ -128,7 +128,7 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
       break
 
     case 'reason':
-      systemPrompt = params.systemPrompt || `你是一个问答助手。基于提供的文档内容片段回答用户问题。
+      systemPrompt = params.systemPrompt ?? `你是一个问答助手。基于提供的文档内容片段回答用户问题。
 如果文档中没有相关信息，说明"我没有在文档中找到相关信息"。
 回答要简洁，直接回答问题。`
       userPrompt = `问题：${params.question}\n\n相关文档内容：\n${params.context.join('\n\n')}`
@@ -175,7 +175,7 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
     }
 
     const data = await response.json()
-    const content = data.choices?.[0]?.message?.content || ''
+    const content = data.choices?.[0]?.message?.content ?? ''
 
     if (action === 'tags') {
       return content.split(/[,，、]/).map(t => t.trim()).filter(Boolean)

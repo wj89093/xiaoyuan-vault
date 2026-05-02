@@ -102,7 +102,7 @@ async function convertXlsx(filePath: string): Promise<string> {
   for (const sheetName of workbook.SheetNames) {
     lines.push(`## ${sheetName}`)
     const sheet = workbook.Sheets[sheetName]
-    XLSX.default.utils.decode_range(sheet['!ref'] || 'A1')
+    XLSX.default.utils.decode_range(sheet['!ref'] ?? 'A1')
     const data = XLSX.default.utils.sheet_to_json(sheet, { header: 1, defval: '' })
     for (const row of data as any[][]) {
       const filtered = row.filter((c: any) => c !== '')
@@ -123,8 +123,8 @@ async function convertPptx(filePath: string): Promise<string> {
   const lines: string[] = [`# ${basename(filePath).replace('.pptx', '').replace('.ppt', '')}`]
 
   for (const entry of slideEntries.sort((a, b) => {
-    const na = parseInt(a.entryName.match(/slide(\d+)/)?.[1] || '0')
-    const nb = parseInt(b.entryName.match(/slide(\d+)/)?.[1] || '0')
+    const na = parseInt(a.entryName.match(/slide(\d+)/)?.[1] ?? '0')
+    const nb = parseInt(b.entryName.match(/slide(\d+)/)?.[1] ?? '0')
     return na - nb
   })) {
     const xml = entry.getData().toString('utf-8')
