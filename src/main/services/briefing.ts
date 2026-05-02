@@ -107,8 +107,8 @@ ${logLines || '无日志'}
       updatedPages: typeof p.updatedPages === 'number' ? p.updatedPages : 0,
       entities: Array.isArray(p.entities) ? p.entities.slice(0, 5) : [],
       highlights: Array.isArray(p.highlights) ? p.highlights.slice(0, 5) : [],
-      health: p.health || '未知',
-      raw: p.raw || '',
+      health: p.health ?? '未知',
+      raw: p.raw ?? '',
     }
   } catch (err: any) {
     log.warn('[Briefing] LLM failed:', err.message)
@@ -132,14 +132,14 @@ async function getRecentChanges(
     try {
       const raw = await readFile(f.path, 'utf-8')
       const { frontmatter } = parseFrontmatter(raw)
-      const updated = frontmatter.updated || ''
+      const updated = frontmatter.updated ?? ''
       if (updated) {
         const t = new Date(updated).getTime()
         if (t >= cutoff) {
           results.push({
             path: f.path,
-            title: frontmatter.title || f.name.replace('.md', ''),
-            type: frontmatter.type || 'collection',
+            title: frontmatter.title ?? f.name.replace('.md', ''),
+            type: frontmatter.type ?? 'collection',
             updated,
           })
         }

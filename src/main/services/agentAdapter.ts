@@ -21,7 +21,7 @@ import { enrichFile } from './enrich'
 import { searchFiles } from './database'
 import { saveFile } from './database'
 
-const COMMANDS_DIR = join(process.env.HOME || '', '.vault', 'commands')
+const COMMANDS_DIR = join(process.env.HOME ?? '', '.vault', 'commands')
 
 export async function startAgentAdapter(): Promise<void> {
   if (!existsSync(COMMANDS_DIR)) {
@@ -54,7 +54,7 @@ async function processCommand(filePath: string): Promise<void> {
 
   const { action, params = {}, id, result: resultPath } = cmd
 
-  log.info('[AgentAdapter] executing:', action, id || '')
+  log.info('[AgentAdapter] executing:', action, id ?? '')
 
   let output: any = { ok: false, action, id, error: 'unknown action' }
 

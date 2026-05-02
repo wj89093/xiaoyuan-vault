@@ -282,9 +282,9 @@ function showCaptureCard(centerX: number, centerY: number, dropData?: { filePath
     if (dropData) {
       cardWindow.webContents.executeJavaScript(`
         (function() {
-          window.__bubblePaths = ${JSON.stringify(dropData.filePaths || [])};
+          window.__bubblePaths = ${JSON.stringify(dropData.filePaths ?? [])};
           var fpl = window.__bubblePaths;
-          var txt = ${JSON.stringify(dropData.text || '')};
+          var txt = ${JSON.stringify(dropData.text ?? '')};
           if (fpl.length) {
             var fl = document.getElementById('fileList');
             if (fl) { fl.style.display='block'; fl.innerHTML = fpl.map(function(n){return '<div class="item"><span class="icon">📄</span>'+n.split('/').pop()+'</div>'}).join(''); }
@@ -361,7 +361,7 @@ if (window.__bubblePaths && window.__bubblePaths.length) {
   content.style.display='block'; hint.style.display='none'
   content.value = droppedFiles.map(function(f){return '📎 '+f.name}).join('\\n')
 }
-var txt = ${JSON.stringify(dropData?.text || '')};
+var txt = ${JSON.stringify(dropData?.text ?? '')};
 if (txt) { content.style.display='block'; hint.style.display='none'; content.value = (content.value ? content.value+'\\n'+txt : txt) }
 
 // Click dropzone to type
@@ -444,7 +444,7 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
     if (raw && raw.startsWith('SAVE:')) {
       try {
         const data = JSON.parse(raw.replace('SAVE:', ''))
-        const allPaths = (data.files || []).map((f: any) => f.path).filter(Boolean)
+        const allPaths = (data.files ?? []).map((f: any) => f.path).filter(Boolean)
         if (allPaths.length > 0) {
           const { rename } = await import('fs/promises')
           const { basename } = await import('path')

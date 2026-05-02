@@ -33,7 +33,7 @@ export async function queryVault(question: string): Promise<QueryResult> {
         const content = await readFile(file.path, 'utf-8')
         contexts.push({
           path: file.path,
-          title: file.title || file.name,
+          title: file.title ?? file.name,
           content: content.slice(0, 2000)
         })
       } catch {

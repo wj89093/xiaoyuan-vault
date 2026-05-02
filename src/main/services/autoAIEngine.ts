@@ -97,7 +97,7 @@ export function stopAutoAIEngine(): Promise<void> {
 // ─── Core auto AI logic ──────────────────────────────────────────────────
 
 async function runAutoAI(): Promise<void> {
-  const settings = currentSettings || await readAutoAISettings()
+  const settings = currentSettings ?? await readAutoAISettings()
   if (!settings?.enabled) return
 
   const vaultPath = getVaultPath()
@@ -345,9 +345,9 @@ export async function rebuildIndexFile(vaultPath: string): Promise<void> {
 
       if (!byFolder[folder]) byFolder[folder] = []
       byFolder[folder].push({
-        title: frontmatter.title || basename(filePath, '.md'),
-        type: frontmatter.type || 'collection',
-        summary: frontmatter.summary || '-'
+        title: frontmatter.title ?? basename(filePath, '.md'),
+        type: frontmatter.type ?? 'collection',
+        summary: frontmatter.summary ?? '-'
       })
     } catch {
       // Skip unreadable files
@@ -440,8 +440,8 @@ export function assessContentWorth(rawContent: string): AssessResult {
   }
 
   // Skip ad-like content (high density of emoji + links)
-  const emojiCount = (content.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) || []).length
-  const linkCount = (content.match(/https?:\/\/[^\s]+/g) || []).length
+  const emojiCount = (content.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu) ?? []).length
+  const linkCount = (content.match(/https?:\/\/[^\s]+/g) ?? []).length
   if (emojiCount > 10 && linkCount > 5 && wordCount < 300) {
     return { worth: false, score: 0.2, reason: 'ad-like content (emoji+links)', contentType: 'trash' }
   }
