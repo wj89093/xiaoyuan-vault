@@ -13,3 +13,5 @@ chi_sim.traineddata
 eng.traineddata
 *.db-shm
 *.db-wal
+electron.vite.config.js
+tsconfig.tsbuildinfo
