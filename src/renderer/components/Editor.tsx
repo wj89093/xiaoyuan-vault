@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import React from 'react'
+import DOMPurify from 'dompurify'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
@@ -202,14 +203,14 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
           )}
 
           {nativePreview.type === 'html' && nativePreview.content && (
-            <div className="native-preview-html" dangerouslySetInnerHTML={{ __html: nativePreview.content }} />
+            <div className="native-preview-html" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(nativePreview.content, { USE_PROFILES: { html: true }, ALLOWED_TAGS: ['p','br','h1','h2','h3','h4','h5','h6','ul','ol','li','table','thead','tbody','tr','th','td','blockquote','pre','code','em','strong','a','img','div','span','hr','br'], ALLOWED_ATTR: ['href','src','alt','class','style'] }) }} />
           )}
 
           {nativePreview.type === 'sheets' && nativePreview.sheets && nativePreview.sheetNames && (
             <div className="native-preview-sheets">
               <div
                 className="sheet-content"
-                dangerouslySetInnerHTML={{ __html: nativePreview.sheets[nativePreview.sheetNames[activeSheet]] || '' }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(nativePreview.sheets[nativePreview.sheetNames[activeSheet]] || '') }}
               />
             </div>
           )}

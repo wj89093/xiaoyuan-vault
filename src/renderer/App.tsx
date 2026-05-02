@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import React from 'react'
+import log from 'electron-log/renderer'
 import { FileTree } from './components/FileTree'
 import { Editor } from './components/Editor'
 import { AIChat } from './components/AIChat'
@@ -226,7 +228,7 @@ function App(): JSX.Element {
       const code = e?.code ?? e?.cause?.code
       const msg = e?.message ?? ''
       if (code === 'ENOENT' || msg.includes('ENOENT') || msg.includes('no such file')) {
-        console.warn('[FileTree] file no longer exists, skipping:', filePath)
+        log.warn('[FileTree] file no longer exists, skipping:', filePath)
         return
       }
       throw e  // re-throw other errors

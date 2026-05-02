@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import log from 'electron-log/renderer'
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Trash2, Pencil, MoveRight, Plus, FolderPlus } from 'lucide-react'
 import type { FileInfo } from '../types'
 
@@ -83,13 +84,13 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
   }
 
   const handleDelete = async (file: FileInfo) => {
-    console.log('[FileTree] handleDelete called:', file.path, 'isDirectory:', file.isDirectory)
+    log.info('[FileTree] handleDelete called:', file.path, 'isDirectory:', file.isDirectory)
     setContextMenu(null)
     const api = window.api as any
     const result = file.isDirectory
       ? await api.deleteFolder(file.path)
       : await api.deleteFile(file.path)
-    console.log('[FileTree] delete result:', result)
+    log.info('[FileTree] delete result:', result)
     onRefresh?.()
   }
 

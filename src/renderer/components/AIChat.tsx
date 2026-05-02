@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import React from 'react'
+import log from 'electron-log/renderer'
 import { Send, Bot, User, Trash2, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, MessageCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -95,7 +96,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
       await onSaveToVault(msgId)
       setSavedIds(prev => new Set(prev).add(msgId))
     } catch (e) {
-      console.error('Save failed:', e)
+      log.error('Save failed:', e)
     } finally {
       setSavingId(null)
     }

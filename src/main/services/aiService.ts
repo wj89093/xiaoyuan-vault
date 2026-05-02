@@ -203,7 +203,10 @@ export function getDefaultProvider(): AIProvider {
 // ─── Auth Gateway AI 调用 ───────────────────────────────────────
 // 用于：Electron app 调 Auth Gateway（平台统一提供 AI）
 // Gateway 验证 token + 扣 quota + 调 DeepSeek
-const AUTH_GATEWAY_URL = process.env.AUTH_GATEWAY_URL || 'https://chance-unnamed-camera.ngrok-free.dev'
+const AUTH_GATEWAY_URL = process.env.AUTH_GATEWAY_URL
+if (!AUTH_GATEWAY_URL && process.env.NODE_ENV === 'production') {
+  throw new Error('AUTH_GATEWAY_URL 环境变量未配置，Auth Gateway 无法调用')
+}
 
 export async function callAIGateway(
   question: string,
