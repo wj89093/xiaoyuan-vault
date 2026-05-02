@@ -104,7 +104,7 @@ async function indexFile(filePath: string): Promise<void> {
     const relPath = filePath.replace(vaultPath + '/', '')
     const name = basename(relPath)
     const { frontmatter } = parseFrontmatter(content)
-    const title = frontmatter.title || extractTitle(content) || name.replace(/\.md$/, '')
+    const title = frontmatter.title ?? extractTitle(content) || name.replace(/\.md$/, '')
     const hash = simpleHash(content)
 
     const stmt = db.prepare(`
@@ -121,7 +121,7 @@ async function indexFile(filePath: string): Promise<void> {
       name,
       title,
       content,
-      frontmatter.tags?.join(', ') || '',
+      frontmatter.tags?.join(', ') ?? '',
       JSON.stringify(frontmatter),
       stats.mtimeMs,
       hash,
@@ -189,11 +189,11 @@ export function searchFiles(query: string): Promise<FileRecord[]> {
 function normalizeRecord(r: any): FileRecord {
   return {
     path: r.path,
-    name: r.name || r.path.split('/').pop() || r.path,
+    name: r.name ?? r.path.split('/').pop() ?? r.path,
     isDirectory: false,
     modified: r.modified_at,
-    title: r.title || undefined,
-    tags: r.tags || undefined
+    title: r.title ?? undefined,
+    tags: r.tags ?? undefined
   }
 }
 
@@ -216,7 +216,7 @@ export async function saveFile(filePath: string, content: string): Promise<boole
       const stats = await stat(fullPath)
       const name = basename(relPath)
       const { frontmatter } = parseFrontmatter(content)
-      const title = frontmatter.title || extractTitle(content) || name.replace(/\.md$/, '')
+      const title = frontmatter.title ?? extractTitle(content) || name.replace(/\.md$/, '')
       const hash = simpleHash(content)
       const folder = relPath.includes('/')
         ? relPath.split('/').slice(0, -1).join('/')
@@ -226,7 +226,7 @@ export async function saveFile(filePath: string, content: string): Promise<boole
         INSERT OR REPLACE INTO files (path, name, title, content, tags, frontmatter, modified_at, content_hash, folder)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      stmt.run(relPath, name, title, content, frontmatter.tags?.join(', ') || '', JSON.stringify(frontmatter), stats.mtimeMs, hash, folder)
+      stmt.run(relPath, name, title, content, frontmatter.tags?.join(', ') ?? '', JSON.stringify(frontmatter), stats.mtimeMs, hash, folder)
     }
 
     return true
@@ -268,13 +268,13 @@ export async function renameFile(oldPath: string, newName: string): Promise<bool
         const content = await readFile(newFullPath, 'utf-8')
         const stats = await stat(newFullPath)
         const { frontmatter } = parseFrontmatter(content)
-        const title = frontmatter.title || extractTitle(content) || newName.replace(/\.md$/, '')
+        const title = frontmatter.title ?? extractTitle(content) || newName.replace(/\.md$/, '')
         const hash = simpleHash(content)
         const folder = newRelPath.includes('/') ? newRelPath.split('/').slice(0, -1).join('/') : ''
 
         db.prepare(`
           UPDATE files SET content = ?, title = ?, tags = ?, frontmatter = ?, modified_at = ?, content_hash = ?, folder = ? WHERE path = ?
-        `).run(content, title, frontmatter.tags?.join(', ') || '', JSON.stringify(frontmatter), stats.mtimeMs, hash, folder, newRelPath)
+        `).run(content, title, frontmatter.tags?.join(', ') ?? '', JSON.stringify(frontmatter), stats.mtimeMs, hash, folder, newRelPath)
       }
     }
 
@@ -314,11 +314,11 @@ export async function moveFile(oldPath: string, newParentDir: string): Promise<b
         const content = await readFile(newFullPath, 'utf-8')
         const stats = await stat(newFullPath)
         const { frontmatter } = parseFrontmatter(content)
-        const title = frontmatter.title || extractTitle(content) || basename(oldRelPath).replace(/\.md$/, '')
+        const title = frontmatter.title ?? extractTitle(content) || basename(oldRelPath).replace(/\.md$/, '')
         const hash = simpleHash(content)
         db.prepare(`
           UPDATE files SET content = ?, title = ?, tags = ?, frontmatter = ?, modified_at = ?, content_hash = ? WHERE path = ?
-        `).run(content, title, frontmatter.tags?.join(', ') || '', JSON.stringify(frontmatter), stats.mtimeMs, hash, newRelPath)
+        `).run(content, title, frontmatter.tags?.join(', ') ?? '', JSON.stringify(frontmatter), stats.mtimeMs, hash, newRelPath)
       }
     }
     return true
@@ -421,8 +421,8 @@ async function scanDirectory(dir: string, basePath: string = ''): Promise<FileRe
       if (db) {
         const record = db.prepare('SELECT title, tags FROM files WHERE path = ?').get(relPath) as any
         if (record) {
-          title = record.title || undefined
-          tags = record.tags || undefined
+          title = record.title ?? undefined
+          tags = record.tags ?? undefined
         }
       }
       results.push({

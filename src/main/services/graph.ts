@@ -146,11 +146,11 @@ export async function rebuildGraph(): Promise<{ nodes: number; edges: number }> 
     // Step 6: Update edge counts on nodes
     const edgeCounts = new Map<string, number>()
     for (const edge of edges) {
-      edgeCounts.set(edge.source, (edgeCounts.get(edge.source) || 0) + 1)
-      edgeCounts.set(edge.target, (edgeCounts.get(edge.target) || 0) + 1)
+      edgeCounts.set(edge.source, (edgeCounts.get(edge.source) ?? 0) + 1)
+      edgeCounts.set(edge.target, (edgeCounts.get(edge.target) ?? 0) + 1)
     }
     for (const node of nodes) {
-      node.edge_count = edgeCounts.get(node.id) || 0
+      node.edge_count = edgeCounts.get(node.id) ?? 0
     }
 
     const graph: GraphData = {
@@ -200,13 +200,13 @@ async function tokenizeDocument(
   const content = await readFile(fullPath, 'utf-8')
 
   // Skip system files
-  const filename = file.split('/').pop() || ''
+  const filename = file.split('/').pop() ?? ''
   if (['index.md', 'log.md', 'RESOLVER.md', 'schema.md'].includes(filename)) {
     return null
   }
 
   // Extract title and tags from frontmatter
-  let title = file.replace(/\.md$/, '').split('/').pop() || file
+  let title = file.replace(/\.md$/, '').split('/').pop() ?? file
   let tags: string[] = []
 
   const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/)
@@ -246,11 +246,11 @@ export function tokenize(text: string): Map<string, number> {
 
   // CJK: split into bigrams (2-char groups)
   const cjkPattern = /[\u4e00-\u9fff\u3400-\u4dbf]/g
-  const cjkChars = cleaned.match(cjkPattern) || []
+  const cjkChars = cleaned.match(cjkPattern) ?? []
   for (let i = 0; i < cjkChars.length - 1; i++) {
     const bigram = cjkChars[i] + cjkChars[i + 1]
     if (!STOPWORDS.has(bigram)) {
-      tokenMap.set(bigram, (tokenMap.get(bigram) || 0) + 1)
+      tokenMap.set(bigram, (tokenMap.get(bigram) ?? 0) + 1)
     }
   }
 
@@ -260,7 +260,7 @@ export function tokenize(text: string): Map<string, number> {
     if (w.length < 3 || w.length > 30) continue
     if (STOPWORDS.has(w)) continue
     if (/^\d+$/.test(w)) continue
-    tokenMap.set(w, (tokenMap.get(w) || 0) + 1)
+    tokenMap.set(w, (tokenMap.get(w) ?? 0) + 1)
   }
 
   return tokenMap
@@ -281,14 +281,14 @@ export function computeTFIDF(documents: TFIDFDocument[]): {
     const seen = new Set<string>()
     for (const term of doc.tokens.keys()) {
       if (!seen.has(term)) {
-        df.set(term, (df.get(term) || 0) + 1)
+        df.set(term, (df.get(term) ?? 0) + 1)
         seen.add(term)
       }
     }
     // Add tags as extra tokens
     for (const tag of doc.tags) {
       if (!seen.has(tag)) {
-        df.set(tag, (df.get(tag) || 0) + 1)
+        df.set(tag, (df.get(tag) ?? 0) + 1)
         seen.add(tag)
       }
     }
@@ -308,14 +308,14 @@ export function computeTFIDF(documents: TFIDFDocument[]): {
 
     for (const [term, count] of doc.tokens) {
       const tf = count / totalTokens
-      const termIdf = idf.get(term) || 1
+      const termIdf = idf.get(term) ?? 1
       vec.set(term, tf * termIdf)
     }
 
     // Boost for tags
     for (const tag of doc.tags) {
-      const termIdf = idf.get(tag) || 1
-      vec.set(tag, (vec.get(tag) || 0) + 2 * termIdf)
+      const termIdf = idf.get(tag) ?? 1
+      vec.set(tag, (vec.get(tag) ?? 0) + 2 * termIdf)
     }
 
     vectors.push(vec)
@@ -352,7 +352,7 @@ export function buildEdges(
   for (const doc of documents) {
     for (const rel of doc.relationships) {
       const targetNorm = rel.target.toLowerCase().replace(/\s+/g, '')
-      const matches = nameToDocs.get(targetNorm) || []
+      const matches = nameToDocs.get(targetNorm) ?? []
       for (const { doc: targetDoc } of matches) {
         if (targetDoc.file === doc.file) continue
         // Avoid duplicate edges
@@ -426,7 +426,7 @@ export function cosineSimilarity(
 
   // Compute dot product and normA from vecA
   for (const [term, valueA] of vecA) {
-    const valueB = vecB.get(term) || 0
+    const valueB = vecB.get(term) ?? 0
     dotProduct += valueA * valueB
     normA += valueA * valueA
   }

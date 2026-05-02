@@ -15,19 +15,19 @@ interface ProviderConfig {
 const PROVIDERS: Record<AIProvider, ProviderConfig> = {
   qwen: {
     name: '通义千问 (Qwen3.6-Flash)',
-    apiKey: process.env.QWEN_API_KEY || '',
+    apiKey: process.env.QWEN_API_KEY ?? '',
     apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    model: process.env.QWEN_MODEL || 'qwen3.6-flash',
+    model: process.env.QWEN_MODEL ?? 'qwen3.6-flash',
   },
   minimax: {
     name: 'MiniMax M2.7',
-    apiKey: process.env.MINIMAX_API_KEY || '',
+    apiKey: process.env.MINIMAX_API_KEY ?? '',
     apiUrl: 'https://api.minimax.chat/v1/text/chatcompletion_v2',
     model: 'MiniMax-M2.7',
   },
   deepseek: {
     name: 'DeepSeek V4',
-    apiKey: process.env.DEEPSEEK_API_KEY || '',
+    apiKey: process.env.DEEPSEEK_API_KEY ?? '',
     apiUrl: 'https://api.deepseek.com/chat/completions',
     model: 'deepseek-v4-flash',
   },
@@ -40,7 +40,7 @@ export async function callAI(
   params: Record<string, any>,
   provider?: AIProvider
 ): Promise<any> {
-  const selectedProvider = provider || 'deepseek'
+  const selectedProvider = provider ?? 'deepseek'
   const config = PROVIDERS[selectedProvider]
 
   if (!config.apiKey) {
@@ -91,7 +91,7 @@ async function callOpenAICompatible(
       break
 
     case 'reason':
-      systemPrompt = params.systemPrompt || `你是一个问答助手。基于提供的文档内容回答用户问题。
+      systemPrompt = params.systemPrompt ?? `你是一个问答助手。基于提供的文档内容回答用户问题。
 如果文档中没有相关内容，说明"我没有在文档中找到相关信息"。
 回答要简洁，直接回答问题，使用 Markdown 格式。`
       userPrompt = `问题：${params.question}\n\n相关文档内容：\n${params.context.join('\n\n')}`
@@ -106,8 +106,8 @@ async function callOpenAICompatible(
       break
 
     case 'resolve':
-      systemPrompt = params.systemPrompt || `你是一个知识助手。只返回 JSON，不要解释。`
-      userPrompt = params.prompt || ''
+      systemPrompt = params.systemPrompt ?? `你是一个知识助手。只返回 JSON，不要解释。`
+      userPrompt = params.prompt ?? ''
       maxTokens = 800
       break
 
@@ -167,8 +167,8 @@ async function callOpenAICompatible(
     let content = ''
     if (data.choices?.[0]?.message?.content) {
       content = data.choices[0].message.content
-    } else if (data.reply || data.choices?.[0]?.text) {
-      content = data.reply || data.choices[0].text
+    } else if (data.reply ?? data.choices?.[0]?.text) {
+      content = data.reply ?? data.choices[0].text
     } else if (data.choices?.[0]?.delta?.content) {
       content = data.choices[0].delta.content
     }
@@ -228,7 +228,7 @@ export async function callAIGateway(
 
   const data = await res.json()
   if (!res.ok) {
-    throw new Error(data.error || `Gateway error: ${res.status}`)
+    throw new Error(data.error ?? `Gateway error: ${res.status}`)
   }
   return data
 }
