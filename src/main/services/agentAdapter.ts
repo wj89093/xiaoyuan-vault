@@ -69,7 +69,7 @@ async function processCommand(filePath: string): Promise<void> {
         break
       }
       case 'query': {
-        const { q, limit = 5 } = params
+        const { q } = params
         if (!q) throw new Error('missing query q')
         const results = await searchFiles(q)
         output = { ok: true, action, id, results }

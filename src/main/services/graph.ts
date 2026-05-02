@@ -44,8 +44,6 @@ interface TFIDFDocument {
 
 // ============ Constants ============
 
-const SIMILARITY_THRESHOLD = 0.15
-const MAX_EDGES = 200
 const MIN_TOKENS_FOR_SIMILARITY = 5 // Skip very short documents in content similarity
 const COSINE_EARLY_ZERO = 0.001    // Early exit if dot/norm ratio < this (min possible value)
 

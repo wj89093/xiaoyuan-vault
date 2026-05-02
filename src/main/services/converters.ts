@@ -30,9 +30,6 @@ const AUDIO_FORMATS = new Set(['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', 
 // Image formats (tesseract.js OCR)
 const IMAGE_FORMATS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.tif', '.webp'])
 
-// Skip these (already plain text or handled elsewhere)
-const SKIP_FORMATS = new Set(['.md', '.txt', '.markdown', '.mdown'])
-
 export function canConvertWithJS(filePath: string): boolean {
   const ext = (filePath.toLowerCase().slice(filePath.lastIndexOf('.')))
   return ext in JS_CONVERTERS || TEXT_FORMATS.has(ext) || IMAGE_FORMATS.has(ext) || AUDIO_FORMATS.has(ext)
