@@ -37,7 +37,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
       if (list.length > 0) {
         setSessions(list)
         // Load latest session
-        const msgs = await api.chatLoad?.(list[0].id) || []
+        await api.chatLoad?.(list[0].id)
         // Note: messages are controlled by App.tsx, not loaded here
       }
       setLoaded(true)
