@@ -226,7 +226,7 @@ async function processFile(
           content: body,
           folders
         }) as string
-        if (category && category.trim()) {
+        if (category?.trim()) {
           updates.category = category.trim()
           log.info(`[AutoAI] category → ${category}`)
         }

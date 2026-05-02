@@ -443,7 +443,7 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
       : ''
     cardWindow = null
 
-    if (raw && raw.startsWith('SAVE:')) {
+    if (raw?.startsWith('SAVE:')) {
       try {
         const data = JSON.parse(raw.replace('SAVE:', ''))
         const allPaths = (data.files ?? []).map((f: any) => f.path).filter(Boolean)
