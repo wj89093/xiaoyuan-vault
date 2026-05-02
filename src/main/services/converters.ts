@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
-import { basename, extname } from 'path'
+import { basename } from 'path'
 import log from 'electron-log/main'
 import { transcribeAudio } from './whisper'
 
@@ -102,7 +102,7 @@ async function convertXlsx(filePath: string): Promise<string> {
   for (const sheetName of workbook.SheetNames) {
     lines.push(`## ${sheetName}`)
     const sheet = workbook.Sheets[sheetName]
-    const range = XLSX.default.utils.decode_range(sheet['!ref'] || 'A1')
+    XLSX.default.utils.decode_range(sheet['!ref'] || 'A1')
     const data = XLSX.default.utils.sheet_to_json(sheet, { header: 1, defval: '' })
     for (const row of data as any[][]) {
       const filtered = row.filter((c: any) => c !== '')
