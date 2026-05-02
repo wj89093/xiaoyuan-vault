@@ -27,7 +27,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
   const [loaded, setLoaded] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const saveTimer = useRef<any>(null)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load sessions on mount
   useEffect(() => {

@@ -18,7 +18,7 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileInfo } | null>(null)
   const [hoverPreview, setHoverPreview] = useState<{ x: number; y: number; name: string; summary: string } | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
-  const hoverTimer = useRef<any>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previewBoxRef = useRef<HTMLDivElement>(null)
 
   const toggleFolder = (path: string) => {
