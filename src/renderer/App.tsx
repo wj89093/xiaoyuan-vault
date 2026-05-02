@@ -182,7 +182,7 @@ function App(): JSX.Element {
       const filePath = `0-收集/AI对话/ai-${timestamp}.md`
       await window.api.saveFile(filePath, md)
       showToast('success', 'AI 回复已保存到知识库')
-    } catch (e) {
+    } catch {
       showToast('error', '保存失败')
     }
   }, [vaultPath])
