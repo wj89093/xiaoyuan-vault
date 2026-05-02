@@ -50,7 +50,6 @@ function App(): JSX.Element {
   const [chatLoading, setChatLoading] = useState(false)
   const [showQuickSwitch, setShowQuickSwitch] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
@@ -501,7 +500,7 @@ function App(): JSX.Element {
                   onNewFile={handleNewFile}
                   onNewFolder={handleNewFolder}
                   onOpenGraph={() => setShowGraph(true)}
-                  onOpenSettings={() => setShowSettings(true)}
+                  onOpenSettings={() => {}}
                   onRefresh={handleRefresh}
                   vaultPath={vaultPath}
                   files={files}
