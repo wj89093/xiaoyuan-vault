@@ -165,7 +165,7 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
         setGraphData({ nodes, links })
         setLoading(false)
       }
-    })()
+    })().catch?.(() => {})
 
     return () => { cancelled = true }
   }, [flatFiles])

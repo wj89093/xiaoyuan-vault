@@ -116,7 +116,7 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     void mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']).catch?.(() => {})
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
 
@@ -726,7 +726,7 @@ AI 自动维护反向链接。
           webContents.send('chat:streamError', { error: err.message })
         }
       }
-    })()
+    })().catch(() => {})
 
     return { streamed: true }
   })

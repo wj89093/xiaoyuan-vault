@@ -81,9 +81,9 @@ export async function startAutoAIEngine(): Promise<void> {
   log.info(`[AutoAI] engine started, interval=${settings.interval}min`)
 
   // Run immediately on start
-  runAutoAI()
+  void runAutoAI().catch?.(() => {})
 
-  timer = setInterval(() => runAutoAI(), intervalMs)
+  timer = setInterval(() => void runAutoAI().catch?.(() => {}), intervalMs)
 }
 
 export async function stopAutoAIEngine(): Promise<void> {

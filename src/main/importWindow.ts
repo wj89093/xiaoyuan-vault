@@ -58,7 +58,7 @@ export function openImportWindow(parentWindow: BrowserWindow): void {
 
   // Load with hash for ImportApp route
   const hashPath = `file://${join(__dirname, '../renderer/index.html')}#/import`
-  win.loadURL(hashPath)
+  void win.loadURL(hashPath).catch?.(() => {})
 
   win.once('ready-to-show', () => {
     win.show()

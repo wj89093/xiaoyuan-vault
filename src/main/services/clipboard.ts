@@ -51,7 +51,7 @@ export function showBubble(): void {
   })
 
   // Load bubble HTML from local file so File.path is accessible in drag events
-  bubbleWindow.loadURL(`data:text/html;charset=utf-8,${getBubbleHTML()}`)
+  void bubbleWindow.loadURL(`data:text/html;charset=utf-8,${getBubbleHTML()}`)
 
   bubbleWindow.once('ready-to-show', () => {
     bubbleLocked = false
@@ -419,7 +419,7 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
     },
   })
 
-  cardWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  void cardWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
   cardWindow.setVisibleOnAllWorkspaces(true)
 
   const blurTimer: ReturnType<typeof setTimeout> | null = null

@@ -22,7 +22,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
         setEmail(e)
         setToken(t)
       } catch {}
-    })()
+    })().catch?.(() => {})
 
     // 监听 token 接收（OAuth 回调触发）
     const unsub = (window.api as any).onAuthTokenReceived?.((data: { token: string; email: string }) => {

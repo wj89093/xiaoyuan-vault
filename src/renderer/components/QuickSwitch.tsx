@@ -89,7 +89,7 @@ export function QuickSwitch({ files, recentFiles, onSelect, onClose }: QuickSwit
         needed.slice(0, 3).forEach(r => next.delete(r.path))
         return next
       })
-    })
+    }).catch(() => {})
   }, [query])
 
   const flatFiles = flatFilesRef.current

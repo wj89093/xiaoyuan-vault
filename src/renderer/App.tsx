@@ -200,7 +200,7 @@ function App(): JSX.Element {
   // Select file
   const handleSelectFile = useCallback(async (filePath: string) => {
     if (selectedFile && isDirty) {
-      await window.api.saveFile(selectedFile, content)
+      await void window.api.saveFile(selectedFile, content).catch?.(() => {})
     }
 
     const ext = filePath.split('.').pop()?.toLowerCase() || ''
@@ -265,7 +265,7 @@ function App(): JSX.Element {
   // Save file
   const handleSave = useCallback(async () => {
     if (selectedFile) {
-      await window.api.saveFile(selectedFile, content)
+      await void window.api.saveFile(selectedFile, content).catch?.(() => {})
       setIsDirty(false)
       showToast('success', '文件已保存')
     }
@@ -309,7 +309,7 @@ function App(): JSX.Element {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (selectedFile && isDirty) {
-        window.api.saveFile(selectedFile, content)
+        void window.api.saveFile(selectedFile, content).catch?.(() => {})
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -453,11 +453,11 @@ function App(): JSX.Element {
             {showVaultMenu && (
               <div className="vault-menu">
                 <div className="vault-menu-header">知识库操作</div>
-                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); handleNewVault() }}>
+                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); void handleNewVault().catch?.(() => {}) }}>
                   <FolderPlus size={13} />
                   新建知识库
                 </div>
-                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); handleOpenVault() }}>
+                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); void handleOpenVault().catch?.(() => {}) }}>
                   <FolderOpen size={13} />
                   打开其他知识库
                 </div>
@@ -515,11 +515,11 @@ function App(): JSX.Element {
                     onNewFile={(folderPath) => {
                       const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
                       const name = `Untitled`
-                      handleNewFile(base, name)
+                      void handleNewFile(base, name).catch?.(() => {})
                     }}
                     onNewFolder={(parentPath) => {
                       const base = (parentPath === vaultPath || !parentPath) ? '' : parentPath
-                      handleNewFolder(base, 'Untitled')
+                      void handleNewFolder(base, 'Untitled').catch?.(() => {})
                     }}
                     vaultPath={vaultPath}
                   />
@@ -575,12 +575,12 @@ function App(): JSX.Element {
               // Try exact path first, then search by filename
               const exact = files.find(f => f.path === filePath)
               if (exact) {
-                handleSelectFile(filePath)
+                void handleSelectFile(filePath).catch?.(() => {})
               } else {
                 // Search by filename
                 const name = filePath.split('/').pop() || filePath
                 const found = files.find(f => f.name === name || f.path?.endsWith(name))
-                if (found) handleSelectFile(found.path)
+                if (found) void handleSelectFile(found.path).catch?.(() => {})
               }
             }}
             onInsertToDoc={!isNativePreview && selectedFile ? (async (aiContent: string) => {

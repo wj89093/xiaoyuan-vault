@@ -61,14 +61,14 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
           setLoading(false)
         }
       }
-    })()
+    })().catch?.(() => {})
 
     return () => { cancelled = true }
   }, [dataUrl])
 
   useEffect(() => {
     if (!pdfDocRef.current) return
-    renderPage(pdfDocRef.current, page)
+    void renderPage(pdfDocRef.current, page).catch?.(() => {})
   }, [page])
 
   const renderPage = async (pdf: any, pageNum: number) => {
