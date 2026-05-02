@@ -44,7 +44,6 @@ export async function enrichFile(
     // LLM-first: Use resolver's action plan (entities + updates) instead of hardcoded logic
     // classification now includes: entities[], updates[], summary, tags
     const type = confirmedType || classification?.type || frontmatter.type || 'collection'
-    const suggestedFolder = confirmedFolder || classification?.suggestedFolder || getDefaultFolder(type)
 
     // Build frontmatter updates from LLM's action plan
     const enrichUpdates: Record<string, unknown> = {
@@ -255,8 +254,7 @@ async function addBacklink(
     if (alreadyLinked) return false
 
     seeAlso.push(sourceTitle)
-    const updates = { seeAlso }
-    const newFrontmatter = { ...frontmatter, ...enrichUpdates }
+    const newFrontmatter = { ...frontmatter, ...enrichUpdates, seeAlso }
     const newContent = applyFrontmatter(raw, newFrontmatter)
     await writeFile(targetPath, newContent, 'utf-8')
     return true
