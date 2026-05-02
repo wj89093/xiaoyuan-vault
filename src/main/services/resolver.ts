@@ -1,8 +1,5 @@
 import log from 'electron-log/main'
-import { existsSync } from 'fs'
-import { join } from 'path'
 import { callAI } from './aiService'
-import { getVaultPath } from './database'
 
 // ─── RESOLVER — LLM-first content action plan ───────────────────────
 //

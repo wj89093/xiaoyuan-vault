@@ -26,8 +26,8 @@ function getWhisperModelPath(): string {
   return '/Users/xindaolangu/Library/ApplicationSupport/whisper-cpp/models/ggml-base.bin'
 }
 
-const WHISPER_CLI = '' // resolved at runtime
-const WHISPER_MODEL = '' // resolved at runtime
+const _WHISPER_CLI = '' // resolved at runtime
+const _WHISPER_MODEL = '' // resolved at runtime
 
 // Audio formats that need ffmpeg conversion before whisper
 const AUDIO_NEED_CONVERT = new Set(['.m4a', '.aac', '.ogg', '.flac', '.wma', '.aiff'])
