@@ -431,7 +431,7 @@ function App(): JSX.Element {
       )}
 
       {!vaultPath ? (
-        <WelcomeScreen onOpenVault={handleOpenVault} onNewVault={handleNewVault} />
+        <WelcomeScreen onOpenVault={() => void handleOpenVault()} onNewVault={() => void handleNewVault()} />
       ) : (
         <>
           <div className="sidebar">
@@ -484,7 +484,7 @@ function App(): JSX.Element {
                   className="search-input"
                   placeholder="搜索文件..."
                   value={searchQuery}
-                  onChange={e => handleSearch(e.target.value)}
+                  onChange={e => { void handleSearch(e.target.value) }}
                 />
               </div>
             </div>
@@ -493,17 +493,17 @@ function App(): JSX.Element {
               <SearchResults
                 results={searchResults}
                 query={searchQuery}
-                onSelect={handleSelectFile}
+                onSelect={(path) => { void handleSelectFile(path) }}
                 onClose={handleCloseSearch}
               />
             ) : (
               <>
                 <Toolbar
-                  onNewFile={handleNewFile}
-                  onNewFolder={handleNewFolder}
+                  onNewFile={(p, n) => { void handleNewFile(p, n) }}
+                  onNewFolder={(p, n) => { void handleNewFolder(p, n) }}
                   onOpenGraph={() => setShowGraph(true)}
                   onOpenSettings={() => {}}
-                  onRefresh={handleRefresh}
+                  onRefresh={() => { void handleRefresh() }}
                   vaultPath={vaultPath}
                   files={files}
                 />
@@ -511,7 +511,7 @@ function App(): JSX.Element {
                   <FileTree
                     files={displayFiles}
                     selectedFile={selectedFile}
-                    onSelect={handleSelectFile}
+                    onSelect={(path) => { void handleSelectFile(path) }}
                     onNewFile={(folderPath) => {
                       const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
                       const name = `Untitled`
@@ -535,7 +535,7 @@ function App(): JSX.Element {
                     <span className="editor-title">{selectedFile.split('/').pop()}</span>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       {isDirty && <span className="editor-status">未保存</span>}
-                      <button className="btn" onClick={handleSave}>保存</button>
+                      <button className="btn" onClick={() => { void handleSave() }}>保存</button>
                     </div>
                   </div>
                   <Editor
@@ -556,20 +556,24 @@ function App(): JSX.Element {
           </div>
           <AIChat
             messages={messages}
-            onSend={handleSendMessage}
+            onSend={text => { void handleSendMessage(text) }}
             loading={chatLoading}
-            onLoadSession={async (sessionId: string) => {
-              const api = window.api as any
-              const msgs = await api.chatLoad?.(sessionId) ?? []
-              setMessages(msgs.map((m: any) => ({
-                id: m.id ?? crypto.randomUUID(),
-                role: m.role,
-                content: m.content,
-              })))
+            onLoadSession={(sessionId: string) => {
+              void (async () => {
+                const api = window.api as any
+                const msgs = await api.chatLoad?.(sessionId) ?? []
+                setMessages(msgs.map((m: any) => ({
+                  id: m.id ?? crypto.randomUUID(),
+                  role: m.role,
+                  content: m.content,
+                })))
+              })()
             }}
-            onSaveToVault={async (msgId: string) => {
-              const msg = messages.find((m: any) => m.id === msgId || m.id === undefined)
-              if (msg) await handleSaveAIMessage(msg.content)
+            onSaveToVault={(msgId: string) => {
+              void (async () => {
+                const msg = messages.find((m: any) => m.id === msgId || m.id === undefined)
+                if (msg) await handleSaveAIMessage(msg.content)
+              })()
             }}
             onNavigateToPage={(filePath: string) => {
               // Try exact path first, then search by filename

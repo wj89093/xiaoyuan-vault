@@ -124,7 +124,7 @@ export function ImportApp(): JSX.Element {
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
-        onDrop={handleDrop}
+        onDrop={e => { void handleDrop(e) }}
       >
         <Upload size={28} strokeWidth={1.5} />
         <div className="import-drop-title">
@@ -149,9 +149,9 @@ export function ImportApp(): JSX.Element {
             placeholder="粘贴网址，按回车获取内容..."
             value={urlInput}
             onChange={e => setUrlInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleFetchUrl()}
+            onKeyDown={e => { if (e.key === 'Enter') void handleFetchUrl() }}
           />
-          <button className="btn btn-primary" onClick={handleFetchUrl} disabled={!urlInput.trim() || fetching}>
+          <button className="btn btn-primary" onClick={() => { void handleFetchUrl() }} disabled={!urlInput.trim() || fetching}>
             {fetching ? '获取...' : '获取'}
           </button>
         </div>

@@ -232,6 +232,7 @@ function ensureIPC(): void {
     }
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   ipcMain.on('bubble:drop', async (_event, data: { filePaths: string[]; text: string }) => {
     console.log('[Bubble] bubble:drop received:', JSON.stringify(data))
     if (!bubbleWindow) { console.log('[Bubble] no bubble window'); return }
@@ -433,6 +434,7 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
   //   if (blurTimer) { clearTimeout(blurTimer); blurTimer = null }
   // })
 
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   cardWindow.on('closed', async () => {
     if (blurTimer) clearTimeout(blurTimer)
     // Capture title BEFORE nulling the window reference

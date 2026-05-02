@@ -81,7 +81,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
                 </div>
                 <button
                   className="btn btn-ghost"
-                  onClick={handleLogout}
+                  onClick={() => { void handleLogout() }}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}
                 >
                   <LogOut size={12} />
@@ -96,7 +96,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
                 </div>
                 <button
                   className="btn btn-primary"
-                  onClick={handleLogin}
+                  onClick={() => { void handleLogin() }}
                   disabled={loading}
                   style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                 >
