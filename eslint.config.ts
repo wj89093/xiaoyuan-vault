@@ -26,7 +26,7 @@ export default tseslint.config(
 
   // 主进程 + 预加载脚本
   {
-    files: ['src/main/**/*.ts', 'src/preload/**/*.ts'],
+    files: ['src/main/**/*.ts', 'src/preload/**/*.ts', 'src/shared/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -80,7 +80,7 @@ export default tseslint.config(
 
   // 渲染进程（React）
   {
-    files: ['src/renderer/**/*.ts', 'src/renderer/**/*.tsx'],
+    files: ['src/renderer/**/*.ts', 'src/renderer/**/*.tsx', 'src/shared/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.browser,
