@@ -178,7 +178,7 @@ async function fetchWechat(url: string): Promise<URLFetchResult> {
   }
 
   // 4. 最后手段：标题
-  const title = $('meta[property="og:title"]').attr('content') || 
+  const title = $('meta[property="og:title"]').attr('content') ?? 
                 $('h1').text() || 
                 $('title').text() || 
                 '微信文章'
@@ -285,9 +285,9 @@ async function fetchTwitter(url: string): Promise<URLFetchResult> {
     throw new Error('Twitter API response invalid')
   }
 
-  const author = tweet.author?.name || 'Unknown'
-  const handle = tweet.author?.screen_name || ''
-  const text = tweet.text || ''
+  const author = tweet.author?.name ?? 'Unknown'
+  const handle = tweet.author?.screen_name ?? ''
+  const text = tweet.text ?? ''
 
   return {
     title: `@${handle}: ${text.slice(0, 50)}...`,
@@ -343,8 +343,8 @@ async function fetchGitHub(url: string): Promise<URLFetchResult> {
 
   const content = `# ${repoData.full_name}\n\n` +
     `⭐ ${repoData.stargazers_count} stars | ` +
-    `📝 ${repoData.language || 'Unknown'}\n\n` +
-    `${repoData.description || ''}\n\n` +
+    `📝 ${repoData.language ?? 'Unknown'}\n\n` +
+    `${repoData.description ?? ''}\n\n` +
     (readme ? `## README\n\n${readme.slice(0, 10000)}` : '')
 
   return {
@@ -377,8 +377,8 @@ async function fetchReddit(url: string): Promise<URLFetchResult> {
   }
 
   return {
-    title: post.title || 'Reddit Post',
-    content: `${post.selftext || ''}\n\n` +
+    title: post.title ?? 'Reddit Post',
+    content: `${post.selftext ?? ''}\n\n` +
              `[原文链接](${url})`,
     url,
     source: 'reddit'

@@ -37,13 +37,13 @@ export async function enrichFile(
     // Step 1: Classify if not already classified
     let classification: ResolverResult | null = null
     if (!frontmatter.type || frontmatter.type === 'collection') {
-      classification = await resolveContentType(content, frontmatter.title || basename(filePath, '.md'))
+      classification = await resolveContentType(content, frontmatter.title ?? basename(filePath, '.md'))
     }
 
     // Step 2: Determine type and folder
     // LLM-first: Use resolver's action plan (entities + updates) instead of hardcoded logic
     // classification now includes: entities[], updates[], summary, tags
-    const type = confirmedType || classification?.type || frontmatter.type || 'collection'
+    const type = confirmedType ?? classification?.type ?? frontmatter.type ?? 'collection'
 
     // Build frontmatter updates from LLM's action plan
     const enrichUpdates: Record<string, unknown> = {
@@ -63,10 +63,10 @@ export async function enrichFile(
       // Use LLM-decided entities for relationships (not regex extraction)
       if (classification.entities?.length > 0) {
         const rels = classification.entities.map((e: any) => ({
-          type: e.entityType || 'mentions',
+          type: e.entityType ?? 'mentions',
           target: e.name,
           confidence: 'EXTRACTED' as const,
-          source: classification.reason || '',
+          source: classification.reason ?? '',
         }))
         const existingRels = Array.isArray(frontmatter.relationships) ? frontmatter.relationships : []
         const existingTargets = new Set(existingRels.map((r: Relationship) => `${r.type}:${r.target}`))
@@ -84,7 +84,7 @@ export async function enrichFile(
     log.info(`[Enrich] updated frontmatter: ${filePath} → type=${type}`)
 
     // Step 5: Bidirectional links — update backlinks for this file's typed links
-    const backlinksAdded = await updateBacklinksForFile(filePath, newFrontmatter.title as string || basename(filePath, '.md'))
+    const backlinksAdded = await updateBacklinksForFile(filePath, newFrontmatter.title as string ?? basename(filePath, '.md'))
     if (backlinksAdded > 0) {
       log.info(`[Backlink] ${backlinksAdded} backlinks created from ${filePath}`)
     }
@@ -92,8 +92,8 @@ export async function enrichFile(
     // Step 6: Phase 2 — enrich linked entity pages (append timeline + update related pages)
     const { updated: updatedPages, pending: pendingPages } = await enrichLinkedEntityPages(
       filePath,
-      newFrontmatter.title as string || basename(filePath, '.md'),
-      classification?.entities || []
+      newFrontmatter.title as string ?? basename(filePath, '.md'),
+      classification?.entities ?? []
     )
     const phase2info = updatedPages.length > 0
       ? `, 相关页面+${updatedPages.join(',')}`
@@ -418,7 +418,7 @@ async function enrichLinkedEntityPages(
     const entry: TimelineEntry = {
       date: new Date().toISOString().slice(0, 10),
       type: 'related',
-      content: `在「${fileTitle}」中提到: ${rel.source || rel.target}`,
+      content: `在「${fileTitle}」中提到: ${rel.source ?? rel.target}`,
       source: fileTitle
     }
 
@@ -465,7 +465,7 @@ export async function enrichInbox(): Promise<EnrichResult[]> {
       await rebuildIndexFile(vaultPath)
       const logEntries = results
         .filter(r => r.success)
-        .map(r => `${basename(r.oldPath || '')} → ${r.message}`)
+        .map(r => `${basename(r.oldPath ?? '')} → ${r.message}`)
       await appendToOperationLog(vaultPath, logEntries)
     } catch (err: any) {
       log.error('[Enrich] index/log update failed:', err.message)

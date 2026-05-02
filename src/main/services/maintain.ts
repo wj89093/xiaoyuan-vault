@@ -53,7 +53,7 @@ export async function runMaintenance(): Promise<MaintainReport> {
     try {
       const raw = await readFile(file.path, 'utf-8')
       const { frontmatter } = parseFrontmatter(raw)
-      const title = frontmatter.title || file.name.replace('.md', '')
+      const title = frontmatter.title ?? file.name.replace('.md', '')
       allTitles.add(title)
 
       // Missing fields
@@ -81,13 +81,13 @@ export async function runMaintenance(): Promise<MaintainReport> {
     if (allTitles.has(target)) linkedTitles.add(target)
     else {
       for (const source of sources) {
-        deadLinks.push({ fromPath: mdFiles.find(f => f.title === source || f.name === source)?.path || '', fromTitle: source, deadTarget: target })
+        deadLinks.push({ fromPath: mdFiles.find(f => f.title === source || f.name === source)?.path ?? '', fromTitle: source, deadTarget: target })
       }
     }
   }
 
   for (const file of mdFiles) {
-    const title = file.title || file.name.replace('.md', '')
+    const title = file.title ?? file.name.replace('.md', '')
     if (!linkedTitles.has(title) && mdFiles.length > 1) orphanPages.push({ path: file.path, title })
   }
 
@@ -144,8 +144,8 @@ async function detectContradictions(mdFiles: { path: string; name: string; title
       const { frontmatter } = parseFrontmatter(raw)
       const result = await checkPageContradictions(
         file.path,
-        frontmatter.title || file.name.replace('.md', ''),
-        frontmatter.summary || '',
+        frontmatter.title ?? file.name.replace('.md', ''),
+        frontmatter.summary ?? '',
         raw
       )
       if (result) results.push(result)

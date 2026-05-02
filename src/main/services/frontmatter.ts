@@ -171,7 +171,7 @@ function parseRelationships(raw: string): Relationship[] {
           relationships.push({
             type: currentRel.type,
             target: currentRel.target,
-            confidence: currentRel.confidence || 'EXTRACTED',
+            confidence: currentRel.confidence ?? 'EXTRACTED',
             source: currentRel.source
           })
         }
@@ -201,7 +201,7 @@ function parseRelationships(raw: string): Relationship[] {
           relationships.push({
             type: currentRel.type,
             target: currentRel.target,
-            confidence: currentRel.confidence || 'EXTRACTED',
+            confidence: currentRel.confidence ?? 'EXTRACTED',
             source: currentRel.source
           })
         }
@@ -215,7 +215,7 @@ function parseRelationships(raw: string): Relationship[] {
     relationships.push({
       type: currentRel.type,
       target: currentRel.target,
-      confidence: currentRel.confidence || 'EXTRACTED',
+      confidence: currentRel.confidence ?? 'EXTRACTED',
       source: currentRel.source
     })
   }
@@ -245,7 +245,7 @@ function parseOpenThreads(raw: string): OpenThread[] {
         if (currentThread.content) {
           threads.push({
             content: currentThread.content,
-            status: currentThread.status || 'open',
+            status: currentThread.status ?? 'open',
             created: currentThread.created
           })
         }
@@ -266,7 +266,7 @@ function parseOpenThreads(raw: string): OpenThread[] {
           currentThread.status = isDone ? 'done' : 'open'
           currentThread.content = rest.slice(4).trim()
         } else {
-          currentThread.content = (currentThread.content || '') + ' ' + rest
+          currentThread.content = (currentThread.content ?? '') + ' ' + rest
         }
       } else if (trimmed.startsWith('status:')) {
         currentThread.status = trimmed.slice(7).trim().replace(/[\[\]]/g, '') === 'done' ? 'done' : 'open'
@@ -276,7 +276,7 @@ function parseOpenThreads(raw: string): OpenThread[] {
         if (currentThread.content) {
           threads.push({
             content: currentThread.content,
-            status: currentThread.status || 'open',
+            status: currentThread.status ?? 'open',
             created: currentThread.created
           })
         }
@@ -288,7 +288,7 @@ function parseOpenThreads(raw: string): OpenThread[] {
   if (currentThread.content) {
     threads.push({
       content: currentThread.content,
-      status: currentThread.status || 'open',
+      status: currentThread.status ?? 'open',
       created: currentThread.created
     })
   }
@@ -494,7 +494,7 @@ export function generateFileTemplate(title: string, type?: string): string {
   const now = new Date().toISOString().split('T')[0]
   const frontmatter: Frontmatter = {
     title,
-    type: type || 'note',  // Default to 'note', resolver will reassign via enrich
+    type: type ?? 'note',  // Default to 'note', resolver will reassign via enrich
     status: 'active',
     summary: '',
     confidence: 'low',
