@@ -66,8 +66,8 @@ describe('graph service', () => {
   describe('computeTFIDF', () => {
     it('should compute TF-IDF vectors', () => {
       const docs = [
-        { file: 'a.md', title: 'A', tags: ['tag1'], tokens: new Map([['word', 2], ['test', 1]]) },
-        { file: 'b.md', title: 'B', tags: ['tag1'], tokens: new Map([['word', 1], ['other', 3]]) }
+        { file: 'a.md', title: 'A', tags: ['tag1'], tokens: new Map([['word', 2], ['test', 1]]), relationships: [] },
+        { file: 'b.md', title: 'B', tags: ['tag1'], tokens: new Map([['word', 1], ['other', 3]]), relationships: [] }
       ]
       const { vectors, idf } = computeTFIDF(docs)
       expect(vectors).toHaveLength(2)
@@ -76,8 +76,8 @@ describe('graph service', () => {
 
     it('should boost tags', () => {
       const docs = [
-        { file: 'a.md', title: 'A', tags: ['important'], tokens: new Map() },
-        { file: 'b.md', title: 'B', tags: ['important'], tokens: new Map() }
+        { file: 'a.md', title: 'A', tags: ['important'], tokens: new Map(), relationships: [] },
+        { file: 'b.md', title: 'B', tags: ['important'], tokens: new Map(), relationships: [] }
       ]
       const { vectors } = computeTFIDF(docs)
       expect(vectors[0].get('important')).toBeGreaterThan(0)
@@ -87,8 +87,8 @@ describe('graph service', () => {
   describe('buildEdges', () => {
     it('should create tag-based edges', () => {
       const docs = [
-        { file: 'a.md', title: 'A', tags: ['tag1'], tokens: new Map() },
-        { file: 'b.md', title: 'B', tags: ['tag1'], tokens: new Map() }
+        { file: 'a.md', title: 'A', tags: ['tag1'], tokens: new Map(), relationships: [] },
+        { file: 'b.md', title: 'B', tags: ['tag1'], tokens: new Map(), relationships: [] }
       ]
       const { vectors, idf } = computeTFIDF(docs)
       const edges = buildEdges(docs, vectors, idf)
@@ -98,8 +98,8 @@ describe('graph service', () => {
 
     it('should create content-based edges', () => {
       const docs = [
-        { file: 'a.md', title: 'A', tags: [], tokens: new Map([['word', 5]]) },
-        { file: 'b.md', title: 'B', tags: [], tokens: new Map([['word', 5]]) }
+        { file: 'a.md', title: 'A', tags: [], tokens: new Map([['word', 5]]), relationships: [] },
+        { file: 'b.md', title: 'B', tags: [], tokens: new Map([['word', 5]]), relationships: [] }
       ]
       const { vectors, idf } = computeTFIDF(docs)
       const edges = buildEdges(docs, vectors, idf)
@@ -111,7 +111,8 @@ describe('graph service', () => {
         file: `${i}.md`,
         title: `${i}`,
         tags: [],
-        tokens: new Map([['word', 1]])
+        tokens: new Map([['word', 1]]),
+        relationships: []
       }))
       const { vectors, idf } = computeTFIDF(docs)
       const edges = buildEdges(docs, vectors, idf)

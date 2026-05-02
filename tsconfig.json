@@ -8,12 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true
+    "isolatedModules": true
   },
-  "include": ["src/**/*", "electron.vite.config.ts"],
-  "references": [
-    { "path": "./tsconfig.node.json" },
-    { "path": "./tsconfig.web.json" }
-  ]
+  "include": ["src/**/*", "electron.vite.config.ts"]
 }

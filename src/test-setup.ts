@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
-// Mock electron APIs
+// Mock window.addEventListener / removeEventListener (used by electron-log/renderer)
 Object.defineProperty(global, 'window', {
   value: {
     api: {
@@ -18,7 +18,10 @@ Object.defineProperty(global, 'window', {
       createFile: vi.fn(),
       saveFile: vi.fn(),
       saveAutoAISettings: vi.fn()
-    }
+    },
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
   },
   writable: true
 })
