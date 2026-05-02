@@ -4,25 +4,11 @@ import log from 'electron-log/renderer'
 import { Send, Bot, User, Trash2, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, MessageCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import type { ChatMessage, ChatSession } from '../../shared/chat'
 
-export interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  pagesUsed?: Array<{ file: string; title: string }>  // 引用的页面
-  sourceMode?: 'knowledge_base' | 'mixed' | 'ai_only'
-  saved?: boolean
-}
+export type { ChatMessage }
 
-export interface ChatSession {
-  id: string
-  title: string
-  updatedAt: string
-  messages: ChatMessage[]
-}
-
-interface AIChatProps {
-  messages: ChatMessage[]
+export interface AIChatProps {
   onSend: (text: string) => void
   loading: boolean
   onLoadSession?: (sessionId: string) => void

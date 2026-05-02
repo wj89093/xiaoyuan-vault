@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { ChatMessage, ChatSession, AskResult } from '../../shared/chat'
 
 export type FileInfo = {
   path: string
@@ -92,9 +93,9 @@ const api = {
   aiReason: (question: string, context: string[]): Promise<string> =>
     ipcRenderer.invoke('ai:reason', question, context),
   aiWrite: (outline: string): Promise<string> => ipcRenderer.invoke('ai:write', outline),
-  chatAsk: (question: string, history?: any[]): Promise<any> =>
+  chatAsk: (question: string, history?: ChatMessage[]): Promise<AskResult> =>
     ipcRenderer.invoke('chat:ask', question, history || []),
-  chatAskStream: (question: string, history?: any[]) =>
+  chatAskStream: (question: string, history?: ChatMessage[]) =>
     ipcRenderer.invoke('chat:askStream', question, history || []),
   onChatStreamChunk: (callback: (data: { chunk: string; partial: string }) => void) => {
     const sub = (_: any, data: any) => callback(data)
@@ -111,13 +112,13 @@ const api = {
     ipcRenderer.on('chat:streamError', sub)
     return () => ipcRenderer.removeListener('chat:streamError', sub)
   },
-  chatSessions: (): Promise<any[]> =>
+  chatSessions: (): Promise<ChatSession[]> =>
     ipcRenderer.invoke('chat:sessions'),
-  chatCreate: (firstQuestion: string): Promise<any> =>
+  chatCreate: (firstQuestion: string): Promise<ChatSession> =>
     ipcRenderer.invoke('chat:create', firstQuestion),
-  chatLoad: (sessionId: string): Promise<any[]> =>
+  chatLoad: (sessionId: string): Promise<ChatMessage[]> =>
     ipcRenderer.invoke('chat:load', sessionId),
-  chatSave: (sessionId: string, messages: any[]): Promise<boolean> =>
+  chatSave: (sessionId: string, messages: ChatMessage[]): Promise<boolean> =>
     ipcRenderer.invoke('chat:save', sessionId, messages),
   chatDelete: (sessionId: string): Promise<boolean> =>
     ipcRenderer.invoke('chat:delete', sessionId),
