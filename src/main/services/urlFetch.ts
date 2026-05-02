@@ -337,7 +337,7 @@ async function fetchGitHub(url: string): Promise<URLFetchResult> {
     if (readmeData.content) {
       readme = Buffer.from(readmeData.content, 'base64').toString('utf-8')
     }
-  } catch (e) {
+  } catch {
     // README 可能不存在
   }
 

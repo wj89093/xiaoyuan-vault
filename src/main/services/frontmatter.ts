@@ -56,15 +56,15 @@ export function parseFrontmatter(content: string): { frontmatter: Frontmatter; c
   // Check for timeline separator
   const timelineMatch = rest.match(/^---\s*\n([\s\S]*)$/)
   let body = rest
-  let timelineContent = ''
+  let _timelineContent = ''
 
   if (timelineMatch) {
     body = rest.slice(0, rest.indexOf('---\n'))
-    timelineContent = rest.slice(rest.indexOf('---\n') + 4)
+    _timelineContent = rest.slice(rest.indexOf('---\n') + 4)
   }
 
   // Parse each line
-  const inFrontmatter = true
+  const _inFrontmatter = true
   for (const line of raw.split('\n')) {
     const colonIdx = line.indexOf(':')
     if (colonIdx === -1) continue
@@ -303,7 +303,7 @@ export function stringifyFrontmatter(frontmatter: Frontmatter): string {
   const lines: string[] = []
 
   // Helper to add multiline array field
-  const addMultilineArray = (key: string, values: string[] | undefined) => {
+  const _addMultilineArray = (key: string, values: string[] | undefined) => {
     if (!values || values.length === 0) return
     lines.push(`${key}:`)
     for (const v of values) {
