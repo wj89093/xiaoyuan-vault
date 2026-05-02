@@ -5,7 +5,7 @@ const QWEN_API_KEY = process.env.QWEN_API_KEY || ''
 const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen3.6-flash'
 const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 
-interface QwenRequest {
+interface _QwenRequest {
   model: string
   messages: Array<{
     role: 'system' | 'user' | 'assistant'

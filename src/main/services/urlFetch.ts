@@ -2,7 +2,7 @@ import axios from 'axios'
 import * as cheerio from 'cheerio'
 
 const JINA_READER_BASE = 'https://r.jina.ai/'
-const MAX_CONTENT_LENGTH = 50000 // ~50KB
+const _MAX_CONTENT_LENGTH = 50000 // ~50KB
 const FETCH_TIMEOUT = 15000 // 15s
 const MIN_CONTENT_LENGTH = 20
 
