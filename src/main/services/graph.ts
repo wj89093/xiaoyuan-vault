@@ -329,7 +329,7 @@ export function computeTFIDF(documents: TFIDFDocument[]): {
 export function buildEdges(
   documents: TFIDFDocument[],
   vectors: Map<string, Map<string, number>>[],
-  idf: Map<string, number>
+  _idf: Map<string, number>
 ): GraphEdge[] {
   const edges: GraphEdge[] = []
   const SIMILARITY_THRESHOLD = 0.15
@@ -447,7 +447,7 @@ export function cosineSimilarity(
 
 // ============ Helpers ============
 
-export function getPageType(file: string): string {
+export function getPageType(_file: string): string {
   // Return 'note' as default — real type comes from frontmatter/enrich, not folder path
   return 'note'
 }

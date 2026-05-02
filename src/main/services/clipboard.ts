@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, ipcMain, BrowserWindow as BW } from 'electron'
+import { BrowserWindow, screen, ipcMain } from 'electron'
 import { join } from 'path'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
