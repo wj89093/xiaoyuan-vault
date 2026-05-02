@@ -25,7 +25,7 @@ export { rebuildIndexFile, appendToOperationLog }
 export async function enrichFile(
   filePath: string,
   confirmedType?: string,
-  confirmedFolder?: string
+  _confirmedFolder?: string
 ): Promise<EnrichResult> {
   const vaultPath = getVaultPath()
   if (!vaultPath) return { success: false, action: 'error', message: '未打开知识库' }
