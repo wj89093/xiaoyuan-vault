@@ -73,14 +73,14 @@ function parseResolverResult(raw: string, fallbackTitle?: string): ResolverResul
       intent: ['enrich', 'query', 'maintain'].includes(p.intent) ? p.intent : 'enrich',
       type: VALID_TYPES.includes(p.type) ? p.type : 'collection',
       confidence: ['high', 'medium', 'low'].includes(p.confidence) ? p.confidence : 'medium',
-      reason: p.reason || p.summary || '',
-      suggestedFolder: p.suggestedFolder || '0-收集',
+      reason: p.reason ?? p.summary ?? '',
+      suggestedFolder: p.suggestedFolder ?? '0-收集',
       needsUserConfirm: p.needsUserConfirm !== false,
       extractedNames: Array.isArray(p.extractedNames) ? p.extractedNames : [],
       extractedCompanies: Array.isArray(p.extractedCompanies) ? p.extractedCompanies : [],
       entities: Array.isArray(p.entities) ? p.entities : [],
       updates: Array.isArray(p.updates) ? p.updates : [],
-      summary: p.summary || '',
+      summary: p.summary ?? '',
       tags: Array.isArray(p.tags) ? p.tags : [],
     }
   } catch {
