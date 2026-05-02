@@ -88,7 +88,7 @@ function parseResolverResult(raw: string, fallbackTitle?: string): ResolverResul
   }
 }
 
-function makeDefault(title?: string): ResolverResult {
+function makeDefault(_title?: string): ResolverResult {
   return {
     intent: 'enrich',
     type: 'collection',
