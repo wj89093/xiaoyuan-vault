@@ -62,8 +62,6 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, o
     while (existing.some(f => f.name === `${baseName}${counter > 0 ? ' ' + counter : ''}.md`)) {
       counter++
     }
-    const name = counter === 0 ? `${baseName}.md` : `${baseName} ${counter}.md`
-    // Strip .md for the file creation (handleNewFile appends .md)
     onNewFile(targetFolder, counter === 0 ? baseName : `${baseName} ${counter}`)
   }, [files, targetFolder, onNewFile])
 
