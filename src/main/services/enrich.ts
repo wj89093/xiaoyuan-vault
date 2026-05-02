@@ -215,7 +215,6 @@ async function findFilesMentioningEntity(
   entityName: string
 ): Promise<string[]> {
   const files = await scanAllMarkdownFiles(vaultPath)
-  const nameLower = entityName.toLowerCase()
   const results: string[] = []
 
   for (const filePath of files) {
