@@ -337,7 +337,7 @@ function App(): JSX.Element {
           setFiles(fileList)
         }
       } catch { /* first launch, show welcome */ }
-    })()
+    })().catch(() => {})
   }, [])
 
   // Refresh file list after import
@@ -461,13 +461,15 @@ function App(): JSX.Element {
                   <FolderOpen size={13} />
                   打开其他知识库
                 </div>
-                <div className="vault-menu-item danger" onClick={async () => {
-                  setShowVaultMenu(false)
-                  setVaultPath(null)
-                  setFiles([])
-                  setSelectedFile(null)
-                  setContent('')
-                  await (window.api as any).clearLastVault?.()
+                <div className="vault-menu-item danger" onClick={() => {
+                  ;(async () => {
+                    setShowVaultMenu(false)
+                    setVaultPath(null)
+                    setFiles([])
+                    setSelectedFile(null)
+                    setContent('')
+                    await (window.api as any).clearLastVault?.()
+                  })().catch(() => {})
                 }}>
                   <span>✕</span>
                   关闭当前知识库
