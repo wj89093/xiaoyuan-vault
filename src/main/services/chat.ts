@@ -1,6 +1,6 @@
 import { getVaultPath, searchFiles } from './database'
 import { callAI } from './aiService'
-import { readFile, readFileSync, writeFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { createHash } from 'crypto'
