@@ -1,11 +1,11 @@
 import log from 'electron-log/main'
-import { readFile, writeFile, rename } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
-import { join, dirname, basename } from 'path'
+import { join, basename } from 'path'
 import { resolveContentType, type ResolverResult } from './resolver'
 import { rebuildIndexFile, appendToOperationLog } from './autoAIEngine'
 import { getVaultPath } from './database'
-import { parseFrontmatter, applyFrontmatter, generateFileTemplate, extractTypedLinks, type Relationship } from './frontmatter'
+import { parseFrontmatter, applyFrontmatter, extractTypedLinks, type Relationship } from './frontmatter'
 
 export interface EnrichResult {
   success: boolean
@@ -168,7 +168,7 @@ export async function saveFolderMap(map: Record<string, string>): Promise<void> 
   await writeFile(joinPath(dir, 'folder-map.json'), JSON.stringify(map, null, 2), 'utf-8')
 }
 
-function getDefaultFolder(type: string): string {
+function _getDefaultFolder(type: string): string {
   if (!_folderMap) return DEFAULT_FOLDER_MAP[type] || '0-收集'
   return _folderMap[type] || '0-收集'
 }
@@ -307,7 +307,7 @@ interface TimelineEntry {
 /**
  * Parse a timeline entry from the "## 时间线" section of a page
  */
-function parseTimeline(raw: string): TimelineEntry[] {
+function _parseTimeline(raw: string): TimelineEntry[] {
   const entries: TimelineEntry[] = []
   const match = raw.match(/##\s*时间线[\s\S]*$/m)
   if (!match) return entries
@@ -362,7 +362,7 @@ async function appendTimelineEntry(
 ): Promise<boolean> {
   try {
     const raw = await readFile(filePath, 'utf-8')
-    const { frontmatter } = parseFrontmatter(raw)
+    parseFrontmatter(raw)
     const now = entry.date || new Date().toISOString().slice(0, 10)
     const entryLine = `## [${now}] ${entry.type} | ${entry.content}${entry.source ? '  \n   来源: ' + entry.source : ''}`
 
