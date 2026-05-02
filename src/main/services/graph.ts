@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 import { join, extname } from 'path'
 import log from 'electron-log/main'
 import { loadFolderMap as loadEnrichFolderMap } from './enrich'
-import { extractTypedLinks, Relationship } from './frontmatter'
+import { extractTypedLinks, type Relationship } from './frontmatter'
 
 // ============ Types ============
 

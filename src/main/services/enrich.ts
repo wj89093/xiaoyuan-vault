@@ -2,10 +2,10 @@ import log from 'electron-log/main'
 import { readFile, writeFile, rename } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, dirname, basename } from 'path'
-import { resolveContentType, ResolverResult } from './resolver'
+import { resolveContentType, type ResolverResult } from './resolver'
 import { rebuildIndexFile, appendToOperationLog } from './autoAIEngine'
 import { getVaultPath } from './database'
-import { parseFrontmatter, applyFrontmatter, generateFileTemplate, extractTypedLinks, Relationship } from './frontmatter'
+import { parseFrontmatter, applyFrontmatter, generateFileTemplate, extractTypedLinks, type Relationship } from './frontmatter'
 
 export interface EnrichResult {
   success: boolean

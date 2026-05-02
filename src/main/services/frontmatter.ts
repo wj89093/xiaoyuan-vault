@@ -64,7 +64,7 @@ export function parseFrontmatter(content: string): { frontmatter: Frontmatter; c
   }
 
   // Parse each line
-  let inFrontmatter = true
+  const inFrontmatter = true
   for (const line of raw.split('\n')) {
     const colonIdx = line.indexOf(':')
     if (colonIdx === -1) continue

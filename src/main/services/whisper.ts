@@ -13,7 +13,7 @@ const execFileAsync = promisify(execFile)
 function getWhisperBinaryPath(): string {
   if (app.isPackaged) {
     // Packaged: extraResources/whisper/bin/whisper-cli
-    return join(process.resourcesPath!, 'whisper', 'bin', 'whisper-cli')
+    return join(process.resourcesPath, 'whisper', 'bin', 'whisper-cli')
   }
   return '/opt/homebrew/bin/whisper-cli'
 }
@@ -21,7 +21,7 @@ function getWhisperBinaryPath(): string {
 function getWhisperModelPath(): string {
   if (app.isPackaged) {
     // Packaged: extraResources/whisper/models/ggml-base.bin
-    return join(process.resourcesPath!, 'whisper', 'models', 'ggml-base.bin')
+    return join(process.resourcesPath, 'whisper', 'models', 'ggml-base.bin')
   }
   return '/Users/xindaolangu/Library/ApplicationSupport/whisper-cpp/models/ggml-base.bin'
 }

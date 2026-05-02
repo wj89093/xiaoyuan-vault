@@ -93,7 +93,7 @@ function App(): JSX.Element {
         // Vault-wide RAG — stream the answer
         const placeholderId = `stream-${Date.now()}`
         const placeholder = { id: placeholderId, role: 'assistant' as const, content: '正在思考...', sources: [] as any[], sourceMode: 'knowledge_base' as const }
-        setMessages(prev => [...prev, placeholder as any])
+        setMessages(prev => [...prev, placeholder])
 
         const api = window.api as any
         const history = messages.slice(-20).map((m: any) => ({ role: m.role, content: m.content }))
@@ -578,7 +578,7 @@ function App(): JSX.Element {
                 // Search by filename
                 const name = filePath.split('/').pop() || filePath
                 const found = files.find(f => f.name === name || f.path?.endsWith(name))
-                if (found) handleSelectFile(found.path!)
+                if (found) handleSelectFile(found.path)
               }
             }}
             onInsertToDoc={!isNativePreview && selectedFile ? (async (aiContent: string) => {

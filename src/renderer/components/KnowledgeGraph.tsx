@@ -116,7 +116,7 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
           for (const link of wikiLinks) {
             const targetName = link.slice(2, -2).trim()
             // Resolve target: try exact path, then name match
-            let targetPath = nodeMap.get(targetName)?.id
+            const targetPath = nodeMap.get(targetName)?.id
               || nodeMap.get(targetName + '.md')?.id
               || titleToPath.get(targetName)
             if (targetPath && targetPath !== file.path) {
@@ -324,7 +324,7 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
 function forceCluster(folderIndex: Map<string, number>) {
   const clusters = new Map<string, { cx: number; cy: number }>()
   const CLUSTER_RADIUS = 200
-  let radius = CLUSTER_RADIUS
+  const radius = CLUSTER_RADIUS
 
   for (const [, idx] of folderIndex) {
     const angle = (2 * Math.PI * idx) / folderIndex.size

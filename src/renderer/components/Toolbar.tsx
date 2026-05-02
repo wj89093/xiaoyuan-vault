@@ -57,7 +57,7 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, o
   const handleNewFileInstant = useCallback(() => {
     // Generate default name: "Untitled" / "Untitled 1" / ...
     const existing = files.filter(f => !f.isDirectory)
-    let baseName = 'Untitled'
+    const baseName = 'Untitled'
     let counter = 0
     while (existing.some(f => f.name === `${baseName}${counter > 0 ? ' ' + counter : ''}.md`)) {
       counter++
@@ -69,7 +69,7 @@ export function Toolbar({ onNewFile, onNewFolder, onOpenGraph, onOpenSettings, o
 
   const handleNewFolderInstant = useCallback(() => {
     const existing = folders
-    let baseName = 'Untitled'
+    const baseName = 'Untitled'
     let counter = 0
     while (existing.some(f => f.name === `${baseName}${counter > 0 ? ' ' + counter : ''}`)) {
       counter++

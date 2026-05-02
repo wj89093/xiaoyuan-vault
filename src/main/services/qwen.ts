@@ -46,7 +46,7 @@ export async function streamQwenAI(
         stream: true,
         temperature: 0.7,
         max_tokens: 2000,
-      } as QwenRequest),
+      }),
       signal,
     })
 
@@ -165,7 +165,7 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
         ],
         temperature: 0.7,
         max_tokens: 2000
-      } as QwenRequest)
+      })
     })
 
     if (!response.ok) {

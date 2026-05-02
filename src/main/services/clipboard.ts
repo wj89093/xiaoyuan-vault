@@ -422,7 +422,7 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
   cardWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
   cardWindow.setVisibleOnAllWorkspaces(true)
 
-  let blurTimer: ReturnType<typeof setTimeout> | null = null
+  const blurTimer: ReturnType<typeof setTimeout> | null = null
   // Disabled: blur-to-close causes premature close when card loses focus during save
   // cardWindow.on('blur', () => {
   //   blurTimer = setTimeout(() => {

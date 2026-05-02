@@ -278,7 +278,7 @@ async function fetchTwitter(url: string): Promise<URLFetchResult> {
     }
   })
 
-  const data = response.data as any
+  const data = response.data
   const tweet = data.tweet
   
   if (!tweet) {
@@ -318,7 +318,7 @@ async function fetchGitHub(url: string): Promise<URLFetchResult> {
     }
   })
 
-  const repoData = repoResponse.data as any
+  const repoData = repoResponse.data
   
   // 获取 README
   let readme = ''
@@ -333,7 +333,7 @@ async function fetchGitHub(url: string): Promise<URLFetchResult> {
         }
       }
     )
-    const readmeData = readmeResponse.data as any
+    const readmeData = readmeResponse.data
     if (readmeData.content) {
       readme = Buffer.from(readmeData.content, 'base64').toString('utf-8')
     }
@@ -369,7 +369,7 @@ async function fetchReddit(url: string): Promise<URLFetchResult> {
     }
   })
 
-  const data = response.data as any
+  const data = response.data
   const post = data[0]?.data?.children[0]?.data
   
   if (!post) {
