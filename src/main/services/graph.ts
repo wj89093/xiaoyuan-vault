@@ -426,28 +426,16 @@ export function cosineSimilarity(
   let normA = 0
   let normB = 0
 
-  // Single pass: accumulate from smaller vector
-  const smaller = vecA.size <= vecB.size ? vecA : vecB
-  const larger = vecA.size <= vecB.size ? vecB : vecA
-
-  for (const [term, valueA] of smaller) {
-    const valueB = larger.get(term) || 0
+  // Compute dot product and normA from vecA
+  for (const [term, valueA] of vecA) {
+    const valueB = vecB.get(term) || 0
     dotProduct += valueA * valueB
     normA += valueA * valueA
-    normB += valueB * valueB
   }
 
-  // If vectors are very different sizes, accumulate remaining normB
-  if (smaller === vecA) {
-    // smaller = vecA, larger = vecB — already counted vecB for matching terms
-    for (const [, valueB] of larger) {
-      normB += valueB * valueB
-    }
-  } else {
-    // smaller = vecB, larger = vecA — need vecA remaining terms
-    for (const [term, valueA] of vecA) {
-      if (!vecB.has(term)) normA += valueA * valueA
-    }
+  // Compute normB from vecB
+  for (const [, valueB] of vecB) {
+    normB += valueB * valueB
   }
 
   if (normA === 0 || normB === 0) return 0

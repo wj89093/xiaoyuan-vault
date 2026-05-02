@@ -98,8 +98,8 @@ describe('graph service', () => {
 
     it('should create content-based edges', () => {
       const docs = [
-        { file: 'a.md', title: 'A', tags: [], tokens: new Map([['word', 5]]), relationships: [] },
-        { file: 'b.md', title: 'B', tags: [], tokens: new Map([['word', 5]]), relationships: [] }
+        { file: 'a.md', title: 'A', tags: [], tokens: new Map([['word', 5], ['foo', 1], ['bar', 1], ['baz', 1], ['qux', 1]]), relationships: [] },
+        { file: 'b.md', title: 'B', tags: [], tokens: new Map([['word', 5], ['foo', 1], ['bar', 1], ['baz', 1], ['qux', 1]]), relationships: [] }
       ]
       const { vectors, idf } = computeTFIDF(docs)
       const edges = buildEdges(docs, vectors, idf)
