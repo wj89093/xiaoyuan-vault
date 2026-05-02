@@ -403,7 +403,7 @@ AI 自动维护反向链接。
     return true
   })
   ipcMain.handle('auth:openLogin', () => {
-    const gatewayUrl = process.env.AUTH_GATEWAY_URL || 'https://chance-unnamed-camera.ngrok-free.dev'
+    const gatewayUrl = process.env.AUTH_GATEWAY_URL ?? 'https://chance-unnamed-camera.ngrok-free.dev'
     // Open login page - after login, redirect to xiaoyuan://auth/callback
     const loginUrl = `${gatewayUrl}/auth/email/login?redirect_uri=xiaoyuan%3A%2F%2Fauth%2Fcallback`
     require('electron').shell.openExternal(loginUrl)
@@ -412,10 +412,10 @@ AI 自动维护反向链接。
 
   // AI Provider settings
   ipcMain.handle('provider:get', async () => {
-    return readAutoAISettings()?.then(s => s?.provider || 'qwen').catch(() => 'qwen')
+    return readAutoAISettings()?.then(s => s?.provider ?? 'qwen').catch(() => 'qwen')
   })
   ipcMain.handle('provider:set', async (_, provider: string) => {
-    const settings = await readAutoAISettings() || { enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true }
+    const settings = await readAutoAISettings() ?? { enabled: true, interval: 60, onClassify: true, onTags: true, onSummary: true }
     ;(settings as any).provider = provider
     await writeAutoAISettings(settings)
     return true
@@ -561,7 +561,7 @@ AI 自动维护反向链接。
       return { title: result.title, content: result.content }
     } catch (err: any) {
       log.error('fetchUrl error:', err)
-      throw new Error(err.message || '获取失败')
+      throw new Error(err.message ?? '获取失败')
     }
   })
 
