@@ -1,4 +1,4 @@
-import type { XyVaultAPI } from '../window.d.ts'
+import type { XyVaultAPI } from '../shared/window.d.ts'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
