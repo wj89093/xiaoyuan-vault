@@ -114,7 +114,7 @@ function createWindow(): void {
 
   // Load the app
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    void mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']).catch?.(() => {})
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -783,7 +783,7 @@ app.on('open-url', (event, url) => {
   handleAuthCallback(url)
 })
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   log.info('App starting...')
 
   electronApp.setAppUserModelId('com.xiaoyuan.vault')
