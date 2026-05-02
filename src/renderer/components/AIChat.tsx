@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import React from 'react'
 import log from 'electron-log/renderer'
-import { Send, Bot, User, Trash2, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, MessageCircle } from 'lucide-react'
+import { Send, Bot, User, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, MessageCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatMessage, ChatSession } from '../../shared/chat'

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import React from 'react'
 import * as d3 from 'd3'
-import { FileText, Folder } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import type { FileInfo } from '../types'
 
 interface KnowledgeGraphProps {

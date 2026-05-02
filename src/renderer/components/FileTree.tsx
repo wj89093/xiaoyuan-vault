@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import log from 'electron-log/renderer'
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Trash2, Pencil, MoveRight, Plus, FolderPlus } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Trash2, Pencil, Plus, FolderPlus } from 'lucide-react'
 import type { FileInfo } from '../types'
 
 interface FileTreeProps {
