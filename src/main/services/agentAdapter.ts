@@ -64,7 +64,7 @@ async function processCommand(filePath: string): Promise<void> {
         const { path, content, frontmatter } = params
         if (!path || !content) throw new Error('missing path or content')
         const fileContent = frontmatter
-          ? `---\n${Object.entries(frontmatter).map(([k,v]) => `${k}: ${v}`).join('\n')}\n---\n\n${content}`
+          ? `---\n${Object.entries(frontmatter).map(([k,v]) => `${k}: ${String(v)}`).join('\n')}\n---\n\n${content}`
           : content
         await saveFile(path, fileContent)
         output = { ok: true, action, id, path }
@@ -106,7 +106,7 @@ async function processCommand(filePath: string): Promise<void> {
           if (idx > 0) fm[l.slice(0, idx).trim()] = l.slice(idx+1).trim()
         }
         Object.assign(fm, updates)
-        const newFm = Object.entries(fm).map(([k,v]) => `${k}: ${v}`).join('\n')
+        const newFm = Object.entries(fm).map(([k,v]) => `${k}: ${String(v)}`).join('\n')
         const newContent = `---\n${newFm}\n---\n\n${bodyLines.join('\n')}`
         await writeFile(fpath, newContent, 'utf-8')
         output = { ok: true, action, id }

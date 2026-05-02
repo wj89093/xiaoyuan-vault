@@ -45,13 +45,13 @@ export async function fetchURL(url: string): Promise<URLFetchResult> {
   try {
     return await fetchViaJina(cleanUrl)
   } catch (jinaErr) {
-    console.warn(`[Jina] failed: ${jinaErr}, trying direct fetch`)
+    console.warn(`[Jina] failed: ${String(jinaErr)}, trying direct fetch`)
     
     // 3. 直接 HTML 抓取（降级方案）
     try {
       return await fetchDirectHTML(cleanUrl)
     } catch (directErr) {
-      throw new Error(`Jina: ${jinaErr} | Direct: ${directErr}`)
+      throw new Error(`Jina: ${String(jinaErr)} | Direct: ${String(directErr)}`)
     }
   }
 }
