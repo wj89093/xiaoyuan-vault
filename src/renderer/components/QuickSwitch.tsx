@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, FileText, Clock, ArrowRight, X, Hash } from 'lucide-react'
 import type { FileInfo } from '../types'
 
@@ -35,10 +35,7 @@ export function QuickSwitch({ files, recentFiles, onSelect, onClose }: QuickSwit
   const [snippetMap, setSnippetMap] = useState<Record<string, string>>({})
   const [loadingSnippets, setLoadingSnippets] = useState<Set<string>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
-  const flatFilesRef = useRef<FlatFile[]>([])
-
-  // Flatten file tree once
-  flatFilesRef.current = flattenFiles(files)
+  const flatFiles = useMemo(() => flattenFiles(files), [files])
 
   // Focus input on mount
   useEffect(() => {
@@ -56,7 +53,7 @@ export function QuickSwitch({ files, recentFiles, onSelect, onClose }: QuickSwit
       setSnippetMap({})
       return
     }
-    const results = flatFilesRef.current
+    const results = flatFiles
       .filter(f => f.name.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 5)
 
@@ -91,8 +88,6 @@ export function QuickSwitch({ files, recentFiles, onSelect, onClose }: QuickSwit
       })
     }).catch(() => {})
   }, [query])
-
-  const flatFiles = flatFilesRef.current
 
   // Recent files shown when query is empty
   const showRecent = !query.trim()
