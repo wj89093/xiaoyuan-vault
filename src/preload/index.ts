@@ -102,7 +102,7 @@ const api = {
     ipcRenderer.on('chat:streamChunk', sub)
     return () => ipcRenderer.removeListener('chat:streamChunk', sub)
   },
-  onChatStreamDone: (callback: (data: { answer: string; sources: any[]; confidence: number }) => void) => {
+  onChatStreamDone: (callback: (data: AskResult) => void) => {
     const sub = (_: any, data: any) => callback(data)
     ipcRenderer.on('chat:streamDone', sub)
     return () => ipcRenderer.removeListener('chat:streamDone', sub)

@@ -14,6 +14,7 @@ import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
 import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
+import type { ChatMessage } from '../shared/chat'
 
 declare global {
   interface Window {
@@ -28,7 +29,7 @@ declare global {
       aiTags: (content: string) => Promise<string[]>
       aiSummary: (content: string) => Promise<string>
       aiReason: (question: string, context: string[]) => Promise<string>
-      chatAsk: (question: string, history?: any[]) => Promise<{answer: string; sources: {file: string; title: string; snippet: string}[]; confidence: number}>
+      chatAsk: (question: string, history?: ChatMessage[]) => Promise<{answer: string; sources: {file: string; title: string; snippet: string}[]; confidence: number}>
       aiWrite: (outline: string) => Promise<string>
       moveFile: (filePath: string, newParentDir: string) => Promise<boolean>
       getVaultPath: () => Promise<string | null>
@@ -92,7 +93,7 @@ function App(): JSX.Element {
       } else {
         // Vault-wide RAG — stream the answer
         const placeholderId = `stream-${Date.now()}`
-        const placeholder = { id: placeholderId, role: 'assistant' as const, content: '正在思考...', sources: [] as any[], sourceMode: 'knowledge_base' as const }
+        const placeholder = { id: placeholderId, role: 'assistant' as const, content: '正在思考...', pagesUsed: [] as Array<{file: string; title: string}>, sourceMode: 'knowledge_base' as const }
         setMessages(prev => [...prev, placeholder])
 
         const api = window.api as any
