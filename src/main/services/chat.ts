@@ -237,7 +237,7 @@ async function fetchPageContents(
 
   for (const f of files) {
     try {
-      const filePath = vaultPath, f.name(vaultPath, f.name)
+      const filePath = f.path ?? join(vaultPath, f.name)
       const fullPath = filePath.startsWith('/') ? filePath : join(vaultPath, filePath)
       if (!existsSync(fullPath)) continue
       if (f.isDirectory) continue

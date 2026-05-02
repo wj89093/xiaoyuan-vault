@@ -104,7 +104,7 @@ async function indexFile(filePath: string): Promise<void> {
     const relPath = filePath.replace(vaultPath + '/', '')
     const name = basename(relPath)
     const { frontmatter } = parseFrontmatter(content)
-    const title = frontmatter.title ?? extractTitle(content) || name.replace(/\.md$/, '')
+    const title = frontmatter.title ?? extractTitle(content) ?? (name.replace(/\.md$/, ''))
     const hash = simpleHash(content)
 
     const stmt = db.prepare(`
@@ -216,7 +216,7 @@ export async function saveFile(filePath: string, content: string): Promise<boole
       const stats = await stat(fullPath)
       const name = basename(relPath)
       const { frontmatter } = parseFrontmatter(content)
-      const title = frontmatter.title ?? extractTitle(content) || name.replace(/\.md$/, '')
+      const title = frontmatter.title ?? extractTitle(content) ?? (name.replace(/\.md$/, ''))
       const hash = simpleHash(content)
       const folder = relPath.includes('/')
         ? relPath.split('/').slice(0, -1).join('/')
@@ -268,7 +268,7 @@ export async function renameFile(oldPath: string, newName: string): Promise<bool
         const content = await readFile(newFullPath, 'utf-8')
         const stats = await stat(newFullPath)
         const { frontmatter } = parseFrontmatter(content)
-        const title = frontmatter.title ?? extractTitle(content) || newName.replace(/\.md$/, '')
+        const title = frontmatter.title ?? extractTitle(content) ?? (newName.replace(/\.md$/, ''))
         const hash = simpleHash(content)
         const folder = newRelPath.includes('/') ? newRelPath.split('/').slice(0, -1).join('/') : ''
 
@@ -314,7 +314,7 @@ export async function moveFile(oldPath: string, newParentDir: string): Promise<b
         const content = await readFile(newFullPath, 'utf-8')
         const stats = await stat(newFullPath)
         const { frontmatter } = parseFrontmatter(content)
-        const title = frontmatter.title ?? extractTitle(content) || basename(oldRelPath).replace(/\.md$/, '')
+        const title = frontmatter.title ?? extractTitle(content) ?? (basename(oldRelPath).replace(/\.md$/, ''))
         const hash = simpleHash(content)
         db.prepare(`
           UPDATE files SET content = ?, title = ?, tags = ?, frontmatter = ?, modified_at = ?, content_hash = ? WHERE path = ?

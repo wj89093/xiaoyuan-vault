@@ -178,10 +178,8 @@ async function fetchWechat(url: string): Promise<URLFetchResult> {
   }
 
   // 4. 最后手段：标题
-  const title = $('meta[property="og:title"]').attr('content') ?? 
-                $('h1').text() || 
-                $('title').text() || 
-                '微信文章'
+  const title = $('meta[property="og:title"]').attr('content') ??
+                ($('h1').text() || $('title').text() || '微信文章')
 
   if (!content && title) {
     content = title
