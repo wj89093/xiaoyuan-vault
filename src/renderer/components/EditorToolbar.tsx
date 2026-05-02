@@ -1,9 +1,9 @@
-import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, Eye, EyeOff, List, ListOrdered, Quote, Columns, BookOpen, Undo2, Redo2, FileText } from 'lucide-react'
+import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, EyeOff, List, ListOrdered, Quote, Columns, BookOpen, Undo2, Redo2, FileText } from 'lucide-react'
 import React from 'react'
 
 interface EditorToolbarProps {
   view: any
-  previewMode: boolean
+  _previewMode: boolean
   onTogglePreview: () => void
   onToggleSplit: () => void
   splitView?: boolean
@@ -11,7 +11,7 @@ interface EditorToolbarProps {
   onReference?: (content: string, fileName: string) => void
 }
 
-export function EditorToolbar({ view, previewMode, onTogglePreview, onToggleSplit, splitView, readingModeActive, onReference }: EditorToolbarProps): JSX.Element {
+export function EditorToolbar({ view, _previewMode, onTogglePreview, onToggleSplit, splitView, readingModeActive, onReference }: EditorToolbarProps): JSX.Element {
   const insert = (template: string, cursorOffset?: number) => {
     if (!view) return
     const selection = view.state.selection.main
