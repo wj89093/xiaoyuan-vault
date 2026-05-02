@@ -14,8 +14,6 @@ import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
 import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
-import type { ChatMessage } from '../shared/chat'
-
 function App(): JSX.Element {
   const [vaultPath, setVaultPath] = useState<string | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
