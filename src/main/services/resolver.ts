@@ -1,5 +1,4 @@
 import log from 'electron-log/main'
-import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { callAI } from './aiService'
