@@ -28,12 +28,14 @@ export async function startAgentAdapter(): Promise<void> {
     await mkdir(COMMANDS_DIR, { recursive: true })
   }
 
-  watch(COMMANDS_DIR, { persistent: false }, async (event, filename) => {
-    if (event !== 'rename' || !filename?.endsWith('.json')) return
-    const filePath = join(COMMANDS_DIR, filename)
-    // Wait for file to be fully written
-    await new Promise(r => setTimeout(r, 200))
-    await processCommand(filePath)
+  watch(COMMANDS_DIR, { persistent: false }, (event, filename) => {
+    void (async () => {
+      if (event !== 'rename' || !filename?.endsWith('.json')) return
+      const filePath = join(COMMANDS_DIR, filename)
+      // Wait for file to be fully written
+      await new Promise(r => setTimeout(r, 200))
+      await processCommand(filePath)
+    })()
   })
 
   log.info('[AgentAdapter] started, watching:', COMMANDS_DIR)

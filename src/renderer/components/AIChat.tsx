@@ -49,7 +49,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
     if (!loaded || messages.length === 0) return
     const api = window.api as any
     clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(async () => {
+    saveTimer.current = setTimeout(() => { void (async () => {
       if (!activeSessionId) {
         const session = await api.chatCreate?.(messages[0]?.content?.slice(0, 40) || '新会话')
         if (session) setActiveSessionId(session.id)
@@ -264,7 +264,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                       {msg.sourceMode && msg.sourceMode !== 'ai_only' && onSaveToVault && (
                         <button
                           className="ai-chat-save"
-                          onClick={() => handleSave(msg.id)}
+                          onClick={() => { void handleSave(msg.id).catch?.(() => {}) }}
                           disabled={savingId === msg.id || savedIds.has(msg.id)}
                         >
                           {savingId === msg.id ? (
