@@ -147,7 +147,7 @@ function simpleHash(str: string): string {
   return hash.toString(16)
 }
 
-export async function searchFiles(query: string): Promise<FileRecord[]> {
+export function searchFiles(query: string): Promise<FileRecord[]> {
   if (!db) return []
 
   if (!query.trim()) {

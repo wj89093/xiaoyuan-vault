@@ -86,7 +86,7 @@ export async function startAutoAIEngine(): Promise<void> {
   timer = setInterval(() => void runAutoAI().catch?.(() => {}), intervalMs)
 }
 
-export async function stopAutoAIEngine(): Promise<void> {
+export function stopAutoAIEngine(): Promise<void> {
   if (timer) {
     clearInterval(timer)
     timer = null

@@ -40,7 +40,7 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
   }, [contextMenu, hoverPreview])
 
   // Handle mouse enter: fetch summary for preview
-  const handleMouseEnter = async (e: React.MouseEvent, file: FileInfo) => {
+  const handleMouseEnter = (e: React.MouseEvent, file: FileInfo) => {
     if (file.isDirectory) return
     const rect = (e.target as HTMLElement).getBoundingClientRect()
     hoverTimer.current = setTimeout(async () => {

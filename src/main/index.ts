@@ -372,7 +372,7 @@ AI 自动维护反向链接。
     return true
   })
 
-  ipcMain.handle('vault:path', async () => {
+  ipcMain.handle('vault:path', () => {
     return getVaultPath()
   })
 
@@ -392,17 +392,17 @@ AI 自动维护反向链接。
   })
 
   // ─── Auth Token ─────────────────────────────────────────────
-  ipcMain.handle('auth:getToken', async () => {
+  ipcMain.handle('auth:getToken', () => {
     return getAuthToken()
   })
-  ipcMain.handle('auth:getEmail', async () => {
+  ipcMain.handle('auth:getEmail', () => {
     return getAuthEmail()
   })
-  ipcMain.handle('auth:clear', async () => {
+  ipcMain.handle('auth:clear', () => {
     clearAuthToken()
     return true
   })
-  ipcMain.handle('auth:openLogin', async () => {
+  ipcMain.handle('auth:openLogin', () => {
     const gatewayUrl = process.env.AUTH_GATEWAY_URL || 'https://chance-unnamed-camera.ngrok-free.dev'
     // Open login page - after login, redirect to xiaoyuan://auth/callback
     const loginUrl = `${gatewayUrl}/auth/email/login?redirect_uri=xiaoyuan%3A%2F%2Fauth%2Fcallback`
@@ -608,10 +608,10 @@ AI 自动维护反向链接。
   ipcMain.handle('converter:convert', async (_, filePath: string) => {
     return convertWithJS(filePath)
   })
-  ipcMain.handle('converter:supported', async () => {
+  ipcMain.handle('converter:supported', () => {
     return getSupportedExtensions()
   })
-  ipcMain.handle('converter:transcribe', async (_, filePath: string) => {
+  ipcMain.handle('converter:transcribe', (_, filePath: string) => {
     if (!canTranscribeAudio(filePath)) return { success: false, error: '不支持的音频格式' }
     return { success: false, error: 'Whisper 模型未配置' }
   })
@@ -672,7 +672,7 @@ AI 自动维护反向链接。
     return true
   })
 
-  ipcMain.handle('import:open', async () => {
+  ipcMain.handle('import:open', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       openImportWindow(mainWindow)
       return true
@@ -759,16 +759,16 @@ AI 自动维护反向链接。
   })
 
   // Clipboard watcher
-  ipcMain.handle('clipboard:start', async (_, vaultPath: string) => {
+  ipcMain.handle('clipboard:start', (_, vaultPath: string) => {
     setVaultPath(vaultPath)
     showBubble(); triggerGraphRebuild()
     return true
   })
-  ipcMain.handle('clipboard:stop', async () => {
+  ipcMain.handle('clipboard:stop', () => {
     hideBubble()
     return true
   })
-  ipcMain.handle('clipboard:setVaultPath', async (_, vaultPath: string) => {
+  ipcMain.handle('clipboard:setVaultPath', (_, vaultPath: string) => {
     setVaultPath(vaultPath)
     return true
   })

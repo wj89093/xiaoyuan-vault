@@ -583,7 +583,7 @@ function App(): JSX.Element {
                 if (found) void handleSelectFile(found.path).catch?.(() => {})
               }
             }}
-            onInsertToDoc={!isNativePreview && selectedFile ? (async (aiContent: string) => {
+            onInsertToDoc={!isNativePreview && selectedFile ? ((aiContent: string) => {
               const separator = '\n\n---\n\n'
               const newContent = content + (content ? separator : '') + aiContent
               setContent(newContent)

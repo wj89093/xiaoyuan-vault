@@ -149,7 +149,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
             </div>
           ) : (
             sessions.map(s => (
-              <div key={s.id} className="ai-chat-session-item" onClick={async () => { setActiveSessionId(s.id); setView('chat'); onLoadSession?.(s.id); }}>
+              <div key={s.id} className="ai-chat-session-item" onClick={() => { setActiveSessionId(s.id); setView('chat'); onLoadSession?.(s.id); }}>
                 <span className="ai-chat-session-title">{s.title || '未命名会话'}</span>
                 <span className="ai-chat-session-date">{s.updatedAt?.slice(0, 10)}</span>
               </div>
