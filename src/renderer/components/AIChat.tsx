@@ -32,11 +32,11 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
   // Load sessions on mount
   useEffect(() => {
     (async () => {
-            const list = await api.chatSessions?.() ?? []
+            const list = await window.api.chatSessions?.() ?? []
       if (list.length > 0) {
         setSessions(list)
         // Load latest session
-        await api.chatLoad?.(list[0].id)
+        await window.api.chatLoad?.(list[0].id)
         // Note: messages are controlled by App.tsx, not loaded here
       }
       setLoaded(true)
@@ -49,13 +49,13 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
         clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => { void (async () => {
       if (!activeSessionId) {
-        const session = await api.chatCreate?.(messages[0]?.content?.slice(0, 40) ?? '新会话')
+        const session = await window.api.chatCreate?.(messages[0]?.content?.slice(0, 40) ?? '新会话')
         if (session) setActiveSessionId(session.id)
       }
       if (activeSessionId) {
-        await api.chatSave?.(activeSessionId, messages)
+        await window.api.chatSave?.(activeSessionId, messages)
         // Update session list
-        const list = await api.chatSessions?.() ?? []
+        const list = await window.api.chatSessions?.() ?? []
         setSessions(list)
       }
       })().catch(() => {})
