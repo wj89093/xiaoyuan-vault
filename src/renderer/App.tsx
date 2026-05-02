@@ -16,27 +16,6 @@ import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
 import type { ChatMessage } from '../shared/chat'
 
-declare global {
-  interface Window {
-    api: {
-      openVault: () => Promise<string | null>
-      listFiles: () => Promise<FileInfo[]>
-      searchFiles: (query: string) => Promise<FileInfo[]>
-      readFile: (path: string) => Promise<string>
-      saveFile: (path: string, content: string) => Promise<boolean>
-      createFolder: (path: string) => Promise<boolean>
-      aiClassify: (content: string, folders: string[]) => Promise<string>
-      aiTags: (content: string) => Promise<string[]>
-      aiSummary: (content: string) => Promise<string>
-      aiReason: (question: string, context: string[]) => Promise<string>
-      chatAsk: (question: string, history?: ChatMessage[]) => Promise<{answer: string; sources: {file: string; title: string; snippet: string}[]; confidence: number}>
-      aiWrite: (outline: string) => Promise<string>
-      moveFile: (filePath: string, newParentDir: string) => Promise<boolean>
-      getVaultPath: () => Promise<string | null>
-    }
-  }
-}
-
 function App(): JSX.Element {
   const [vaultPath, setVaultPath] = useState<string | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
