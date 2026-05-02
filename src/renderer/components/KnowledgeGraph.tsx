@@ -18,12 +18,28 @@ interface GraphNode extends d3.SimulationNodeDatum {
   isDirectory: boolean
   tags: string[]
   folder: string
+  // Entity data (from enrich relationships)
+  is_entity?: boolean
+  entity_type?: string
+  entity_count?: number
 }
 
 interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
   source: string | GraphNode
   target: string | GraphNode
-  type: 'link' | 'folder'
+  type: 'link' | 'folder' | 'typed_link'
+}
+
+const ENTITY_COLORS: Record<string, string> = {
+  person: '#7c3aed',     // violet
+  company: '#0891b2',   // cyan
+  project: '#059669',    // emerald
+  meeting: '#d97706',    // amber
+  deal: '#dc2626',      // red
+  concept: '#7c3aed',   // violet
+  research: '#2563eb',   // blue
+  event: '#ea580c',      // orange
+  note: '#515154',       // default
 }
 
 const COLORS = {
@@ -31,6 +47,7 @@ const COLORS = {
   nodeActive: '#007aff',
   link: '#dcdcde',
   linkFolder: '#a1a1a6',
+  linkTyped: '#a78bfa',   // typed link edges
   text: '#6e6e73',
   bg: '#ffffff'
 }
@@ -180,9 +197,9 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
       .data(graphData.links)
       .enter()
       .append('line')
-      .attr('stroke', d => d.type === 'link' ? COLORS.link : COLORS.linkFolder)
-      .attr('stroke-width', d => d.type === 'link' ? 1.5 : 0.8)
-      .attr('stroke-opacity', d => d.type === 'link' ? 0.8 : 0.4)
+      .attr('stroke', d => d.type === 'typed_link' ? COLORS.linkTyped : d.type === 'link' ? COLORS.link : COLORS.linkFolder)
+      .attr('stroke-width', d => d.type === 'typed_link' ? 2.0 : d.type === 'link' ? 1.5 : 0.8)
+      .attr('stroke-opacity', d => d.type === 'typed_link' ? 0.9 : d.type === 'link' ? 0.8 : 0.4)
 
     // Nodes
     const nodeGroup = g.append('g').attr('class', 'nodes')
@@ -208,12 +225,21 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
           })
       )
 
-    // Node circles
+    // Node circles — entity nodes larger + colored by type
     nodeElements
       .append('circle')
-      .attr('r', d => d.tags.length > 0 ? 8 : 6)
-      .attr('fill', d => selectedFile === d.path ? COLORS.nodeActive : COLORS.node)
-      .attr('fill-opacity', 0.85)
+      .attr('r', d => {
+        if (d.is_entity && d.entity_count) return Math.min(6 + d.entity_count * 1.5, 14)
+        return d.tags.length > 0 ? 8 : 6
+      })
+      .attr('fill', d => {
+        if (selectedFile === d.path) return COLORS.nodeActive
+        if (d.is_entity && d.entity_type && ENTITY_COLORS[d.entity_type]) {
+          return ENTITY_COLORS[d.entity_type]
+        }
+        return COLORS.node
+      })
+      .attr('fill-opacity', d => d.is_entity ? 0.9 : 0.85)
 
     // Node labels
     nodeElements
@@ -283,8 +309,11 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
         <svg ref={svgRef} className="kg-svg" />
       )}
       <div className="kg-legend">
+        <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: COLORS.linkTyped }} />类型链接</span>
         <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: COLORS.link }} />引用链接</span>
         <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: COLORS.linkFolder }} />同文件夹</span>
+        <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: ENTITY_COLORS.person }} />人物</span>
+        <span className="kg-legend-item"><span className="kg-legend-dot" style={{ background: ENTITY_COLORS.company }} />公司</span>
         <span className="kg-legend-hint">🖱 滚轮缩放 · 拖拽移动</span>
       </div>
     </div>

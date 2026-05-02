@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { join, extname } from 'path'
 import log from 'electron-log/main'
 import { loadFolderMap as loadEnrichFolderMap } from './enrich'
+import { extractTypedLinks, Relationship } from './frontmatter'
 
 // ============ Types ============
 
@@ -13,12 +14,16 @@ interface GraphNode {
   page_type?: string
   tags?: string[]
   edge_count: number
+  // Entity data (from enrich relationships)
+  is_entity?: boolean       // has typed relationship entry
+  entity_type?: string       // person|company|project|etc.
+  entity_count?: number      // number of relationships pointing to/from
 }
 
 interface GraphEdge {
   source: string
   target: string
-  relation: 'shared_tag' | 'similar_content' | 'hyperlink'
+  relation: 'shared_tag' | 'similar_content' | 'hyperlink' | 'typed_link'
   weight: number
 }
 
@@ -33,6 +38,8 @@ interface TFIDFDocument {
   title: string
   tags: string[]
   tokens: Map<string, number>
+  // Entity data
+  relationships: Relationship[]
 }
 
 // ============ Constants ============
@@ -118,12 +125,20 @@ export async function rebuildGraph(): Promise<{ nodes: number; edges: number }> 
     const folderToType = await loadFolderToTypeMap()
     const nodes: GraphNode[] = documents.map(doc => {
       const folder = doc.file.split('/')[0] || ''
+      // Count relationships as a proxy for entity prominence
+      const entity_count = doc.relationships.length
+      const is_entity = entity_count > 0
+      // Primary entity type (from first relationship or frontmatter)
+      const primaryType = doc.relationships[0]?.type || folderToType[folder] || 'note'
       return {
         id: doc.file,
         title: doc.title,
         tags: doc.tags,
         page_type: folderToType[folder] || 'note',
         edge_count: 0,
+        is_entity,
+        entity_type: is_entity ? primaryType : undefined,
+        entity_count: is_entity ? entity_count : 0,
       }
     })
 
@@ -212,7 +227,10 @@ async function tokenizeDocument(
   const body = content.replace(/^---[\s\S]*?---\n?/, '')  // remove frontmatter
   const tokens = tokenize(body)
 
-  return { file, title, tags, tokens }
+  // Extract typed links for entity visualization
+  const relationships = extractTypedLinks(body)
+
+  return { file, title, tags, tokens, relationships }
 }
 
 export function tokenize(text: string): Map<string, number> {
@@ -318,6 +336,43 @@ export function buildEdges(
   const edges: GraphEdge[] = []
   const SIMILARITY_THRESHOLD = 0.15
   const MAX_EDGES = 200  // Cap to prevent explosion
+
+  // ── Build entity name → doc index (for typed link resolution) ──
+  const nameToDocs = new Map<string, { doc: TFIDFDocument; norm: string }[]>()
+  for (const doc of documents) {
+    // Index by title (normalized) and all relationship target names
+    const titles = [doc.title]
+    for (const rel of doc.relationships) titles.push(rel.target)
+    for (const name of titles) {
+      const norm = name.toLowerCase().replace(/\s+/g, '')
+      if (!nameToDocs.has(norm)) nameToDocs.set(norm, [])
+      nameToDocs.get(norm)!.push({ doc, norm })
+    }
+  }
+
+  // ── Typed-link edges (from [[TYPE:NAME]] relationships) ──
+  for (const doc of documents) {
+    for (const rel of doc.relationships) {
+      const targetNorm = rel.target.toLowerCase().replace(/\s+/g, '')
+      const matches = nameToDocs.get(targetNorm) || []
+      for (const { doc: targetDoc } of matches) {
+        if (targetDoc.file === doc.file) continue
+        // Avoid duplicate edges
+        const exists = edges.some(
+          e => (e.source === doc.file && e.target === targetDoc.file && e.relation === 'typed_link') ||
+               (e.source === targetDoc.file && e.target === doc.file && e.relation === 'typed_link')
+        )
+        if (!exists && edges.length < MAX_EDGES) {
+          edges.push({
+            source: doc.file,
+            target: targetDoc.file,
+            relation: 'typed_link',
+            weight: 1.0,  // typed links are high-confidence
+          })
+        }
+      }
+    }
+  }
 
   // Tag-based edges (fast)
   for (let i = 0; i < documents.length; i++) {

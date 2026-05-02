@@ -94,7 +94,7 @@ function App(): JSX.Element {
         setMessages(prev => [...prev, placeholder as any])
 
         const api = window.api as any
-        const history = messages.slice(-6).map((m: any) => ({ role: m.role, content: m.content }))
+        const history = messages.slice(-20).map((m: any) => ({ role: m.role, content: m.content }))
 
         // Set up stream listeners before kicking off the request
         let unsubChunk: (() => void) | undefined
