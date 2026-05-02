@@ -60,6 +60,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
         const list = await api.chatSessions?.() || []
         setSessions(list)
       }
+      })().catch(() => {})
     }, 1000)
     return () => clearTimeout(saveTimer.current)
   }, [messages.length, loaded])
