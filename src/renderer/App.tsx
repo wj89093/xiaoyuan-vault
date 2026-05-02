@@ -111,13 +111,13 @@ function App(): JSX.Element {
           setChatLoading(false)
         }
 
-        unsubChunk = api.onChatStreamChunk?.(({ chunk, partial }: any) => {
+        unsubChunk = api.onChatStreamChunk?.(({ partial }: any) => {
           setMessages(prev => prev.map((m: any) =>
             m.id === placeholderId ? { ...m, content: partial } : m
           ))
         })
 
-        unsubDone = api.onChatStreamDone?.(({ answer, sources, confidence }: any) => {
+        unsubDone = api.onChatStreamDone?.(({ answer, sources }: any) => {
           settled = true
           const sourcePaths = sources?.map((s: any) => ({ file: s.file, title: s.title })) || []
           setMessages(prev => prev.map((m: any) =>
