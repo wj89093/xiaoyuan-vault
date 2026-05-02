@@ -45,7 +45,7 @@ async function processCommand(filePath: string): Promise<void> {
     if (!existsSync(filePath)) return
     const raw = await readFile(filePath, 'utf-8')
     cmd = JSON.parse(raw)
-  } catch (e) {
+  } catch {
     log.error('[AgentAdapter] failed to parse command file:', filePath, e)
     return
   }
@@ -113,9 +113,9 @@ async function processCommand(filePath: string): Promise<void> {
       default:
         output.error = `unknown action: ${action}`
     }
-  } catch (e: any) {
+  } catch (_e: any) {
     output = { ok: false, action, id, error: e.message }
-    log.error('[AgentAdapter] error:', e)
+    log.error('[AgentAdapter] error:', _e)
   }
 
   // Write result if requested

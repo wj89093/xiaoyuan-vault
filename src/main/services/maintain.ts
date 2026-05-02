@@ -1,7 +1,7 @@
 import log from 'electron-log/main'
 import { readFile } from 'fs/promises'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { join as _join } from 'path'
 import { getVaultPath, listVaultFiles } from './database'
 import { parseFrontmatter, extractWikiLinks } from './frontmatter'
 import { callAI } from './aiService'
