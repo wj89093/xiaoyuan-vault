@@ -31,7 +31,7 @@ function App(): JSX.Element {
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
   const { toasts, dismiss: dismissToast } = useToasts()
-  const [nativePreview, setNativePreview] = useState<any>(null)
+  const [nativePreview, setNativePreview] = useState<{path: string, content: string} | null>(null)
   const [isNativePreview, setIsNativePreview] = useState(false)
 
   // Hash-based routing for import window
