@@ -33,7 +33,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
   useEffect(() => {
     (async () => {
       const api = window.api as any
-      const list = await api.chatSessions?.() || []
+      const list = await api.chatSessions?.() ?? []
       if (list.length > 0) {
         setSessions(list)
         // Load latest session
@@ -51,13 +51,13 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => { void (async () => {
       if (!activeSessionId) {
-        const session = await api.chatCreate?.(messages[0]?.content?.slice(0, 40) || '新会话')
+        const session = await api.chatCreate?.(messages[0]?.content?.slice(0, 40) ?? '新会话')
         if (session) setActiveSessionId(session.id)
       }
       if (activeSessionId) {
         await api.chatSave?.(activeSessionId, messages)
         // Update session list
-        const list = await api.chatSessions?.() || []
+        const list = await api.chatSessions?.() ?? []
         setSessions(list)
       }
       })().catch(() => {})
@@ -194,7 +194,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                       remarkPlugins={[remarkGfm]}
                       components={{
                         text: ({ children, ...props }: any) => {
-                          const text = String(children || '')
+                          const text = String(children ?? '')
                           // Parse [[wiki links]] as clickable buttons
                           const parts = text.split(/(\[\[[^\]]+\]\])/g)
                           if (parts.length <= 1) return <span {...props}>{children}</span>

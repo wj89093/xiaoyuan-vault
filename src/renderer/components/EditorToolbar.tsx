@@ -16,7 +16,7 @@ export function EditorToolbar({ view, _previewMode, onTogglePreview, onToggleSpl
     if (!view) return
     const selection = view.state.selection.main
     const selectedText = view.state.sliceDoc(selection.from, selection.to)
-    const text = template.replace('$TEXT', selectedText || '')
+    const text = template.replace('$TEXT', selectedText ?? '')
     view.dispatch({
       changes: { from: selection.from, to: selection.to, insert: text },
       selection: cursorOffset != null

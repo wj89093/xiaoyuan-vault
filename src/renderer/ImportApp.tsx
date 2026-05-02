@@ -50,7 +50,7 @@ export function ImportApp(): JSX.Element {
       const res = await (window.api as any).importFiles(vaultPath, filePaths)
       setResults(prev => [...prev, ...res.map((r: any) => ({ type: 'file' as const, ...r }))])
     } catch (err: any) {
-      setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: err.message || '导入失败' }])
+      setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: err.message ?? '导入失败' }])
     } finally {
       setImporting(false)
     }
@@ -95,11 +95,11 @@ export function ImportApp(): JSX.Element {
     try {
       const { title, content } = await (window.api as any).fetchUrl(url)
       const vaultPath = await (window.api as any).getVaultPath()
-      const path = await (window.api as any).saveUrlContent(vaultPath || '', title, content)
+      const path = await (window.api as any).saveUrlContent(vaultPath ?? '', title, content)
       setResults(prev => [...prev, { type: 'url', name: title, path, status: 'ok' }])
       setUrlInput('')
     } catch (err: any) {
-      setUrlError(err.message || '获取失败')
+      setUrlError(err.message ?? '获取失败')
     } finally {
       setFetching(false)
     }

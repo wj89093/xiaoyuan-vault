@@ -119,12 +119,12 @@ function App(): JSX.Element {
 
         unsubDone = api.onChatStreamDone?.(({ answer, sources }: any) => {
           settled = true
-          const sourcePaths = sources?.map((s: any) => ({ file: s.file, title: s.title })) || []
+          const sourcePaths = sources?.map((s: any) => ({ file: s.file, title: s.title })) ?? []
           setMessages(prev => prev.map((m: any) =>
             m.id === placeholderId
               ? {
                   ...m,
-                  content: `${answer}\n\n---\n${sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`,
+                  content: `${answer}\n\n---\n${sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') ?? ''}`,
                   pagesUsed: sourcePaths,
                   sourceMode: 'knowledge_base',
                 }
@@ -152,15 +152,15 @@ function App(): JSX.Element {
             m.id === placeholderId
               ? {
                   ...m,
-                  content: `${result.answer}\n\n---\n${result.sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') || ''}`,
-                  sources: result.sources?.map((s: any) => s.title) || [],
+                  content: `${result.answer}\n\n---\n${result.sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') ?? ''}`,
+                  sources: result.sources?.map((s: any) => s.title) ?? [],
                 }
               : m
           ))
         }
       }
     } catch (err: any) {
-      const msg = err?.message || String(err)
+      const msg = err?.message ?? String(err)
       const fallback = msg.includes('key') || msg.includes('401') ? 'API Key 未配置或无效'
         : msg.includes('timeout') || msg.includes('ETIMEDOUT') ? '请求超时，请稍后重试'
         : msg.includes('network') || msg.includes('ECONNREFUSED') ? '网络连接失败'
@@ -203,13 +203,13 @@ function App(): JSX.Element {
       await void window.api.saveFile(selectedFile, content).catch?.(() => {})
     }
 
-    const ext = filePath.split('.').pop()?.toLowerCase() || ''
+    const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
     const isMarkdown = ['md', 'markdown', 'mdown', 'mkd'].includes(ext)
 
     if (!isMarkdown) {
       // Native preview for non-markdown files
       const preview = await (window.api as any).renderFile?.(filePath)
-      setNativePreview(preview || { type: 'unsupported' })
+      setNativePreview(preview ?? { type: 'unsupported' })
       setIsNativePreview(true)
       setSelectedFile(filePath)
       setContent('')
@@ -319,7 +319,7 @@ function App(): JSX.Element {
   // Track recent files
   useEffect(() => {
     if (!selectedFile) return
-    const name = selectedFile.split('/').pop() || selectedFile
+    const name = selectedFile.split('/').pop() ?? selectedFile
     setRecentFiles(prev => {
       const filtered = prev.filter(f => f.path !== selectedFile)
       return [{ path: selectedFile, name }, ...filtered].slice(0, 8)
@@ -560,9 +560,9 @@ function App(): JSX.Element {
             loading={chatLoading}
             onLoadSession={async (sessionId: string) => {
               const api = window.api as any
-              const msgs = await api.chatLoad?.(sessionId) || []
+              const msgs = await api.chatLoad?.(sessionId) ?? []
               setMessages(msgs.map((m: any) => ({
-                id: m.id || crypto.randomUUID(),
+                id: m.id ?? crypto.randomUUID(),
                 role: m.role,
                 content: m.content,
               })))
@@ -578,7 +578,7 @@ function App(): JSX.Element {
                 void handleSelectFile(filePath).catch?.(() => {})
               } else {
                 // Search by filename
-                const name = filePath.split('/').pop() || filePath
+                const name = filePath.split('/').pop() ?? filePath
                 const found = files.find(f => f.name === name || f.path?.endsWith(name))
                 if (found) void handleSelectFile(found.path).catch?.(() => {})
               }

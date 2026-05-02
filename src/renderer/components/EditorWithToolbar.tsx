@@ -50,7 +50,7 @@ export function EditorWithToolbar({ value, onChange }: { value: string; onChange
 
   const handleChange = useCallback((val: string) => {
     onChange(val)
-    const cjk = (val.match(/[\u4e00-\u9fff\u3400-\u4dbf]/gu) || []).length
+    const cjk = (val.match(/[\u4e00-\u9fff\u3400-\u4dbf]/gu) ?? []).length
     const en = val.replace(/[\u4e00-\u9fff\u3400-\u4dbf]/gu, ' ').trim().split(/\s+/).filter(Boolean).length
     setWordCount(cjk + en)
   }, [onChange])

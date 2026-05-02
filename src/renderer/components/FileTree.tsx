@@ -163,10 +163,10 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
         onContextMenu={(e) => handleContextMenu(e, file)}
         onMouseEnter={(e) => handleMouseEnter(e, file)}
         onMouseLeave={handleMouseLeave}
-        title={file.title || file.name}
+        title={file.title ?? file.name}
       >
         <FileText className="file-tree-icon" size={16} />
-        <span className="file-tree-name">{file.title || file.name}</span>
+        <span className="file-tree-name">{file.title ?? file.name}</span>
       </div>
     )
   }

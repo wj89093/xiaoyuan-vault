@@ -76,7 +76,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
                 <div className="settings-row-label">
                   <span>已登录</span>
                   <span className="settings-row-desc" style={{ color: 'var(--color-accent)' }}>
-                    {email || '账户'}
+                    {email ?? '账户'}
                   </span>
                 </div>
                 <button

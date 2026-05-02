@@ -322,7 +322,7 @@ ${recentHistory || '(无)'}
 ${context || '(无相关结果)'}`,
     })
 
-    const answerText = typeof answer === 'string' ? answer : String(answer || '')
+    const answerText = typeof answer === 'string' ? answer : String(answer ?? '')
 
     // Estimate confidence based on retrieved results
     const confidence = results.length > 0

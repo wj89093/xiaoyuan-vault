@@ -112,13 +112,13 @@ export function KnowledgeGraph({ files, selectedFile, onSelect, onClose }: Knowl
           const content = await window.api.readFile(file.path)
           
           // Extract Wiki links [[...]]
-          const wikiLinks = content.match(/\[\[([^\]]+)\]\]/g) || []
+          const wikiLinks = content.match(/\[\[([^\]]+)\]\]/g) ?? []
           for (const link of wikiLinks) {
             const targetName = link.slice(2, -2).trim()
             // Resolve target: try exact path, then name match
             const targetPath = nodeMap.get(targetName)?.id
-              || nodeMap.get(targetName + '.md')?.id
-              || titleToPath.get(targetName)
+              ?? nodeMap.get(targetName + '.md')?.id
+              ?? titleToPath.get(targetName)
             if (targetPath && targetPath !== file.path) {
               wikiLinksFound.push({ source: file.path, target: targetPath })
             }

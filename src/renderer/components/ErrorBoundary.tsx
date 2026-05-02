@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div style={{ fontSize: 48, opacity: 0.3 }}>⚠</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)' }}>出错了</div>
           <div style={{ fontSize: 13, maxWidth: 400, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
-            {this.state.error || '未知错误'}
+            {this.state.error ?? '未知错误'}
           </div>
           <button
             onClick={() => window.location.reload()}

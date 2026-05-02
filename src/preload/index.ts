@@ -94,9 +94,9 @@ const api = {
     ipcRenderer.invoke('ai:reason', question, context),
   aiWrite: (outline: string): Promise<string> => ipcRenderer.invoke('ai:write', outline),
   chatAsk: (question: string, history?: ChatMessage[]): Promise<AskResult> =>
-    ipcRenderer.invoke('chat:ask', question, history || []),
+    ipcRenderer.invoke('chat:ask', question, history ?? []),
   chatAskStream: (question: string, history?: ChatMessage[]) =>
-    ipcRenderer.invoke('chat:askStream', question, history || []),
+    ipcRenderer.invoke('chat:askStream', question, history ?? []),
   onChatStreamChunk: (callback: (data: { chunk: string; partial: string }) => void) => {
     const sub = (_: any, data: any) => callback(data)
     ipcRenderer.on('chat:streamChunk', sub)

@@ -57,7 +57,7 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
         setLoading(false)
       } catch (e: any) {
         if (!cancelled) {
-          setError(e.message || 'PDF 加载失败')
+          setError(e.message ?? 'PDF 加载失败')
           setLoading(false)
         }
       }
@@ -111,13 +111,13 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
   const wordCount = value.replace(/\s/g, '').length
   const readMinutes = Math.max(1, Math.ceil(value.split(/\s+/).filter(Boolean).length / 300))
   const lines = value.split('\n').length
-  const headings = (value.match(/^#{1,6}\s.+/gm) || []).length
-  const wikiLinks = (value.match(/\[\[([^\]]+)\]\]/g) || []).length
-  const externalLinks = (value.match(/https?:\/\/[^\s]+/g) || []).length
+  const headings = (value.match(/^#{1,6}\s.+/gm) ?? []).length
+  const wikiLinks = (value.match(/\[\[([^\]]+)\]\]/g) ?? []).length
+  const externalLinks = (value.match(/https?:\/\/[^\s]+/g) ?? []).length
 
   const { frontmatter } = parseFrontmatter(value)
-  const type = frontmatter.type || 'collection'
-  const status = frontmatter.status || 'active'
+  const type = frontmatter.type ?? 'collection'
+  const status = frontmatter.status ?? 'active'
 
   // Cmd+E toggle Reading ↔ Source mode + Cmd+B/I/K formatting shortcuts
   useEffect(() => {
@@ -210,7 +210,7 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
             <div className="native-preview-sheets">
               <div
                 className="sheet-content"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(nativePreview.sheets[nativePreview.sheetNames[activeSheet]] || '') }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(nativePreview.sheets[nativePreview.sheetNames[activeSheet]] ?? '') }}
               />
             </div>
           )}
