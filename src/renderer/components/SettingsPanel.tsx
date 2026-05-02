@@ -13,19 +13,21 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
 
   // 加载登录状态
   useEffect(() => {
-    ;(async () => {
+    void (async () => {
       try {
         const [e, t] = await Promise.all([
-          (window.api as any).authGetEmail?.(),
-          (window.api as any).authGetToken?.(),
+          (window.api).authGetEmail?.(),
+          (window.api).authGetToken?.(),
         ])
         setEmail(e)
         setToken(t)
-      } catch {}
-    })().catch?.(() => {})
+      } catch {
+        // ignore
+      }
+    })()
 
     // 监听 token 接收（OAuth 回调触发）
-    const unsub = (window.api as any).onAuthTokenReceived?.((data: { token: string; email: string }) => {
+    const unsub = (window.api).onAuthTokenReceived?.((data: { token: string; email: string }) => {
       setToken(data.token)
       setEmail(data.email)
       setLoginHint('登录成功 ✅')
@@ -39,16 +41,16 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const handleLogin = async () => {
     setLoading(true)
     try {
-      await (window.api as any).authOpenLogin?.()
-    } catch (err: any) {
-      setLoginHint('打开发登录页失败：' + err.message)
+      await (window.api).authOpenLogin?.()
+    } catch (err) {
+      setLoginHint('打开发登录页失败：' + (err instanceof Error ? err.message : String(err)))
     }
     setLoading(false)
   }
 
   // 登出
   const handleLogout = async () => {
-    await (window.api as any).authClear?.()
+    await (window.api).authClear?.()
     setToken(null)
     setEmail(null)
   }

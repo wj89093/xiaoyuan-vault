@@ -66,7 +66,7 @@ export function QuickSwitch({ files, recentFiles, onSelect, onClose }: QuickSwit
     Promise.all(
       needed.slice(0, 3).map(async (file) => {
         try {
-          const content = await (window.api as any).readFile?.(file.path) ?? ''
+          const content = await (window.api).readFile?.(file.path) ?? ''
           const lines = content.split('\n')
           // Find first non-frontmatter, non-empty line as snippet
           const snippet = lines.find(l => l.trim() && !l.trim().startsWith('---')) ?? lines[0] ?? ''

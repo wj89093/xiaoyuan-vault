@@ -32,8 +32,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
   // Load sessions on mount
   useEffect(() => {
     (async () => {
-      const api = window.api as any
-      const list = await api.chatSessions?.() ?? []
+            const list = await api.chatSessions?.() ?? []
       if (list.length > 0) {
         setSessions(list)
         // Load latest session
@@ -47,8 +46,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
   // Auto-create session on first message + persist
   useEffect(() => {
     if (!loaded || messages.length === 0) return
-    const api = window.api as any
-    clearTimeout(saveTimer.current)
+        clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => { void (async () => {
       if (!activeSessionId) {
         const session = await api.chatCreate?.(messages[0]?.content?.slice(0, 40) ?? '新会话')

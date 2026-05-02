@@ -42,12 +42,12 @@ export function ImportApp(): JSX.Element {
   const handleFileImport = async (filePaths: string[]) => {
     setImporting(true)
     try {
-      const vaultPath = await (window.api as any).getVaultPath()
+      const vaultPath = await (window.api).getVaultPath()
       if (!vaultPath) {
         setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: '未打开知识库' }])
         return
       }
-      const res = await (window.api as any).importFiles(vaultPath, filePaths)
+      const res = await (window.api).importFiles(vaultPath, filePaths)
       setResults(prev => [...prev, ...res.map((r: any) => ({ type: 'file' as const, ...r }))])
     } catch (err: any) {
       setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: err.message ?? '导入失败' }])
@@ -65,7 +65,7 @@ export function ImportApp(): JSX.Element {
     if (files.length === 0) return
 
     // Use webUtils.getPathForFile via preload (File.path is undefined under contextIsolation)
-    const paths = files.map(f => (window.api as any).getPathForFile?.(f)).filter(Boolean)
+    const paths = files.map(f => (window.api).getPathForFile?.(f)).filter(Boolean)
     if (paths.length > 0) {
       await handleFileImport(paths)
     }
@@ -77,7 +77,7 @@ export function ImportApp(): JSX.Element {
     input.multiple = true
     input.onchange = async () => {
       if (input.files) {
-        const paths = Array.from(input.files).map(f => (window.api as any).getPathForFile?.(f)).filter(Boolean)
+        const paths = Array.from(input.files).map(f => (window.api).getPathForFile?.(f)).filter(Boolean)
         if (paths.length > 0) {
           await handleFileImport(paths)
         }
@@ -93,9 +93,9 @@ export function ImportApp(): JSX.Element {
     setFetching(true)
     setUrlError(null)
     try {
-      const { title, content } = await (window.api as any).fetchUrl(url)
-      const vaultPath = await (window.api as any).getVaultPath()
-      const path = await (window.api as any).saveUrlContent(vaultPath ?? '', title, content)
+      const { title, content } = await (window.api).fetchUrl(url)
+      const vaultPath = await (window.api).getVaultPath()
+      const path = await (window.api).saveUrlContent(vaultPath ?? '', title, content)
       setResults(prev => [...prev, { type: 'url', name: title, path, status: 'ok' }])
       setUrlInput('')
     } catch (err: any) {

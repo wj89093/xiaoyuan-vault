@@ -74,8 +74,7 @@ function App(): JSX.Element {
         const placeholder = { id: placeholderId, role: 'assistant' as const, content: '正在思考...', pagesUsed: [] as Array<{file: string; title: string}>, sourceMode: 'knowledge_base' as const }
         setMessages(prev => [...prev, placeholder])
 
-        const api = window.api as any
-        const history = messages.slice(-20).map((m: any) => ({ role: m.role, content: m.content }))
+                const history = messages.slice(-20).map((m: any) => ({ role: m.role, content: m.content }))
 
         // Set up stream listeners before kicking off the request
         let unsubChunk: (() => void) | undefined
@@ -156,7 +155,7 @@ function App(): JSX.Element {
     if (!vaultPath) return
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
     try {
-      await (window.api as any).createFolder?.('0-收集/AI对话')
+      await (window.api).createFolder?.('0-收集/AI对话')
       const title = content.split('\n')[0].slice(0, 40).replace(/[#*`\[\]]/g, '')
       const md = `---\ntitle: "${title || 'AI 对话'}"\ntype: note\nsource: ai-chat\ncreated: ${new Date().toISOString().slice(0, 10)}\ntags: [ai-chat]\n---\n\n${content}`
       const filePath = `0-收集/AI对话/ai-${timestamp}.md`
@@ -190,7 +189,7 @@ function App(): JSX.Element {
 
     if (!isMarkdown) {
       // Native preview for non-markdown files
-      const preview = await (window.api as any).renderFile?.(filePath)
+      const preview = await (window.api).renderFile?.(filePath)
       setNativePreview(preview ?? { type: 'unsupported' })
       setIsNativePreview(true)
       setSelectedFile(filePath)
@@ -322,7 +321,7 @@ function App(): JSX.Element {
   useEffect(() => {
     ;(async () => {
       try {
-        const lastPath = await (window.api as any).getLastVault?.()
+        const lastPath = await (window.api).getLastVault?.()
         if (lastPath) {
           setVaultPath(lastPath)
           const fileList = await window.api.listFiles()
@@ -384,7 +383,7 @@ function App(): JSX.Element {
   // Global shortcut Cmd+Shift+F → Quick Switch
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    return (window.api as any).onQuickSwitch?.(() => {
+    return (window.api).onQuickSwitch?.(() => {
       if (vaultPath) setShowQuickSwitch(true)
     })
   }, [vaultPath])
@@ -392,7 +391,7 @@ function App(): JSX.Element {
   // Global shortcut Cmd+Shift+I → Import panel
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    return (window.api as any).onGotoImport?.(() => {
+    return (window.api).onGotoImport?.(() => {
       window.location.hash = '#/import'
     })
   }, [])
@@ -465,7 +464,7 @@ function App(): JSX.Element {
                     setFiles([])
                     setSelectedFile(null)
                     setContent('')
-                    await (window.api as any).clearLastVault?.()
+                    await (window.api).clearLastVault?.()
                   })().catch(() => {})
                 }}>
                   <span>✕</span>
@@ -557,8 +556,7 @@ function App(): JSX.Element {
             loading={chatLoading}
             onLoadSession={(sessionId: string) => {
               void (async () => {
-                const api = window.api as any
-                const msgs = await api.chatLoad?.(sessionId) ?? []
+                                const msgs = await api.chatLoad?.(sessionId) ?? []
                 setMessages(msgs.map((m: any) => ({
                   id: m.id ?? crypto.randomUUID(),
                   role: m.role,
