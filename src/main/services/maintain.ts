@@ -1,10 +1,9 @@
 import log from 'electron-log/main'
 import { readFile } from 'fs/promises'
 import { readFileSync } from 'fs'
-import { existsSync } from 'fs'
-import { join, relative } from 'path'
+import { join } from 'path'
 import { getVaultPath, listVaultFiles } from './database'
-import { parseFrontmatter, extractWikiLinks, Relationship } from './frontmatter'
+import { parseFrontmatter, extractWikiLinks } from './frontmatter'
 import { callAI } from './aiService'
 
 export interface MaintainReport {
