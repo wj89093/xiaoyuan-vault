@@ -55,9 +55,9 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
         setTotalPages(pdf.numPages)
         await renderPage(pdf, page)
         setLoading(false)
-      } catch (e: any) {
+      } catch (err) {
         if (!cancelled) {
-          setError(e.message ?? 'PDF 加载失败')
+          setError((err as any)?.message ?? 'PDF 加载失败')
           setLoading(false)
         }
       }

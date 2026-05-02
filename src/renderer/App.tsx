@@ -204,15 +204,15 @@ function App(): JSX.Element {
     let fileContent = ''
     try {
       fileContent = await window.api.readFile(filePath)
-    } catch (e: any) {
+    } catch (err) {
       // Check code on error itself or nested cause (Node.js fs errors may lose code across IPC)
-      const code = e?.code ?? e?.cause?.code
-      const msg = e?.message ?? ''
+      const code = (err as any)?.code ?? (err as any)?.cause?.code
+      const msg = (err as any)?.message ?? String(err)
       if (code === 'ENOENT' || msg.includes('ENOENT') || msg.includes('no such file')) {
         log.warn('[FileTree] file no longer exists, skipping:', filePath)
         return
       }
-      throw e  // re-throw other errors
+      throw err
     }
     setNativePreview(null)
     setIsNativePreview(false)
