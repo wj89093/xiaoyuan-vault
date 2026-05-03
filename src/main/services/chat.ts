@@ -32,6 +32,31 @@ interface RAGResult {
   snippet: string
   score: number
 }
+// ============ Validation Helpers ============
+
+function isValidSession(obj: unknown): obj is ChatSession {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj && typeof (obj as Record<string, unknown>).id === 'string' &&
+    'title' in obj && typeof (obj as Record<string, unknown>).title === 'string' &&
+    'created_at' in obj && typeof (obj as Record<string, unknown>).created_at === 'number' &&
+    'updated_at' in obj && typeof (obj as Record<string, unknown>).updated_at === 'number'
+  )
+}
+
+function isValidMessage(obj: unknown): obj is ChatMessage {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'role' in obj &&
+    typeof (obj as Record<string, unknown>).role === 'string' &&
+    'content' in obj &&
+    typeof (obj as Record<string, unknown>).content === 'string'
+  )
+}
+
+
 
 // ============ Chat Service ============
 
@@ -388,7 +413,15 @@ export async function loadSessions(): Promise<ChatSession[]> {
     const sessionsFile = join(dir, SESSIONS_FILE)
     if (!existsSync(sessionsFile)) return []
     const raw = await readFile(sessionsFile, 'utf-8')
-    return JSON.parse(raw) as Record<string, unknown>
+    let parsed: unknown[]
+    try {
+      parsed = JSON.parse(raw) as Record<string, unknown>
+    } catch (err) {
+      log.error('[chat] loadSessions: JSON parse failed', err)
+      return []
+    }
+    const sessions: ChatSession[] = parsed.filter(isValidSession)
+    return sessions
   } catch (err) {
     log.warn('[chat] loadSessions:', err)
     return []
@@ -397,8 +430,19 @@ export async function loadSessions(): Promise<ChatSession[]> {
 
 export async function saveSessions(sessions: ChatSession[]): Promise<void> {
   const dir = await getSessionsDir()
+  // Backup before write
+  try {
+    const backupFile = join(dir, `${SESSIONS_FILE}.bak`)
+    if (existsSync(join(dir, SESSIONS_FILE))) {
+      await writeFile(backupFile, await readFile(join(dir, SESSIONS_FILE), 'utf-8'), 'utf-8')
+    }
+  } catch {/* ignore backup failures */}
+  await writeFile(join(dir, SESSIONS_FILE), JSON.stringify(sessions, null, 2), 'utf-8')
+  const dir = await getSessionsDir()
   await writeFile(join(dir, SESSIONS_FILE), JSON.stringify(sessions, null, 2), 'utf-8')
 }
+
+const SESSION_TITLE_MAX_LEN = 50
 
 export async function createSession(firstQuestion: string): Promise<ChatSession> {
   const sessions = await loadSessions()
@@ -451,6 +495,9 @@ export async function loadMessages(sessionId: string): Promise<ChatMessage[]> {
 }
 
 export async function saveMessages(sessionId: string, messages: ChatMessage[]): Promise<void> {
+  const dir = await getSessionsDir()
+  const validMessages = messages.filter(isValidMessage)
+  await writeFile(join(dir, `${sessionId}.json`), JSON.stringify(validMessages, null, 2), 'utf-8')
   const dir = await getSessionsDir()
   await writeFile(join(dir, `${sessionId}.json`), JSON.stringify(messages, null, 2), 'utf-8')
 
