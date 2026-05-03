@@ -181,7 +181,7 @@ function App(): JSX.Element {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleSelectFile = useCallback(async (filePath: string) => {
     if (selectedFile && isDirty) {
-      await void window.api.saveFile(selectedFile, content).catch?.(() => {})
+      await window.api.saveFile(selectedFile, content).catch?.(() => {})
     }
 
     const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
@@ -249,7 +249,7 @@ function App(): JSX.Element {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleSave = useCallback(async () => {
     if (selectedFile) {
-      await void window.api.saveFile(selectedFile, content).catch?.(() => {})
+      await window.api.saveFile(selectedFile, content).catch?.(() => {})
       setIsDirty(false)
       showToast('success', '文件已保存')
     }
