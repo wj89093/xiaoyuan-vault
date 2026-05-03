@@ -2,6 +2,7 @@
 import { useEffect, useCallback } from 'react'
 import React from 'react'
 import { Sidebar } from './components/Sidebar'
+import { EditorHeader } from './components/EditorHeader'
 import { Editor } from './components/Editor'
 import { AIChat } from './components/AIChat'
 import { WelcomeScreen } from './components/WelcomeScreen'
@@ -140,13 +141,11 @@ function App(): JSX.Element {
             <div className="editor-container">
               {selectedFile ? (
                 <>
-                  <div className="editor-header">
-                    <span className="editor-title">{selectedFile.split('/').pop()}</span>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {isDirty && <span className="editor-status">未保存</span>}
-                      <button className="btn" onClick={() => { void handleSave() }}>保存</button>
-                    </div>
-                  </div>
+                  <EditorHeader
+                    selectedFile={selectedFile}
+                    isDirty={isDirty}
+                    onSave={() => { void handleSave() }}
+                  />
                   <Editor
                     value={content}
                     onChange={handleContentChange}
