@@ -227,7 +227,7 @@ async function retrieveRelevantPages(query: string): Promise<RAGResult[]> {
 }
 
 async function fetchPageContents(
-  files: any[],
+  files: unknown[],
   query: string
 ): Promise<RAGResult[]> {
   const vaultPath = getVaultPath()

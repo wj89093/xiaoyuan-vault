@@ -69,7 +69,7 @@ const configPath = join(app.getPath('userData'), 'config.json')
 async function readConfig(): Promise<Record<string, unknown>> {
   try {
     if (existsSync(configPath)) {
-      return JSON.parse(await readFile(configPath, 'utf-8'))
+      return JSON.parse(await readFile(configPath, 'utf-8')) as Record<string, unknown>
     }
   } catch {}
   return {}
@@ -496,7 +496,7 @@ AI 自动维护反向链接。
     // Auto-enrich: LLM 维护 wiki，无感持续运行
     // skip .raw/ files (原始文件不需要 enrich)
     if (!filePath.includes('/.raw/') && !filePath.includes('\\.raw\\')) {
-      enrichFile(filePath).catch((err: any) => log.warn('[AutoEnrich] failed:', err.message))
+      enrichFile(filePath).catch((err: any) => log.warn('[AutoEnrich] failed:', String(err)))
     }
     return result
   })
@@ -547,9 +547,9 @@ AI 自动维护反向链接。
         } else {
           results.push({ name, path: dest, status: 'ok', converted: false })
         }
-      } catch (err: any) {
+      } catch (err) {
         log.error('Import error:', err)
-        results.push({ name: basename(filePath), path: '', status: 'error', error: err.message })
+        results.push({ name: basename(filePath), path: '', status: 'error', error: String(err) })
       }
     }
     return results
@@ -559,9 +559,9 @@ AI 自动维护反向链接。
     try {
       const result = await fetchURL(url)
       return { title: result.title, content: result.content }
-    } catch (err: any) {
+    } catch (err) {
       log.error('fetchUrl error:', err)
-      throw new Error(err.message ?? '获取失败')
+      throw new Error(String(err))
     }
   })
 
@@ -721,9 +721,9 @@ AI 自动维护反向链接。
           sources,
           confidence,
         })
-      } catch (err: any) {
+      } catch (err) {
         if (err.name !== 'AbortError') {
-          webContents.send('chat:streamError', { error: err.message })
+          webContents.send('chat:streamError', { error: (err as Error).message })
         }
       }
     })().catch(() => {})
@@ -740,7 +740,7 @@ AI 自动维护反向链接。
   ipcMain.handle('chat:load', async (_, sessionId: string) => {
     return loadMessages(sessionId)
   })
-  ipcMain.handle('chat:save', async (_, sessionId: string, messages: any[]) => {
+  ipcMain.handle('chat:save', async (_, sessionId: string, messages: unknown[]) => {
     return saveMessages(sessionId, messages)
   })
   ipcMain.handle('chat:delete', async (_, sessionId: string) => {

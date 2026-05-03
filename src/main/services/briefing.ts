@@ -157,7 +157,7 @@ function getPeriodString(days: number): string {
   return `${fmt(start)} ~ ${fmt(end)}`
 }
 
-function flattenFiles(files: any[]): any[] {
+function flattenFiles(files: unknown[]): any[] {
   const result: unknown[] = []
   for (const f of files) {
     result.push(f)
