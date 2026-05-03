@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import React from 'react'
 import * as d3 from 'd3'
+import type { SimulationNodeDatum, SimulationLinkDatum } from 'd3-force'
 import { FileText } from 'lucide-react'
 import type { FileInfo } from '../types'
 
@@ -11,7 +12,7 @@ interface KnowledgeGraphProps {
   onClose: () => void
 }
 
-interface GraphNode extends d3.SimulationNodeDatum {
+interface GraphNode extends SimulationNodeDatum {
   id: string
   name: string
   path: string
@@ -24,7 +25,7 @@ interface GraphNode extends d3.SimulationNodeDatum {
   entity_count?: number
 }
 
-interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
+interface GraphLink extends SimulationLinkDatum<GraphNode> {
   source: string | GraphNode
   target: string | GraphNode
   type: 'link' | 'folder' | 'typed_link'
