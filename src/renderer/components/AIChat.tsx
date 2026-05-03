@@ -328,20 +328,20 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
         </>
       )}
       {/* Context Menu for messages */}
-      {chatContextMenu ? (
-        <div
-          className="context-menu"
-          style={{ left: chatContextMenu.x, top: chatContextMenu.y }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="context-menu-item" onClick={() => { setChatContextMenu(null); void navigator.clipboard.writeText(chatContextMenu.text) }}>
-            <Copy size={14} /> 复制内容
+      {(() => {
+        if (!chatContextMenu) return null
+        const { x, y, text } = chatContextMenu
+        return (
+          <div className="context-menu" style={{ left: x, top: y }} onClick={e => e.stopPropagation()}>
+            <div className="context-menu-item" onClick={() => { setChatContextMenu(null); void navigator.clipboard.writeText(text) }}>
+              <Copy size={14} /> 复制内容
+            </div>
+            <div className="context-menu-item" onClick={() => { setChatContextMenu(null); void onInsertToDoc?.(text) }}>
+              <Quote size={14} /> 插入文档
+            </div>
           </div>
-          <div className="context-menu-item" onClick={() => { setChatContextMenu(null); void onInsertToDoc?.(chatContextMenu.text) }}>
-            <Quote size={14} /> 插入文档
-          </div>
-        </div>
-      ) : null}
+        )
+      })()}
 
     </div>
   )

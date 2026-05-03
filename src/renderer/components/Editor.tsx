@@ -372,33 +372,33 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
       </div>
 
       {/* Context Menu */}
-      {editorContextMenu && (
-        <div
-          className="context-menu"
-          style={{ left: editorContextMenu.x, top: editorContextMenu.y }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('selectAll') }}>
-            <Undo2 size={14} /> 全选
+      {(() => {
+        if (!editorContextMenu) return null
+        const { x, y } = editorContextMenu
+        return (
+          <div className="context-menu" style={{ left: x, top: y }} onClick={e => e.stopPropagation()}>
+            <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('selectAll') }}>
+              <Undo2 size={14} /> 全选
+            </div>
+            <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('undo') }}>
+              <Undo2 size={14} /> 撤销
+            </div>
+            <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('redo') }}>
+              <Redo2 size={14} /> 重做
+            </div>
+            <div className="context-menu-separator" />
+            <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('cut') }}>
+              <Scissors size={14} /> 剪切
+            </div>
+            <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('copy') }}>
+              <Copy size={14} /> 复制
+            </div>
+            <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('paste') }}>
+              <Clipboard size={14} /> 粘贴
+            </div>
           </div>
-          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('undo') }}>
-            <Undo2 size={14} /> 撤销
-          </div>
-          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('redo') }}>
-            <Redo2 size={14} /> 重做
-          </div>
-          <div className="context-menu-separator" />
-          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('cut') }}>
-            <Scissors size={14} /> 剪切
-          </div>
-          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('copy') }}>
-            <Copy size={14} /> 复制
-          </div>
-          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('paste') }}>
-            <Clipboard size={14} /> 粘贴
-          </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
