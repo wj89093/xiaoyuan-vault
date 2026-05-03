@@ -157,7 +157,7 @@ async function runAutoAI(): Promise<void> {
 
     // Weekly work log
     try {
-      const allFolders: string[] = Array.from(new Set(files.map((f: string) => dirname(f)))
+      const allFolders: string[] = Array.from(new Set(files.map((f: string) => dirname(f))))
       await appendWeeklyLog(vaultPath, { processed, skipped, folders: allFolders })
     } catch (err) {
       log.warn('[AutoAI] weekly log failed:', (err as Error).message)

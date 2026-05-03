@@ -90,6 +90,10 @@ const api = {
     ipcRenderer.invoke('file:trashRestore', vaultPath, originalPath),
   trashDelete: (vaultPath: string, originalPath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:trashDelete', vaultPath, originalPath),
+  generateBriefing: (): Promise<{
+    date: string; period: string; newPages: number; updatedPages: number;
+    entities: string[]; highlights: string[]; health: string; raw: string;
+  }> => ipcRenderer.invoke('briefing:generate'),
   trashClean: (vaultPath: string): Promise<number> =>
     ipcRenderer.invoke('file:trashClean', vaultPath),
   deleteFolder: (folderPath: string): Promise<boolean> =>

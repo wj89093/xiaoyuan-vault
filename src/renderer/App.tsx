@@ -10,6 +10,7 @@ import { QuickSwitch } from './components/QuickSwitch'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
 import { BacklinksPanel } from './components/BacklinksPanel'
 import { TrashPanel } from './components/TrashPanel'
+import { BriefingPanel } from './components/BriefingPanel'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
@@ -46,6 +47,7 @@ function App(): JSX.Element {
     showVaultMenu, setShowVaultMenu,
     showBacklinks, setShowBacklinks, toggleBacklinks,
     showTrash, setShowTrash, _toggleTrash,
+    showBriefing, setShowBriefing,
   } = useUIState()
 
   // Chat state managed by useChatSession hook
@@ -66,6 +68,14 @@ function App(): JSX.Element {
       showToast('success', '文件导入成功')
     })
   }, [setFiles])
+
+  // Show briefing on first vault open
+  useEffect(() => {
+    if (vaultPath && !sessionStorage.getItem('briefing_shown')) {
+      sessionStorage.setItem('briefing_shown', '1')
+      requestAnimationFrame(() => { setShowBriefing(true) })
+    }
+  }, [vaultPath])
 
   // Keyboard shortcuts (Cmd+P/F/D, ?)
   useKeyboardShortcuts(vaultPath, setShowQuickSwitch, setShowShortcuts, showQuickSwitch, showShortcuts)
@@ -157,6 +167,11 @@ function App(): JSX.Element {
                 selectedFile={selectedFile}
                 onNavigate={(path) => { setSelectedFile(path); setShowBacklinks(false) }}
                 onClose={() => setShowBacklinks(false)}
+              />
+            )}
+            {showBriefing && (
+              <BriefingPanel
+                onClose={() => setShowBriefing(false)}
               />
             )}
             <div className="editor-container">
