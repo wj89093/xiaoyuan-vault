@@ -48,6 +48,9 @@ export function useVaultState() {
   const [nativePreview, setNativePreview] = useState<{ path: string; content: string } | null>(null)
   const [isNativePreview, setIsNativePreview] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<FileInfo[]>([])
+  const [showSearchResults, setShowSearchResults] = useState(false)
 
   const handleNewVault = useCallback(async () => {
     const path = await api.openVault()
@@ -212,6 +215,7 @@ export function useVaultState() {
 
   return {
     vaultPath, files, selectedFile, content, isDirty,
+    searchQuery, searchResults, showSearchResults,
     nativePreview, isNativePreview, recentFiles,
     setVaultPath, setFiles, setSelectedFile, setContent, setIsDirty,
     setNativePreview, setIsNativePreview,

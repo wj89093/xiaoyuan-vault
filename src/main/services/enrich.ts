@@ -257,7 +257,7 @@ async function addBacklink(
     if (alreadyLinked) return false
 
     seeAlso.push(sourceTitle)
-    const newFrontmatter = { ...frontmatter, ...enrichUpdates, seeAlso }
+    const newFrontmatter = { ...frontmatter, seeAlso }
     const newContent = applyFrontmatter(raw, newFrontmatter)
     await writeFile(targetPath, newContent, 'utf-8')
     return true

@@ -70,12 +70,8 @@ export function registerVaultHandlers(): void {
     if (!result.canceled && result.filePath) {
       const vaultPath = result.filePath
       await mkdir(vaultPath, { recursive: true })
-      await initDatabase(vaultPath)
-      await writeConfig({ lastVaultPath: vaultPath })
-      await startAutoAIEngine()
-      setVaultPath(vaultPath)
-      showBubble(); triggerGraphRebuild()
 
+      // Create all directories first
       await mkdir(join(vaultPath, '0-收集'), { recursive: true })
 
       const rawDirs = ['文档', '截图', '来源']
@@ -84,6 +80,7 @@ export function registerVaultHandlers(): void {
         await mkdir(join(rawPath, sub), { recursive: true })
       }
 
+      // Write all initialization files BEFORE initDatabase so they are indexed
       await writeFile(join(vaultPath, 'RESOLVER.md'), `# 知识库决策树
 
 > 任何知识入库前，AI必须先读此文件
@@ -202,6 +199,13 @@ updated: 2026-04-27
 ---
 
 `, 'utf-8')
+
+      // Init database AFTER all initialization files are written, so they get indexed
+      await initDatabase(vaultPath)
+      await writeConfig({ lastVaultPath: vaultPath })
+      await startAutoAIEngine()
+      setVaultPath(vaultPath)
+      showBubble(); triggerGraphRebuild()
 
       return vaultPath
     }

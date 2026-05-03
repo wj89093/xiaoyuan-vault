@@ -438,8 +438,6 @@ export async function saveSessions(sessions: ChatSession[]): Promise<void> {
     }
   } catch {/* ignore backup failures */}
   await writeFile(join(dir, SESSIONS_FILE), JSON.stringify(sessions, null, 2), 'utf-8')
-  const dir = await getSessionsDir()
-  await writeFile(join(dir, SESSIONS_FILE), JSON.stringify(sessions, null, 2), 'utf-8')
 }
 
 const SESSION_TITLE_MAX_LEN = 50
@@ -498,8 +496,6 @@ export async function saveMessages(sessionId: string, messages: ChatMessage[]): 
   const dir = await getSessionsDir()
   const validMessages = messages.filter(isValidMessage)
   await writeFile(join(dir, `${sessionId}.json`), JSON.stringify(validMessages, null, 2), 'utf-8')
-  const dir = await getSessionsDir()
-  await writeFile(join(dir, `${sessionId}.json`), JSON.stringify(messages, null, 2), 'utf-8')
 
   // Update session timestamp
   const sessions = await loadSessions()
