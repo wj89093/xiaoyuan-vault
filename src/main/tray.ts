@@ -42,6 +42,7 @@ export function createTray(mainWindow: Electron.BrowserWindow): Electron.Tray {
     {
       label: '退出',
       click: () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         (app as any).isQuitting = true
         app.quit()
       }
