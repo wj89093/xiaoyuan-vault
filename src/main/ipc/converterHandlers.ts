@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { convertWithJS, getSupportedExtensions, canTranscribeAudio } from '../services/converters'
 
 export function registerConverterHandlers(): void {
-  ipcMain.handle('converter:convert', async (_, filePath: string) => {  // eslint-disable-line @typescript-eslint/require-await
+  ipcMain.handle('converter:convert', async (_, filePath: string) => {   
     return convertWithJS(filePath)
   })
 

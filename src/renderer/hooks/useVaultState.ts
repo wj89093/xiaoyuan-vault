@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { useState, useCallback, useEffect } from 'react'
 import type { FileInfo } from '../types'
 import { showToast } from '../components/Toast'
@@ -45,9 +45,6 @@ export function useVaultState() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [content, setContent] = useState<string>('')
   const [isDirty, setIsDirty] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<FileInfo[]>([])
-  const [showSearchResults, setShowSearchResults] = useState(false)
   const [nativePreview, setNativePreview] = useState<{ path: string; content: string } | null>(null)
   const [isNativePreview, setIsNativePreview] = useState(false)
   const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
@@ -189,7 +186,7 @@ export function useVaultState() {
   }, [selectedFile, isDirty, content])
 
   // Track recent files
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+   
   useEffect(() => {
     if (!selectedFile) return
     const name = selectedFile.split('/').pop() ?? selectedFile
@@ -215,10 +212,9 @@ export function useVaultState() {
 
   return {
     vaultPath, files, selectedFile, content, isDirty,
-    searchQuery, searchResults, showSearchResults,
     nativePreview, isNativePreview, recentFiles,
     setVaultPath, setFiles, setSelectedFile, setContent, setIsDirty,
-    setNativePreview, setIsNativePreview, setShowSearchResults,
+    setNativePreview, setIsNativePreview,
     handleNewVault, handleOpenVault, handleSelectFile,
     handleSave, handleNewFile, handleNewFolder, handleRefresh,
     handleSearch, handleCloseSearch, handleContentChange,

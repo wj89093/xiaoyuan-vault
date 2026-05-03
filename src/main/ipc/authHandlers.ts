@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { ipcMain, openExternal, app, BrowserWindow } from 'electron'
+import { ipcMain, openExternal, BrowserWindow } from 'electron'
 import Store from 'electron-store'
 import log from 'electron-log/main'
 

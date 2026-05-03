@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, react-hooks/exhaustive-deps */
 import { useCallback } from 'react'
 
 export interface ChatMessage {
@@ -36,9 +36,9 @@ export function useChat(
 
         const history = messages.slice(-20).map((m: any) => ({ role: m.role, content: m.content }))
 
-        const unsubChunk: (() => void) | undefined
-        const unsubDone: (() => void) | undefined
-        const unsubError: (() => void) | undefined
+        let unsubChunk: (() => void) | undefined  // eslint-disable-line prefer-const
+        let unsubDone: (() => void) | undefined  // eslint-disable-line prefer-const
+        let unsubError: (() => void) | undefined  // eslint-disable-line prefer-const
         let settled = false
 
         const cleanup = () => {

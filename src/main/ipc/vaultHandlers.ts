@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { ipcMain, dialog, type BrowserWindow } from 'electron'
 import { getMainWindowRef } from '../mainWindowRef'
 import { mkdir, writeFile, readFile } from 'fs/promises'
@@ -8,7 +8,6 @@ import { initDatabase, getVaultPath } from '../services/database'
 import { startAutoAIEngine, stopAutoAIEngine } from '../services/autoAIEngine'
 import { setVaultPath, showBubble, hideBubble } from '../services/clipboard'
 import { triggerGraphRebuild } from '../graphUtils'
-import log from 'electron-log/main'
 
 // Config path (same as main/index.ts)
 const configPath = join(app.getPath('userData'), 'config.json')
