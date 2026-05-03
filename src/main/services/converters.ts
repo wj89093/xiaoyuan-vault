@@ -90,6 +90,7 @@ async function convertDocx(filePath: string): Promise<string> {
   log.info(`[JS] converting DOCX: ${filePath}`)
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const mammoth = await import('mammoth')
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const result = await mammoth.default.convertToMarkdown({ path: filePath })
   return result.value
 }
@@ -121,11 +122,13 @@ async function convertXlsx(filePath: string): Promise<string> {
 async function convertPptx(filePath: string): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const AdmZip = await import('adm-zip')
-  const zip = new AdmZip.default(filePath)
+  const zip = new AdmZip.default(filePath) as unknown as Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const slideEntries = zip.getEntries().filter(e => e.entryName.match(/ppt\/slides\/slide\d+\.xml$/))
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const lines: string[] = [`# ${basename(filePath).replace('.pptx', '').replace('.ppt', '')}`]
 
-  for (const entry of slideEntries.sort((a, b) => {
+  for (const entry of (slideEntries as { entryName: string }[]).sort((a, b) => {
     const na = parseInt(a.entryName.match(/slide(\d+)/)?.[1] ?? '0')
     const nb = parseInt(b.entryName.match(/slide(\d+)/)?.[1] ?? '0')
     return na - nb
@@ -162,8 +165,10 @@ async function convertZip(filePath: string): Promise<string> {
   log.info(`[JS] extracting ZIP: ${filePath}`)
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const AdmZip = await import('adm-zip')
-  const zip = new AdmZip.default(filePath)
+  const zip = new AdmZip.default(filePath) as unknown as Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const entries = zip.getEntries().filter(e => !e.isDirectory)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const names = entries.map(e => `- ${e.entryName}`).join('\n')
   return `# ZIP Contents: ${basename(filePath)}\n\n${names}`
 }
