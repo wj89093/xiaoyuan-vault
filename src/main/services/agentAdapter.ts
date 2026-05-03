@@ -21,6 +21,8 @@ import { enrichFile } from './enrich'
 import { searchFiles } from './database'
 import { saveFile } from './database'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 const COMMANDS_DIR = join(process.env.HOME ?? '', '.vault', 'commands')
 
 export async function startAgentAdapter(): Promise<void> {

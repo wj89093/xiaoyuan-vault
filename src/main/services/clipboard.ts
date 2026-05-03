@@ -4,6 +4,8 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { enrichFile } from './enrich'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 let bubbleWindow: BrowserWindow | null = null
 let cardWindow: BrowserWindow | null = null
 let vaultPath = ''

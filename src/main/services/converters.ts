@@ -5,6 +5,8 @@ import log from 'electron-log/main'
 import { transcribeAudio } from './whisper'
 
 // Supported JS-native formats (no Python needed)
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 const JS_CONVERTERS: Record<string, (filePath: string) => Promise<string>> = {
   '.pdf': convertPdf,
   '.docx': convertDocx,

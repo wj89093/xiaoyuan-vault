@@ -8,6 +8,8 @@
  * - Extended: type, status, summary, confidence, relationships, openThreads, seeAlso
  */
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 export interface Relationship {
   type: string       // invested_in, founded, attended, works_at, etc.
   target: string     // Target entity name

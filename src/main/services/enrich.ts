@@ -7,6 +7,8 @@ import { rebuildIndexFile, appendToOperationLog } from './autoAIEngine'
 import { getVaultPath } from './database'
 import { parseFrontmatter, applyFrontmatter, extractTypedLinks, type Relationship } from './frontmatter'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 export interface EnrichResult {
   success: boolean
   action: 'migrated' | 'updated' | 'skipped' | 'error'

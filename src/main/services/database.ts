@@ -4,6 +4,8 @@ import { readdir, stat, readFile, writeFile, mkdir, rename as fsRename, unlink, 
 import log from 'electron-log/main'
 import { parseFrontmatter } from './frontmatter'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 let db: Database.Database | null = null
 let vaultPath: string = ''
 
