@@ -1,18 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, react-hooks/rules-of-hooks */
 import { useState, useEffect, useCallback } from 'react'
 import React from 'react'
-import { FileTree } from './components/FileTree'
+import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
 import { AIChat } from './components/AIChat'
-import { SearchResults } from './components/SearchResults'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { QuickSwitch } from './components/QuickSwitch'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
-import { Toolbar } from './components/Toolbar'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
-import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import { useVaultState } from './hooks/useVaultState'
 import { useChatSession } from './hooks/useChatSession'
 
@@ -141,98 +138,34 @@ function App(): JSX.Element {
         <WelcomeScreen onOpenVault={() => void handleOpenVault()} onNewVault={() => void handleNewVault()} />
       ) : (
         <>
-          <div className="sidebar">
-            <div className="sidebar-header">
-              <FolderOpen size={16} style={{ color: 'var(--color-text-tertiary)' }} />
-              <span
-                className="sidebar-title sidebar-title-btn"
-                onClick={() => setShowVaultMenu(v => !v)}
-                title="点击切换知识库"
-              >
-                {vaultPath?.split('/').pop()}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 4, opacity: 0.5 }}>
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </span>
-            </div>
-
-            {showVaultMenu && (
-              <div className="vault-menu">
-                <div className="vault-menu-header">知识库操作</div>
-                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); void handleNewVault().catch?.(() => {}) }}>
-                  <FolderPlus size={13} />
-                  新建知识库
-                </div>
-                <div className="vault-menu-item" onClick={() => { setShowVaultMenu(false); void handleOpenVault().catch?.(() => {}) }}>
-                  <FolderOpen size={13} />
-                  打开其他知识库
-                </div>
-                <div className="vault-menu-item danger" onClick={() => {
-                  ;(async () => {
-                    setShowVaultMenu(false)
-                    setVaultPath(null)
-                    setFiles([])
-                    setSelectedFile(null)
-                    setContent('')
-                    await window.api.clearLastVault?.()
-                  })().catch(() => {})
-                }}>
-                  <span>✕</span>
-                  关闭当前知识库
-                </div>
-              </div>
-            )}
-            <div className="search-container">
-              <div className="search-wrapper">
-                <Search className="search-icon" size={14} />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="搜索文件..."
-                  value={searchQuery}
-                  onChange={e => { void handleSearch(e.target.value) }}
-                />
-              </div>
-            </div>
-
-            {showSearchResults ? (
-              <SearchResults
-                results={searchResults}
-                query={searchQuery}
-                onSelect={(path) => { void handleSelectFile(path) }}
-                onClose={handleCloseSearch}
-              />
-            ) : (
-              <>
-                <Toolbar
-                  onNewFile={(p, n) => { void handleNewFile(p, n) }}
-                  onNewFolder={(p, n) => { void handleNewFolder(p, n) }}
-                  onOpenGraph={() => setShowGraph(true)}
-                  onOpenSettings={() => {}}
-                  onRefresh={() => { void handleRefresh() }}
-                  vaultPath={vaultPath}
-                  files={files}
-                />
-                <div className="file-tree">
-                  <FileTree
-                    files={displayFiles}
-                    selectedFile={selectedFile}
-                    onSelect={(path) => { void handleSelectFile(path) }}
-                    onNewFile={(folderPath) => {
-                      const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
-                      void handleNewFile(base, 'Untitled').catch?.(() => {})
-                    }}
-                    onNewFolder={(parentPath) => {
-                      const base = (parentPath === vaultPath || !parentPath) ? '' : parentPath
-                      void handleNewFolder(base, 'Untitled').catch?.(() => {})
-                    }}
-                    vaultPath={vaultPath}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <div className="main-content">
+        <Sidebar
+          vaultPath={vaultPath}
+          files={files}
+          displayFiles={displayFiles}
+          selectedFile={selectedFile}
+          showSearchResults={showSearchResults}
+          searchQuery={searchQuery}
+          searchResults={searchResults}
+          showVaultMenu={showVaultMenu}
+          onToggleVaultMenu={() => setShowVaultMenu(v => !v)}
+          onNewVault={handleNewVault}
+          onOpenVault={handleOpenVault}
+          onCloseVault={async () => {
+            setVaultPath(null)
+            setFiles([])
+            setSelectedFile(null)
+            setContent('')
+            await window.api.clearLastVault?.()
+          }}
+          onSearch={handleSearch}
+          onCloseSearch={handleCloseSearch}
+          onSelectFile={handleSelectFile}
+          onNewFile={handleNewFile}
+          onNewFolder={handleNewFolder}
+          onRefresh={handleRefresh}
+          onOpenGraph={() => setShowGraph(true)}
+        />
+        <div className="main-content">
             <div className="editor-container">
               {selectedFile ? (
                 <>
