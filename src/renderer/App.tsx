@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, prefer-const, react-hooks/exhaustive-deps, react-hooks/rules-of-hooks, react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import React from 'react'
 import log from 'electron-log/renderer'
@@ -14,308 +15,36 @@ import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
 import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import type { FileInfo } from './types'
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, prefer-const, react-hooks/exhaustive-deps, react-hooks/rules-of-hooks, react-hooks/set-state-in-effect */
-function App(): JSX.Element {
-  const [vaultPath, setVaultPath] = useState<string | null>(null)
-  const [files, setFiles] = useState<FileInfo[]>([])
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const [content, setContent] = useState<string>('')
-  const [isDirty, setIsDirty] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<FileInfo[]>([])
-  const [showSearchResults, setShowSearchResults] = useState(false)
-  const [messages, setMessages] = useState<Array<{role: string, content: string}>>([])
-  const [chatLoading, setChatLoading] = useState(false)
-  const [showQuickSwitch, setShowQuickSwitch] = useState(false)
-  const [showGraph, setShowGraph] = useState(false)
-  const [showShortcuts, setShowShortcuts] = useState(false)
-  const [showVaultMenu, setShowVaultMenu] = useState(false)
-  const [recentFiles, setRecentFiles] = useState<Array<{ path: string; name: string }>>([])
-  const { toasts, dismiss: dismissToast } = useToasts()
-  const [nativePreview, setNativePreview] = useState<{path: string, content: string} | null>(null)
-  const [isNativePreview, setIsNativePreview] = useState(false)
+import { useVaultState } from './hooks/useVaultState'
+import { useChat } from './hooks/useChat'
 
-  // Hash-based routing for import window
+function App(): JSX.Element {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
   if (hash === '#/import') {
     return <ImportApp />
   }
 
-  // New vault
-  const handleNewVault = useCallback(async () => {
-    const path = await window.api.openVault()
-    if (path) {
-      setVaultPath(path)
-      const fileList = await window.api.listFiles()
-      setFiles(fileList)
-      showToast('success', '知识库已创建并打开')
-    }
-  }, [])
+  const {
+    vaultPath, files, selectedFile, content, isDirty,
+    searchQuery, searchResults, showSearchResults,
+    nativePreview, isNativePreview, recentFiles,
+    setVaultPath, setFiles, setSelectedFile, setContent, setIsDirty,
+    setNativePreview, setIsNativePreview, setShowSearchResults,
+    handleNewVault, handleOpenVault, handleSelectFile,
+    handleSave, handleNewFile, handleNewFolder, handleRefresh,
+    handleSearch, handleCloseSearch, handleContentChange,
+    handleSaveAIMessage,
+  } = useVaultState()
 
-  // AI Chat (RAG-enhanced: file-context when selected, vault-wide when not)
-  const handleSendMessage = useCallback(async (text: string) => {
-    const userMsg = { role: 'user' as const, content: text }
-    setMessages(prev => [...prev, userMsg])
-    setChatLoading(true)
+  const [messages, setMessages] = useState<Array<{role: string; content: string; id?: string}>>([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const [showQuickSwitch, setShowQuickSwitch] = useState(false)
+  const [showGraph, setShowGraph] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showVaultMenu, setShowVaultMenu] = useState(false)
+  const { toasts, dismiss: dismissToast } = useToasts()
 
-    try {
-      if (selectedFile && content) {
-        // File-focused Q&A — not streamed (simpler, single file)
-        const historyContext = messages.slice(-4).map(m => `${m.role}: ${m.content.slice(0, 200)}`).join('\n')
-        const response = await window.api.aiReason(
-          `对话历史:\n${historyContext}\n\n当前问题: ${text}`,
-          [content]
-        )
-        setMessages(prev => [...prev, { role: 'assistant', content: response }])
-      } else {
-        // Vault-wide RAG — stream the answer
-        const placeholderId = `stream-${Date.now()}`
-        const placeholder = { id: placeholderId, role: 'assistant' as const, content: '正在思考...', pagesUsed: [] as Array<{file: string; title: string}>, sourceMode: 'knowledge_base' as const }
-        setMessages(prev => [...prev, placeholder])
-
-                const history = messages.slice(-20).map((m: any) => ({ role: m.role, content: m.content }))
-
-        // Set up stream listeners before kicking off the request
-        let unsubChunk: (() => void) | undefined
-        let unsubDone: (() => void) | undefined
-        let unsubError: (() => void) | undefined
-        let settled = false
-
-        const cleanup = () => {
-          unsubChunk?.()
-          unsubDone?.()
-          unsubError?.()
-          setChatLoading(false)
-        }
-
-        unsubChunk = api.onChatStreamChunk?.(({ partial }: any) => {
-          setMessages(prev => prev.map((m: any) =>
-            m.id === placeholderId ? { ...m, content: partial } : m
-          ))
-        })
-
-        unsubDone = api.onChatStreamDone?.(({ answer, sources }: any) => {
-          settled = true
-          const sourcePaths = sources?.map((s: any) => ({ file: s.file, title: s.title })) ?? []
-          setMessages(prev => prev.map((m: any) =>
-            m.id === placeholderId
-              ? {
-                  ...m,
-                  content: `${answer}\n\n---\n${sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') ?? ''}`,
-                  pagesUsed: sourcePaths,
-                  sourceMode: 'knowledge_base',
-                }
-              : m
-          ))
-          cleanup()
-        })
-
-        unsubError = api.onChatStreamError?.(({ error }: any) => {
-          settled = true
-          setMessages(prev => prev.map((m: any) =>
-            m.id === placeholderId
-              ? { ...m, content: `抱歉，搜索时出现错误：${error}` }
-              : m
-          ))
-          cleanup()
-        })
-
-        // Kick off streaming
-        const result = await api.chatAskStream?.(text, history)
-        // If result returns immediately (non-stream), finalize
-        if (result && !result.streamed && !settled) {
-          cleanup()
-          setMessages(prev => prev.map((m: any) =>
-            m.id === placeholderId
-              ? {
-                  ...m,
-                  content: `${result.answer}\n\n---\n${result.sources?.map((s: any) => `📄 [[${s.title}]]`).join(' | ') ?? ''}`,
-                  sources: result.sources?.map((s: any) => s.title) ?? [],
-                }
-              : m
-          ))
-        }
-      }
-    } catch (err: any) {
-      const msg = err?.message ?? String(err)
-      const fallback = msg.includes('key') || msg.includes('401') ? 'API Key 未配置或无效'
-        : msg.includes('timeout') || msg.includes('ETIMEDOUT') ? '请求超时，请稍后重试'
-        : msg.includes('network') || msg.includes('ECONNREFUSED') ? '网络连接失败'
-        : '抱歉，处理请求时出错。'
-      setMessages(prev => [...prev, { role: 'assistant', content: fallback }])
-      setChatLoading(false)
-    }
-  }, [content, selectedFile, messages])
-
-  // Open vault
-  // Save AI message to vault
-  const handleSaveAIMessage = useCallback(async (content: string) => {
-    if (!vaultPath) return
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-    try {
-      await (window.api).createFolder?.('0-收集/AI对话')
-      const title = content.split('\n')[0].slice(0, 40).replace(/[#*`\[\]]/g, '')
-      const md = `---\ntitle: "${title || 'AI 对话'}"\ntype: note\nsource: ai-chat\ncreated: ${new Date().toISOString().slice(0, 10)}\ntags: [ai-chat]\n---\n\n${content}`
-      const filePath = `0-收集/AI对话/ai-${timestamp}.md`
-      await window.api.saveFile(filePath, md)
-      showToast('success', 'AI 回复已保存到知识库')
-    } catch {
-      showToast('error', '保存失败')
-    }
-  }, [vaultPath])
-
-  const handleOpenVault = useCallback(async () => {
-    const path = await window.api.openVault()
-    if (path) {
-      setVaultPath(path)
-      const fileList = await window.api.listFiles()
-      setFiles(fileList)
-      showToast('success', '知识库已打开')
-    }
-  }, [])
-
-  // Select file
-  const handleSelectFile = useCallback(async (filePath: string) => {
-    if (selectedFile && isDirty) {
-      await window.api.saveFile(selectedFile, content).catch?.(() => {})
-    }
-
-    const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
-    const isMarkdown = ['md', 'markdown', 'mdown', 'mkd'].includes(ext)
-
-    if (!isMarkdown) {
-      // Native preview for non-markdown files
-      const preview = await (window.api).renderFile?.(filePath)
-      setNativePreview(preview ?? { type: 'unsupported' })
-      setIsNativePreview(true)
-      setSelectedFile(filePath)
-      setContent('')
-      setIsDirty(false)
-      setSearchQuery('')
-      setShowSearchResults(false)
-      return
-    }
-
-    // Regular markdown file
-    let fileContent = ''
-    try {
-      fileContent = await window.api.readFile(filePath)
-    } catch (err) {
-      // Check code on error itself or nested cause (Node.js fs errors may lose code across IPC)
-      const code = (err as any)?.code ?? (err as any)?.cause?.code
-      const msg = (err as any)?.message ?? String(err)
-      if (code === 'ENOENT' || msg.includes('ENOENT') || msg.includes('no such file')) {
-        log.warn('[FileTree] file no longer exists, skipping:', filePath)
-        return
-      }
-      throw err
-    }
-    setNativePreview(null)
-    setIsNativePreview(false)
-    setSelectedFile(filePath)
-    setContent(fileContent)
-    setIsDirty(false)
-    setSearchQuery('')
-    setShowSearchResults(false)
-  }, [selectedFile, isDirty, content])
-
-  // Search
-  const handleSearch = useCallback(async (query: string) => {
-    setSearchQuery(query)
-    if (query.trim()) {
-      const results = await window.api.searchFiles(query)
-      setSearchResults(results)
-      setShowSearchResults(true)
-    } else {
-      setSearchResults([])
-      setShowSearchResults(false)
-    }
-  }, [])
-
-  // Close search results
-  const handleCloseSearch = useCallback(() => {
-    setSearchQuery('')
-    setSearchResults([])
-    setShowSearchResults(false)
-  }, [])
-
-  // Save file
-  const handleSave = useCallback(async () => {
-    if (selectedFile) {
-      await window.api.saveFile(selectedFile, content).catch?.(() => {})
-      setIsDirty(false)
-      showToast('success', '文件已保存')
-    }
-  }, [selectedFile, content])
-
-  // Create new file
-  const handleNewFile = useCallback(async (folderPath: string, fileName: string) => {
-    // If folderPath is the vault itself, use empty string (root)
-    const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
-    const filePath = `${base}/${fileName}.md`
-    await window.api.saveFile(filePath, `# ${fileName}\n\n`)
-    const fileList = await window.api.listFiles()
-    setFiles(fileList)
-    setSelectedFile(filePath)
-    setContent(`# ${fileName}\n\n`)
-    setIsDirty(false)
-  }, [])
-
-  // Create folder
-  const handleNewFolder = useCallback(async (parentPath: string, folderName: string) => {
-    const base = (parentPath === vaultPath || !parentPath) ? '' : parentPath
-    const folderPath = `${base}/${folderName}`
-    await window.api.createFolder(folderPath)
-    const fileList = await window.api.listFiles()
-    setFiles(fileList)
-  }, [])
-
-  // Refresh file list
-  const handleRefresh = useCallback(async () => {
-    const fileList = await window.api.listFiles()
-    setFiles(fileList)
-  }, [])
-
-  // Content change
-  const handleContentChange = useCallback((value: string) => {
-    setContent(value)
-    setIsDirty(true)
-  }, [])
-
-  // Auto-save before close
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (selectedFile && isDirty) {
-        void window.api.saveFile(selectedFile, content).catch?.(() => {})
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [selectedFile, isDirty, content])
-
-  // Track recent files
-  useEffect(() => {
-    if (!selectedFile) return
-    const name = selectedFile.split('/').pop() ?? selectedFile
-    setRecentFiles(prev => {
-      const filtered = prev.filter(f => f.path !== selectedFile)
-      return [{ path: selectedFile, name }, ...filtered].slice(0, 8)
-    })
-  }, [selectedFile])
-
-  // Auto-restore last vault on startup
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const lastPath = await (window.api).getLastVault?.()
-        if (lastPath) {
-          setVaultPath(lastPath)
-          const fileList = await window.api.listFiles()
-          setFiles(fileList)
-        }
-      } catch { /* first launch, show welcome */ }
-    })().catch(() => {})
-  }, [])
+  const { handleSendMessage } = useChat(selectedFile, content, messages, setMessages, setChatLoading)
 
   // Refresh file list after import
   useEffect(() => {
@@ -325,7 +54,7 @@ function App(): JSX.Element {
       setFiles(fileList)
       showToast('success', '文件导入成功')
     })
-  }, [])
+  }, [setFiles])
 
   // Cmd+P Quick Switch + Cmd+F search + Cmd+D dark mode
   useEffect(() => {
@@ -335,7 +64,6 @@ function App(): JSX.Element {
         if (vaultPath) setShowQuickSwitch(v => !v)
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'f' && vaultPath) {
-        // Only focus sidebar search if editor is not focused
         if (!(document.activeElement?.closest('.cm-editor') || document.activeElement?.closest('.cm-content'))) {
           ;(document.querySelector('.search-input') as HTMLInputElement)?.focus()
         }
@@ -365,14 +93,14 @@ function App(): JSX.Element {
 
   // Global shortcut Cmd+Shift+F → Quick Switch
   useEffect(() => {
-    return (window.api).onQuickSwitch?.(() => {
+    return window.api.onQuickSwitch?.(() => {
       if (vaultPath) setShowQuickSwitch(true)
     })
   }, [vaultPath])
 
   // Global shortcut Cmd+Shift+I → Import panel
   useEffect(() => {
-    return (window.api).onGotoImport?.(() => {
+    return window.api.onGotoImport?.(() => {
       window.location.hash = '#/import'
     })
   }, [])
@@ -380,16 +108,16 @@ function App(): JSX.Element {
   // Display files (search results or all files)
   const displayFiles = showSearchResults ? searchResults : files
 
+  // handleReference - not yet fully extracted, placeholder
+  const handleReference = useCallback((ref: any) => {}, [])
+
   return (
     <div className="app-container" style={{ background: '#f5f5f5' }}>
       {showQuickSwitch && (
         <QuickSwitch
           files={files}
           recentFiles={recentFiles}
-          onSelect={(path: string) => {
-            setSelectedFile(path)
-            setShowQuickSwitch(false)
-          }}
+          onSelect={(path: string) => { setSelectedFile(path); setShowQuickSwitch(false) }}
           onClose={() => setShowQuickSwitch(false)}
         />
       )}
@@ -426,7 +154,6 @@ function App(): JSX.Element {
               </span>
             </div>
 
-            {/* Vault switch menu */}
             {showVaultMenu && (
               <div className="vault-menu">
                 <div className="vault-menu-header">知识库操作</div>
@@ -445,7 +172,7 @@ function App(): JSX.Element {
                     setFiles([])
                     setSelectedFile(null)
                     setContent('')
-                    await (window.api).clearLastVault?.()
+                    await window.api.clearLastVault?.()
                   })().catch(() => {})
                 }}>
                   <span>✕</span>
@@ -465,7 +192,7 @@ function App(): JSX.Element {
                 />
               </div>
             </div>
-            
+
             {showSearchResults ? (
               <SearchResults
                 results={searchResults}
@@ -491,8 +218,7 @@ function App(): JSX.Element {
                     onSelect={(path) => { void handleSelectFile(path) }}
                     onNewFile={(folderPath) => {
                       const base = (folderPath === vaultPath || !folderPath) ? '' : folderPath
-                      const name = `Untitled`
-                      void handleNewFile(base, name).catch?.(() => {})
+                      void handleNewFile(base, 'Untitled').catch?.(() => {})
                     }}
                     onNewFolder={(parentPath) => {
                       const base = (parentPath === vaultPath || !parentPath) ? '' : parentPath
@@ -537,7 +263,7 @@ function App(): JSX.Element {
             loading={chatLoading}
             onLoadSession={(sessionId: string) => {
               void (async () => {
-                                const msgs = await api.chatLoad?.(sessionId) ?? []
+                const msgs = await window.api.chatLoad?.(sessionId) ?? []
                 setMessages(msgs.map((m: any) => ({
                   id: m.id ?? crypto.randomUUID(),
                   role: m.role,
@@ -552,12 +278,10 @@ function App(): JSX.Element {
               })()
             }}
             onNavigateToPage={(filePath: string) => {
-              // Try exact path first, then search by filename
               const exact = files.find(f => f.path === filePath)
               if (exact) {
                 void handleSelectFile(filePath).catch?.(() => {})
               } else {
-                // Search by filename
                 const name = filePath.split('/').pop() ?? filePath
                 const found = files.find(f => f.name === name || f.path?.endsWith(name))
                 if (found) void handleSelectFile(found.path).catch?.(() => {})
