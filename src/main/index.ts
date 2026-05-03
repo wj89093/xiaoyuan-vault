@@ -2,7 +2,7 @@ import 'dotenv/config'
 import Store from 'electron-store'
 
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/explicit-function-return-type */
 
 const store = new Store()
 
@@ -688,13 +688,11 @@ AI 自动维护反向链接。
   })
 
   ipcMain.handle('chat:ask', async (_, question: string, history: any[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return askQuestion(question, history || [])
   })
 
   // Streaming RAG Chat — streams answer chunks via IPC events
   ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const webContents = event.sender
     const abortCtrl = new AbortController()
 

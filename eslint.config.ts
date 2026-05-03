@@ -70,7 +70,7 @@ export default tseslint.config(
       'no-new-func': 'error',
 
       // === 代码风格 ===
-      'no-console': 'warn',
+      'no-console': 'off',
       'prefer-const': 'error',
 
       // === 错误处理 ===
@@ -127,7 +127,7 @@ export default tseslint.config(
       'no-new-func': 'error',
 
       // === 代码风格 ===
-      'no-console': 'warn',
+      'no-console': 'off',
       'prefer-const': 'error',
 
       // === 错误处理 ===

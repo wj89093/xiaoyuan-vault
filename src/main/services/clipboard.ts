@@ -4,7 +4,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { enrichFile } from './enrich'
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-invalid-this, @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/unbound-method */
 
 let bubbleWindow: BrowserWindow | null = null
 let cardWindow: BrowserWindow | null = null
@@ -234,7 +234,6 @@ function ensureIPC(): void {
     }
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   ipcMain.on('bubble:drop', async (_event, data: { filePaths: string[]; text: string }) => {
     console.log('[Bubble] bubble:drop received:', JSON.stringify(data))
     if (!bubbleWindow) { console.log('[Bubble] no bubble window'); return }
@@ -436,7 +435,6 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
   //   if (blurTimer) { clearTimeout(blurTimer); blurTimer = null }
   // })
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   cardWindow.on('closed', async () => {
     if (blurTimer) clearTimeout(blurTimer)
     // Capture title BEFORE nulling the window reference

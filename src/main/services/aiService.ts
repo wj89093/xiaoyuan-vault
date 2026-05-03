@@ -4,7 +4,7 @@ import { callQwenAI } from './qwen'
 // ============ Types ============
 
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-base-to-string, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/restrict-template-expressions */
 
 export type AIProvider = 'qwen' | 'minimax' | 'deepseek'
 
@@ -122,7 +122,6 @@ async function callOpenAICompatible(
     // MiniMax uses a slightly different request format
     const isMiniMax = config.apiUrl.includes('minimax')
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body: Record<string, any> = {
       model: config.model,
       messages: [
@@ -218,7 +217,6 @@ export async function callAIGateway(
   userToken?: string
 ): Promise<{ answer: string; used?: number; limit?: number; tokens?: number }> {
   const url = `${AUTH_GATEWAY_URL}/ai/query`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body: Record<string, any> = { question }
   if (context) body.context = context
 

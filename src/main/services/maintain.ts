@@ -7,7 +7,7 @@ import type { FileRecord } from './database'
 import { parseFrontmatter, extractWikiLinks } from './frontmatter'
 import { callAI } from './aiService'
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-invalid-this, @typescript-eslint/unbound-method, @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unused-expressions, prefer-const, prefer-rest-params, @typescript-eslint/no-misused-promises */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-assignment */
 
 export interface MaintainReport {
   timestamp: number
@@ -196,7 +196,6 @@ ${recentEntries}
 如果没有矛盾，返回：{"contradiction": null}`
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await callAI('resolve', { prompt })
     const match = String(result).match(/\{[\s\S]*\}/)
     if (!match) return null
