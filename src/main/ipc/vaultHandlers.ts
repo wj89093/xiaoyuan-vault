@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 import { ipcMain, dialog, type BrowserWindow } from 'electron'
+import { getMainWindowRef } from '../mainWindowRef'
 import { mkdir, writeFile, readFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
@@ -25,10 +26,7 @@ async function writeConfig(data: Record<string, unknown>): Promise<void> {
   await writeFile(configPath, JSON.stringify(data, null, 2), 'utf-8')
 }
 
-function getMainWindow(): BrowserWindow | null {
-  const { getMainWindowRef } = require('../mainWindowRef')
-  return getMainWindowRef()
-}
+function getMainWindow(): BrowserWindow | null { return getMainWindowRef() }
 
 export function registerVaultHandlers(): void {
   ipcMain.handle('vault:getLast', async () => {

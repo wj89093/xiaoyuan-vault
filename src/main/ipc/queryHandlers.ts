@@ -1,6 +1,8 @@
- 
 import { ipcMain } from 'electron'
+import { queryVault } from '../services/query'
 
 export function registerQueryHandlers(): void {
-  // TODO: migrate handlers
+  ipcMain.handle('query:vault', async (_, question: string) => {
+    return queryVault(question)
+  })
 }

@@ -1,6 +1,25 @@
- 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-misused-promises, @typescript-eslint/require-await */
 import { ipcMain } from 'electron'
+import { callAI, callAIGateway } from '../services/aiService'
 
 export function registerAIHandlers(): void {
-  // TODO: migrate handlers
+  ipcMain.handle('ai:classify', async (_, content: string, folders: string[]) => {
+    return callAI('classify', { content, folders })
+  })
+
+  ipcMain.handle('ai:tags', async (_, content: string) => {
+    return callAI('tags', { content })
+  })
+
+  ipcMain.handle('ai:summary', async (_, content: string) => {
+    return callAI('summary', { content })
+  })
+
+  ipcMain.handle('ai:reason', async (_, content: string) => {
+    return callAI('reason', { content })
+  })
+
+  ipcMain.handle('ai:write', async (_, instruction: string, context: any) => {
+    return callAIGateway(instruction, context)
+  })
 }
