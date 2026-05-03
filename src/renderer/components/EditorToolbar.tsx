@@ -1,8 +1,17 @@
 import { Bold, Italic, Heading1, Heading2, Heading3, Link, Code, Table, EyeOff, List, ListOrdered, Quote, Columns, BookOpen, Undo2, Redo2, FileText } from 'lucide-react'
 import React from 'react'
+import type { EditorView } from '@codemirror/view'
+
+interface ToolbarAction {
+  icon?: React.ReactNode
+  label: string
+  action: () => void
+  type?: 'divider'
+  active?: boolean
+}
 
 interface EditorToolbarProps {
-  view: any
+  view: EditorView | null
   _previewMode: boolean
   onTogglePreview: () => void
   onToggleSplit: () => void
@@ -26,7 +35,7 @@ export function EditorToolbar({ view, _previewMode, onTogglePreview, onToggleSpl
     view.focus()
   }
 
-  const actions = [
+  const actions: ToolbarAction[] = [
     { icon: <Undo2 size={15} />, label: '撤销', action: () => {
       const state = view?.state
       if (state) {
@@ -82,7 +91,7 @@ export function EditorToolbar({ view, _previewMode, onTogglePreview, onToggleSpl
         ) : (
           <button
             key={i}
-            className={`editor-toolbar-btn${(item as any).active ? ' active' : ''}`}
+            className={`editor-toolbar-btn${item.active ? ' active' : ''}`}
             title={item.label}
             onClick={item.action}
           >
