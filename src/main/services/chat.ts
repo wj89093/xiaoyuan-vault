@@ -440,7 +440,7 @@ export async function saveSessions(sessions: ChatSession[]): Promise<void> {
   await writeFile(join(dir, SESSIONS_FILE), JSON.stringify(sessions, null, 2), 'utf-8')
 }
 
-const SESSION_TITLE_MAX_LEN = 50
+export const SESSION_TITLE_MAX_LEN = 50
 
 export async function createSession(firstQuestion: string): Promise<ChatSession> {
   const sessions = await loadSessions()
