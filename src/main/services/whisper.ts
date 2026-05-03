@@ -93,8 +93,8 @@ export async function transcribeAudio(filePath: string): Promise<string> {
 
     log.info(`[Whisper] done: ${filePath} → ${text.length} chars`)
     return text.trim()
-  } catch (err: any) {
-    log.error(`[Whisper] failed: ${filePath}`, err.message)
+  } catch (err) {
+    log.error(`[Whisper] failed: ${filePath}`, (err as any).message)
     throw err
   }
 }

@@ -88,12 +88,12 @@ export async function streamQwenAI(
         }
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     if (err.name === 'AbortError') {
       log.info('[Qwen] stream aborted')
     } else {
       log.error('Qwen stream exception:', err)
-      onChunk(`网络错误: ${err.message}`)
+      onChunk(`网络错误: ${(err as any).message}`)
     }
   }
 }

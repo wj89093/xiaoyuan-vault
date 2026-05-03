@@ -95,8 +95,8 @@ export async function runMaintenance(): Promise<MaintainReport> {
   try {
     const detected = await detectContradictions(mdFiles)
     contradictions.push(...detected)
-  } catch (err: any) {
-    log.warn('[Maintain] contradiction detection failed:', err.message)
+  } catch (err) {
+    log.warn('[Maintain] contradiction detection failed:', (err as any).message)
   }
 
   const summary = [
@@ -214,7 +214,7 @@ ${recentEntries}
 // ─── Helpers ──────────────────────────────────────────────────────
 
 function flattenFiles(files: any[]): any[] {
-  const result: any[] = []
+  const result: unknown[] = []
   for (const f of files) {
     result.push(f)
     if (f.children) result.push(...flattenFiles(f.children))

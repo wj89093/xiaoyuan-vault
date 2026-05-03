@@ -43,9 +43,9 @@ export async function generateBriefing(): Promise<BriefingReport> {
     // 4. LLM 读 log + index + recent changes，生成 briefing
     const briefing = await generateLLMBriefing(logRaw, indexRaw, recent, period)
     return briefing
-  } catch (err: any) {
-    log.warn('[Briefing] failed:', err.message)
-    return makeEmpty(`生成失败: ${err.message}`)
+  } catch (err) {
+    log.warn('[Briefing] failed:', (err as any).message)
+    return makeEmpty(`生成失败: ${(err as any).message}`)
   }
 }
 
@@ -99,7 +99,7 @@ ${logLines || '无日志'}
     const match = String(result).match(/\{[\s\S]*\}/)
     if (!match) return makeEmpty('LLM 返回格式异常')
 
-    const p = JSON.parse(match[0])
+    const p = JSON.parse(match[0]) as Record<string, unknown>
     return {
       date: new Date().toISOString().slice(0, 10),
       period,
@@ -110,9 +110,9 @@ ${logLines || '无日志'}
       health: p.health ?? '未知',
       raw: p.raw ?? '',
     }
-  } catch (err: any) {
-    log.warn('[Briefing] LLM failed:', err.message)
-    return makeEmpty(`LLM 失败: ${err.message}`)
+  } catch (err) {
+    log.warn('[Briefing] LLM failed:', (err as any).message)
+    return makeEmpty(`LLM 失败: ${(err as any).message}`)
   }
 }
 
@@ -158,7 +158,7 @@ function getPeriodString(days: number): string {
 }
 
 function flattenFiles(files: any[]): any[] {
-  const result: any[] = []
+  const result: unknown[] = []
   for (const f of files) {
     result.push(f)
     if (f.children) result.push(...flattenFiles(f.children))

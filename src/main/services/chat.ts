@@ -71,10 +71,10 @@ export async function askQuestion(
     }))
 
     return { answer, sources, confidence }
-  } catch (err: any) {
-    log.error('[RAG] ask failed:', err.message)
+  } catch (err) {
+    log.error('[RAG] ask failed:', (err as any).message)
     return {
-      answer: `抱歉，搜索时出现错误：${err.message}`,
+      answer: `抱歉，搜索时出现错误：${(err as any).message}`,
       sources: [],
       confidence: 0,
     }
@@ -98,8 +98,8 @@ export async function askQuestionStream(
       results,
       confidence: Math.min(0.3 + results.length * 0.15, 1.0),
     }
-  } catch (err: any) {
-    log.error('[RAG] stream retrieve failed:', err.message)
+  } catch (err) {
+    log.error('[RAG] stream retrieve failed:', (err as any).message)
     return { results: [], confidence: 0 }
   }
 }
@@ -220,8 +220,8 @@ async function retrieveRelevantPages(query: string): Promise<RAGResult[]> {
     }
 
     return await fetchPageContents(files.slice(0, 10), query)
-  } catch (err: any) {
-    log.error('[RAG] retrieve failed:', err.message)
+  } catch (err) {
+    log.error('[RAG] retrieve failed:', (err as any).message)
     return []
   }
 }
@@ -242,8 +242,8 @@ async function fetchPageContents(
       if (!existsSync(fullPath)) continue
       if (f.isDirectory) continue
 
-      const content = await readFile(fullPath, 'utf-8')
-      const title = f.title ?? f.name ?? filePath
+      const content: string = await readFile(fullPath, 'utf-8')
+      const title = String(f.title ?? f.name ?? filePath)
 
       // Extract relevant snippet
       const snippet = extractSnippet(content, query, 200)
@@ -330,10 +330,10 @@ ${context || '(无相关结果)'}`,
       : 0.1
 
     return { answer: answerText, confidence }
-  } catch (err: any) {
-    log.error('[RAG] answer generation failed:', err.message)
+  } catch (err) {
+    log.error('[RAG] answer generation failed:', (err as any).message)
     return {
-      answer: `AI 回答生成失败：${err.message}。请尝试换个问法。`,
+      answer: `AI 回答生成失败：${(err as any).message}。请尝试换个问法。`,
       confidence: 0,
     }
   }

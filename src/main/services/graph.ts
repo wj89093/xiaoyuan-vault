@@ -164,8 +164,8 @@ export async function rebuildGraph(): Promise<{ nodes: number; edges: number }> 
     const elapsed = Date.now() - start
     log.info(`[Graph] done: ${nodes.length} nodes, ${edges.length} edges (${elapsed}ms)`)
     return { nodes: nodes.length, edges: edges.length }
-  } catch (err: any) {
-    log.error('[Graph] rebuild failed:', err.message)
+  } catch (err) {
+    log.error('[Graph] rebuild failed:', (err as any).message)
     return { nodes: 0, edges: 0 }
   }
 }

@@ -128,8 +128,8 @@ async function runAutoAI(): Promise<void> {
         } else {
           skipped++
         }
-      } catch (err: any) {
-        log.warn(`[AutoAI] skip ${filePath}:`, err.message)
+      } catch (err) {
+        log.warn(`[AutoAI] skip ${filePath}:`, (err as any).message)
         skipped++
       }
     }
@@ -141,20 +141,20 @@ async function runAutoAI(): Promise<void> {
         await appendToOperationLog(vaultPath, logEntries)
       }
       log.info(`[AutoAI] index.md + log.md updated`)
-    } catch (err: any) {
-      log.error('[AutoAI] index/log update failed:', err.message)
+    } catch (err) {
+      log.error('[AutoAI] index/log update failed:', (err as any).message)
     }
 
     // Run maintenance check
     try {
       const report = await runMaintenance()
       log.info(`[AutoAI] maintenance: ${report.summary}`)
-    } catch (err: any) {
-      log.error('[AutoAI] maintenance failed:', err.message)
+    } catch (err) {
+      log.error('[AutoAI] maintenance failed:', (err as any).message)
     }
 
     log.info(`[AutoAI] completed: ${processed} processed, ${skipped} skipped`)
-  } catch (err: any) {
+  } catch (err) {
     log.error('[AutoAI] run failed:', err)
   }
 }

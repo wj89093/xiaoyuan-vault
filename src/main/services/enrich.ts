@@ -108,9 +108,9 @@ export async function enrichFile(
       oldPath: filePath,
       frontmatter: newFrontmatter
     }
-  } catch (err: any) {
-    log.error('[Enrich] failed:', err.message)
-    return { success: false, action: 'error', message: err.message }
+  } catch (err) {
+    log.error('[Enrich] failed:', (err as any).message)
+    return { success: false, action: 'error', message: (err as any).message }
   }
 }
 
@@ -467,8 +467,8 @@ export async function enrichInbox(): Promise<EnrichResult[]> {
         .filter(r => r.success)
         .map(r => `${basename(r.oldPath ?? '')} → ${r.message}`)
       await appendToOperationLog(vaultPath, logEntries)
-    } catch (err: any) {
-      log.error('[Enrich] index/log update failed:', err.message)
+    } catch (err) {
+      log.error('[Enrich] index/log update failed:', (err as any).message)
     }
   }
 

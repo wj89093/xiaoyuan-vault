@@ -56,7 +56,7 @@ async function processCommand(filePath: string): Promise<void> {
 
   log.info('[AgentAdapter] executing:', action, id ?? '')
 
-  let output: any = { ok: false, action, id, error: 'unknown action' }
+  let output: unknown = { ok: false, action, id, error: 'unknown action' }
 
   try {
     switch (action) {

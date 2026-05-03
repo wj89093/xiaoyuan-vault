@@ -57,8 +57,8 @@ ${preview}
       systemPrompt: '你是晓园 Vault 的知识库路由器。只返回 JSON。',
     })
     return parseResolverResult(result as string, contentTitle)
-  } catch (err: any) {
-    log.error('[Resolver] failed:', err.message)
+  } catch (err) {
+    log.error('[Resolver] failed:', (err as any).message)
     return makeDefault()
   }
 }

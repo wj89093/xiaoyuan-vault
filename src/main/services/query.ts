@@ -76,8 +76,8 @@ ${contextText}
       answer: typeof answer === 'string' ? answer : JSON.stringify(answer),
       sources
     }
-  } catch (err: any) {
-    log.error('[Query] failed:', err.message)
-    return { question, answer: `查询失败: ${err.message}`, sources: [] }
+  } catch (err) {
+    log.error('[Query] failed:', (err as any).message)
+    return { question, answer: `查询失败: ${(err as any).message}`, sources: [] }
   }
 }
