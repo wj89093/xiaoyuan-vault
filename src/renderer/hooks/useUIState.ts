@@ -7,6 +7,7 @@ export function useUIState() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const [showBacklinks, setShowBacklinks] = useState(false)
+  const [showTrash, setShowTrash] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
 
   const toggleQuickSwitch = useCallback(() => setShowQuickSwitch(v => !v), [])
@@ -16,6 +17,7 @@ export function useUIState() {
   const toggleDarkMode = useCallback(() => setDarkMode(v => !v), [])
 
   const toggleBacklinks = useCallback(() => setShowBacklinks(v => !v), [])
+  const toggleTrash = useCallback(() => setShowTrash(v => !v), [])
 
   return {
     showQuickSwitch, setShowQuickSwitch,
@@ -23,6 +25,7 @@ export function useUIState() {
     showShortcuts, setShowShortcuts,
     showVaultMenu, setShowVaultMenu,
     showBacklinks, setShowBacklinks, toggleBacklinks,
+    showTrash, setShowTrash, toggleTrash,
     darkMode, toggleDarkMode,
     toggleQuickSwitch, toggleGraph, toggleShortcuts, toggleVaultMenu,
   }

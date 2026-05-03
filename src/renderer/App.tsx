@@ -9,6 +9,7 @@ import { WelcomeScreen } from './components/WelcomeScreen'
 import { QuickSwitch } from './components/QuickSwitch'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
 import { BacklinksPanel } from './components/BacklinksPanel'
+import { TrashPanel } from './components/TrashPanel'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
@@ -44,6 +45,7 @@ function App(): JSX.Element {
     showShortcuts, setShowShortcuts,
     showVaultMenu, setShowVaultMenu,
     showBacklinks, setShowBacklinks, toggleBacklinks,
+    showTrash, setShowTrash, _toggleTrash,
   } = useUIState()
 
   // Chat state managed by useChatSession hook
@@ -140,8 +142,16 @@ function App(): JSX.Element {
           onOpenGraph={() => setShowGraph(true)}
           darkMode={darkMode}
           onToggleDarkMode={toggleDarkMode}
+          onToggleTrash={_toggleTrash}
         />
         <div className="main-content">
+            {showTrash && vaultPath && (
+              <TrashPanel
+                vaultPath={vaultPath}
+                onNavigate={(path) => { setSelectedFile(path); setShowTrash(false) }}
+                onClose={() => setShowTrash(false)}
+              />
+            )}
             {showBacklinks && (
               <BacklinksPanel
                 selectedFile={selectedFile}

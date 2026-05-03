@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-import { Search, FolderOpen, FolderPlus, Moon, Sun } from 'lucide-react'
+import { Search, FolderOpen, FolderPlus, Moon, Sun, Trash2 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { SearchResults } from './SearchResults'
 import { Toolbar } from './Toolbar'
@@ -27,6 +27,7 @@ interface SidebarProps {
   onOpenGraph: () => void
   darkMode: boolean
   onToggleDarkMode: () => void
+  onToggleTrash: () => void
 }
 
 export function Sidebar({
@@ -35,6 +36,7 @@ export function Sidebar({
   onToggleVaultMenu, onNewVault, onOpenVault, onCloseVault,
   onSearch, onCloseSearch, onSelectFile,
   onNewFile, onNewFolder, onRefresh, onOpenGraph,
+  darkMode, onToggleDarkMode, onToggleTrash,
 }: SidebarProps): JSX.Element {
   return (
     <div className="sidebar">
@@ -71,6 +73,10 @@ export function Sidebar({
           <div className="vault-menu-item" onClick={() => { onToggleVaultMenu(); void onOpenVault() }}>
             <FolderOpen size={13} />
             打开其他知识库
+          </div>
+          <div className="vault-menu-item" onClick={() => { onToggleVaultMenu(); onToggleTrash() }}>
+            <Trash2 size={13} />
+            查看回收站
           </div>
           <div className="vault-menu-item danger" onClick={() => { onToggleVaultMenu(); onCloseVault() }}>
             <span>✕</span>
