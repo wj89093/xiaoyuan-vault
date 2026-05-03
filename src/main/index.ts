@@ -406,7 +406,7 @@ AI 自动维护反向链接。
     const gatewayUrl = process.env.AUTH_GATEWAY_URL ?? 'https://chance-unnamed-camera.ngrok-free.dev'
     // Open login page - after login, redirect to xiaoyuan://auth/callback
     const loginUrl = `${gatewayUrl}/auth/email/login?redirect_uri=xiaoyuan%3A%2F%2Fauth%2Fcallback`
-    require('electron').shell.openExternal(loginUrl)
+    void import('electron').then(({ shell }) => shell.openExternal(loginUrl))
     return loginUrl
   })
 
