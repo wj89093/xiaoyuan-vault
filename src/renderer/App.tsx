@@ -12,6 +12,7 @@ import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
 import { useVaultState } from './hooks/useVaultState'
 import { useChatSession } from './hooks/useChatSession'
+import { useAIInsert } from './hooks/useAIInsert'
 
 function App(): JSX.Element {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
@@ -110,6 +111,13 @@ function App(): JSX.Element {
   // handleReference - not yet fully extracted, placeholder
   const handleReference = useCallback((_ref: any) => {}, [])
 
+  // AI insert/navigate hooks
+  const { handleNavigateToPage, handleInsertToDoc } = useAIInsert(
+    content, isNativePreview, selectedFile,
+    setContent, setIsDirty, showToast,
+    files, handleSelectFile,
+  )
+
   return (
     <div className="app-container" style={{ background: '#f5f5f5' }}>
       {showQuickSwitch && (
@@ -200,23 +208,8 @@ function App(): JSX.Element {
             onSaveToVault={(msgId: string) => {
               void handleSaveToVault(msgId, handleSaveAIMessage)
             }}
-            onNavigateToPage={(filePath: string) => {
-              const exact = files.find(f => f.path === filePath)
-              if (exact) {
-                void handleSelectFile(filePath).catch?.(() => {})
-              } else {
-                const name = filePath.split('/').pop() ?? filePath
-                const found = files.find(f => f.name === name || f.path?.endsWith(name))
-                if (found) void handleSelectFile(found.path).catch?.(() => {})
-              }
-            }}
-            onInsertToDoc={!isNativePreview && selectedFile ? ((aiContent: string) => {
-              const separator = '\n\n---\n\n'
-              const newContent = content + (content ? separator : '') + aiContent
-              setContent(newContent)
-              setIsDirty(true)
-              showToast('success', '已插入到文档')
-            }) : undefined}
+            onNavigateToPage={handleNavigateToPage}
+            onInsertToDoc={handleInsertToDoc}
           />
           <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         </>
