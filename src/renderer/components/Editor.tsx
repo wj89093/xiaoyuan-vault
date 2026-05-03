@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import React from 'react'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 import DOMPurify from 'dompurify'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
@@ -7,7 +8,8 @@ import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { EditorToolbar } from './EditorToolbar'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { parseFrontmatter } from '../../main/services/frontmatter'
+import { parseFrontmatter } from '../../shared/frontmatter'
+
 import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil, FileText } from 'lucide-react'
 
 interface EditorProps {
@@ -34,7 +36,7 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const pdfDocRef = useRef<any>(null)
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -71,7 +73,7 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
     void renderPage(pdfDocRef.current, page).catch?.(() => {})
   }, [page])
 
-  const renderPage = async (pdf: any, pageNum: number) => {
+  const renderPage = async (pdf: PDFDocumentProxy, pageNum: number) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const page = await pdf.getPage(pageNum)

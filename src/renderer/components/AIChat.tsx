@@ -9,6 +9,8 @@ import type { ChatMessage, ChatSession } from '../../shared/chat'
 export type { ChatMessage }
 
 export interface AIChatProps {
+  messages: ChatMessage[]
+
   onSend: (text: string) => void
   loading: boolean
   onLoadSession?: (sessionId: string) => void
@@ -191,8 +193,8 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        text: ({ children, ...props }: any) => {
-                          const text = String(children ?? '')
+                        text: ({ children, ...props }: Record<string, unknown>) => {
+                          const text = typeof children === 'string' ? children : ''
                           // Parse [[wiki links]] as clickable buttons
                           const parts = text.split(/(\[\[[^\]]+\]\])/g)
                           if (parts.length <= 1) return <span {...props}>{children}</span>
@@ -243,7 +245,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
                   {msg.pagesUsed && msg.pagesUsed.length > 0 && (
                     <div className="ai-chat-refs">
                       <span className="ai-chat-refs-label">引用来源：</span>
-                      {msg.pagesUsed.map((pg: any, i: number) => (
+                      {msg.pagesUsed.map((pg: { file: string; title: string }, i: number) => (
                         <button
                           key={i}
                           className="ai-chat-ref"
