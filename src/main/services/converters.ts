@@ -88,7 +88,7 @@ async function convertPdf(filePath: string): Promise<string> {
 
 async function convertDocx(filePath: string): Promise<string> {
   log.info(`[JS] converting DOCX: ${filePath}`)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+   
   const mammoth = await import('mammoth')
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const result = await mammoth.default.convertToMarkdown({ path: filePath })
@@ -97,7 +97,7 @@ async function convertDocx(filePath: string): Promise<string> {
 
 async function convertXlsx(filePath: string): Promise<string> {
   log.info(`[JS] converting XLSX: ${filePath}`)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+   
   const XLSX = await import('xlsx')
   const workbook = XLSX.default.readFile(filePath)
   const lines: string[] = []
@@ -125,7 +125,7 @@ async function convertPptx(filePath: string): Promise<string> {
   const zip = new AdmZip.default(filePath) as unknown as Record<string, unknown>
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const slideEntries = zip.getEntries().filter(e => e.entryName.match(/ppt\/slides\/slide\d+\.xml$/))
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+   
   const lines: string[] = [`# ${basename(filePath).replace('.pptx', '').replace('.ppt', '')}`]
 
   for (const entry of (slideEntries as { entryName: string }[]).sort((a, b) => {
