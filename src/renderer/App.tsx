@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, prefer-const, react-hooks/exhaustive-deps, react-hooks/rules-of-hooks, react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import React from 'react'
-import log from 'electron-log/renderer'
 import { FileTree } from './components/FileTree'
 import { Editor } from './components/Editor'
 import { AIChat } from './components/AIChat'
@@ -14,7 +13,6 @@ import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
 import { Search, FolderPlus, FolderOpen } from 'lucide-react'
-import type { FileInfo } from './types'
 import { useVaultState } from './hooks/useVaultState'
 import { useChat } from './hooks/useChat'
 
@@ -29,7 +27,6 @@ function App(): JSX.Element {
     searchQuery, searchResults, showSearchResults,
     nativePreview, isNativePreview, recentFiles,
     setVaultPath, setFiles, setSelectedFile, setContent, setIsDirty,
-    setNativePreview, setIsNativePreview, setShowSearchResults,
     handleNewVault, handleOpenVault, handleSelectFile,
     handleSave, handleNewFile, handleNewFolder, handleRefresh,
     handleSearch, handleCloseSearch, handleContentChange,
@@ -109,7 +106,7 @@ function App(): JSX.Element {
   const displayFiles = showSearchResults ? searchResults : files
 
   // handleReference - not yet fully extracted, placeholder
-  const handleReference = useCallback((ref: any) => {}, [])
+  const handleReference = useCallback((_ref: any) => {}, [])
 
   return (
     <div className="app-container" style={{ background: '#f5f5f5' }}>
