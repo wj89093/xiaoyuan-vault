@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-import { Search, FolderOpen, FolderPlus } from 'lucide-react'
+import { Search, FolderOpen, FolderPlus, Moon, Sun } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { SearchResults } from './SearchResults'
 import { Toolbar } from './Toolbar'
@@ -25,6 +25,8 @@ interface SidebarProps {
   onNewFolder: (parentPath: string, folderName: string) => Promise<void>
   onRefresh: () => Promise<void>
   onOpenGraph: () => void
+  darkMode: boolean
+  onToggleDarkMode: () => void
 }
 
 export function Sidebar({
@@ -49,6 +51,13 @@ export function Sidebar({
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </span>
+        <button
+          onClick={onToggleDarkMode}
+          style={{ marginLeft: 'auto', cursor: 'pointer', padding: '4px', borderRadius: '4px', background: 'none', border: 'none', display: 'flex', alignItems: 'center' }}
+          title={darkMode ? '切换到浅色模式' : '切换到深色模式'}
+        >
+          {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
       </div>
 
       {/* Vault Menu */}

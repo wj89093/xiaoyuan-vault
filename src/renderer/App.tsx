@@ -8,6 +8,7 @@ import { AIChat } from './components/AIChat'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { QuickSwitch } from './components/QuickSwitch'
 import { KnowledgeGraph } from './components/KnowledgeGraph'
+import { BacklinksPanel } from './components/BacklinksPanel'
 import { ToastContainer, useToasts, showToast } from './components/Toast'
 import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
@@ -42,6 +43,7 @@ function App(): JSX.Element {
     showGraph, setShowGraph,
     showShortcuts, setShowShortcuts,
     showVaultMenu, setShowVaultMenu,
+    showBacklinks, setShowBacklinks, toggleBacklinks,
   } = useUIState()
 
   // Chat state managed by useChatSession hook
@@ -136,8 +138,17 @@ function App(): JSX.Element {
           onNewFolder={handleNewFolder}
           onRefresh={handleRefresh}
           onOpenGraph={() => setShowGraph(true)}
+          darkMode={darkMode}
+          onToggleDarkMode={toggleDarkMode}
         />
         <div className="main-content">
+            {showBacklinks && (
+              <BacklinksPanel
+                selectedFile={selectedFile}
+                onNavigate={(path) => { setSelectedFile(path); setShowBacklinks(false) }}
+                onClose={() => setShowBacklinks(false)}
+              />
+            )}
             <div className="editor-container">
               {selectedFile ? (
                 <>
@@ -145,6 +156,8 @@ function App(): JSX.Element {
                     selectedFile={selectedFile}
                     isDirty={isDirty}
                     onSave={() => { void handleSave() }}
+                    showBacklinks={showBacklinks}
+                    onToggleBacklinks={toggleBacklinks}
                   />
                   <Editor
                     value={content}
