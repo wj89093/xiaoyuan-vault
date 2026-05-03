@@ -14,7 +14,7 @@ import { ShortcutGuide } from './components/ShortcutGuide'
 import { ImportApp } from './ImportApp'
 import { Search, FolderPlus, FolderOpen } from 'lucide-react'
 import { useVaultState } from './hooks/useVaultState'
-import { useChat } from './hooks/useChat'
+import { useChatSession } from './hooks/useChatSession'
 
 function App(): JSX.Element {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
@@ -33,15 +33,20 @@ function App(): JSX.Element {
     handleSaveAIMessage,
   } = useVaultState()
 
-  const [messages, setMessages] = useState<Array<{role: string; content: string; id?: string}>>([])
-  const [chatLoading, setChatLoading] = useState(false)
   const [showQuickSwitch, setShowQuickSwitch] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showVaultMenu, setShowVaultMenu] = useState(false)
   const { toasts, dismiss: dismissToast } = useToasts()
 
-  const { handleSendMessage } = useChat(selectedFile, content, messages, setMessages, setChatLoading)
+  // Chat state managed by useChatSession hook
+  const {
+    messages,
+    chatLoading,
+    handleSendMessage,
+    handleLoadSession,
+    handleSaveToVault,
+  } = useChatSession(selectedFile, content)
 
   // Refresh file list after import
   useEffect(() => {
@@ -258,21 +263,9 @@ function App(): JSX.Element {
             messages={messages}
             onSend={text => { void handleSendMessage(text) }}
             loading={chatLoading}
-            onLoadSession={(sessionId: string) => {
-              void (async () => {
-                const msgs = await window.api.chatLoad?.(sessionId) ?? []
-                setMessages(msgs.map((m: any) => ({
-                  id: m.id ?? crypto.randomUUID(),
-                  role: m.role,
-                  content: m.content,
-                })))
-              })()
-            }}
+            onLoadSession={handleLoadSession}
             onSaveToVault={(msgId: string) => {
-              void (async () => {
-                const msg = messages.find((m: any) => m.id === msgId || m.id === undefined)
-                if (msg) await handleSaveAIMessage(msg.content)
-              })()
+              void handleSaveToVault(msgId, handleSaveAIMessage)
             }}
             onNavigateToPage={(filePath: string) => {
               const exact = files.find(f => f.path === filePath)
