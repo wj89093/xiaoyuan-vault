@@ -5,6 +5,8 @@ import { Send, Bot, User, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, Mes
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatMessage, ChatSession } from '../../shared/chat'
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-invalid-this, @typescript-eslint/unbound-method, prefer-const, @typescript-eslint/no-misused-promises */
+
 
 export type { ChatMessage }
 

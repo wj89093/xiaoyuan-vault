@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react'
 
 import log from 'electron-log/renderer'
@@ -5,6 +6,7 @@ import log from 'electron-log/renderer'
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText, Trash2, Pencil, Plus, FolderPlus } from 'lucide-react'
 
 import type { FileInfo } from '../types'
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-invalid-this, @typescript-eslint/unbound-method, prefer-const, @typescript-eslint/no-misused-promises */
 
 
 

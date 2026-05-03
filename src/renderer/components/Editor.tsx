@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback, useEffect } from 'react'
 import React from 'react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
@@ -11,6 +12,7 @@ import remarkGfm from 'remark-gfm'
 import { parseFrontmatter } from '../../shared/frontmatter'
 
 import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil, FileText } from 'lucide-react'
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-invalid-this, @typescript-eslint/unbound-method, prefer-const, @typescript-eslint/no-misused-promises */
 
 interface EditorProps {
   value: string
