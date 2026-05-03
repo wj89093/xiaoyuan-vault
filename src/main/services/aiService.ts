@@ -37,7 +37,7 @@ const PROVIDERS: Record<AIProvider, ProviderConfig> = {
 
 export async function callAI(
   action: string,
-  params: Record<string, any>,
+  params: Record<string, unknown>,
   provider?: AIProvider
 ): Promise<any> {
   const selectedProvider = provider ?? 'deepseek'
@@ -60,7 +60,7 @@ export async function callAI(
 
 async function callOpenAICompatible(
   action: string,
-  params: Record<string, any>,
+  params: Record<string, unknown>,
   config: ProviderConfig
 ): Promise<any> {
   let systemPrompt = ''
@@ -119,7 +119,8 @@ async function callOpenAICompatible(
     // MiniMax uses a slightly different request format
     const isMiniMax = config.apiUrl.includes('minimax')
 
-    const body: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body: Record<string, any> = {
       model: config.model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -214,7 +215,8 @@ export async function callAIGateway(
   userToken?: string
 ): Promise<{ answer: string; used?: number; limit?: number; tokens?: number }> {
   const url = `${AUTH_GATEWAY_URL}/ai/query`
-  const body: any = { question }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body: Record<string, any> = { question }
   if (context) body.context = context
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
