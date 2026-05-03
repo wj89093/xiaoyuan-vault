@@ -277,15 +277,15 @@ async function fetchTwitter(url: string): Promise<URLFetchResult> {
   })
 
   const data = response.data
-  const tweet = data.tweet
+  const tweet = data.tweet as Record<string, unknown>
   
   if (!tweet) {
     throw new Error('Twitter API response invalid')
   }
 
-  const author = tweet.author?.name ?? 'Unknown'
-  const handle = tweet.author?.screen_name ?? ''
-  const text = tweet.text ?? ''
+  const author = (tweet.author as Record<string, string> | undefined)?.name ?? 'Unknown'
+  const handle = (tweet.author as Record<string, string> | undefined)?.screen_name ?? ''
+  const text = (tweet.text as string | undefined) ?? ''
 
   return {
     title: `@${handle}: ${text.slice(0, 50)}...`,

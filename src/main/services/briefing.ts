@@ -44,8 +44,8 @@ export async function generateBriefing(): Promise<BriefingReport> {
     const briefing = await generateLLMBriefing(logRaw, indexRaw, recent, period)
     return briefing
   } catch (err) {
-    log.warn('[Briefing] failed:', (err as any).message)
-    return makeEmpty(`生成失败: ${(err as any).message}`)
+    log.warn('[Briefing] failed:', (err as Error).message)
+    return makeEmpty(`生成失败: ${(err as Error).message}`)
   }
 }
 
@@ -105,14 +105,14 @@ ${logLines || '无日志'}
       period,
       newPages: typeof p.newPages === 'number' ? p.newPages : 0,
       updatedPages: typeof p.updatedPages === 'number' ? p.updatedPages : 0,
-      entities: Array.isArray(p.entities) ? p.entities.slice(0, 5) : [],
-      highlights: Array.isArray(p.highlights) ? p.highlights.slice(0, 5) : [],
-      health: p.health ?? '未知',
-      raw: p.raw ?? '',
+      entities: (p.entities as unknown[]).slice(0, 5) as string[],
+      highlights: (p.highlights as unknown[]).slice(0, 5) as string[],
+      health: String(p.health ?? '未知'),
+      raw: String(p.raw ?? ''),
     }
   } catch (err) {
-    log.warn('[Briefing] LLM failed:', (err as any).message)
-    return makeEmpty(`LLM 失败: ${(err as any).message}`)
+    log.warn('[Briefing] LLM failed:', (err as Error).message)
+    return makeEmpty(`LLM 失败: ${(err as Error).message}`)
   }
 }
 
