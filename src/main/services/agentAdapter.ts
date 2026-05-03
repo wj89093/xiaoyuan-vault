@@ -15,7 +15,7 @@
 import { watch } from 'fs'
 import { readFile, writeFile, unlink, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
-import { join } from 'path'
+import { basename, join } from 'path'
 import log from 'electron-log/main'
 import { enrichFile } from './enrich'
 import { searchFiles } from './database'
@@ -33,7 +33,9 @@ export async function startAgentAdapter(): Promise<void> {
   watch(COMMANDS_DIR, { persistent: false }, (event, filename) => {
     void (async () => {
       if (event !== 'rename' || !filename?.endsWith('.json')) return
-      const filePath = join(COMMANDS_DIR, filename)
+      const safeName = basename(filename)
+      if (safeName !== filename) return  // path traversal guard
+      const filePath = join(COMMANDS_DIR, safeName)
       // Wait for file to be fully written
       await new Promise(r => setTimeout(r, 200))
       await processCommand(filePath)
@@ -49,7 +51,7 @@ async function processCommand(filePath: string): Promise<void> {
     if (!existsSync(filePath)) return
     const raw = await readFile(filePath, 'utf-8')
     cmd = JSON.parse(raw) as Record<string, unknown>
-  } catch {
+  } catch (e) {
     log.error('[AgentAdapter] failed to parse command file:', filePath, e)
     return
   }
