@@ -385,7 +385,7 @@ export async function loadSessions(): Promise<ChatSession[]> {
     const sessionsFile = join(dir, SESSIONS_FILE)
     if (!existsSync(sessionsFile)) return []
     const raw = await readFile(sessionsFile, 'utf-8')
-    return JSON.parse(raw)
+    return JSON.parse(raw) as Record<string, unknown>
   } catch {
     return []
   }
@@ -437,7 +437,7 @@ export async function loadMessages(sessionId: string): Promise<ChatMessage[]> {
     const msgFile = join(dir, `${sessionId}.json`)
     if (!existsSync(msgFile)) return []
     const raw = await readFile(msgFile, 'utf-8')
-    return JSON.parse(raw)
+    return JSON.parse(raw) as Record<string, unknown>
   } catch {
     return []
   }

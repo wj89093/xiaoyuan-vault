@@ -79,7 +79,7 @@ export async function loadGraph(): Promise<GraphData | null> {
     const graphPath = await getGraphPath()
     if (!existsSync(graphPath)) return null
     const raw = await readFile(graphPath, 'utf-8')
-    return JSON.parse(raw)
+    return JSON.parse(raw) as Record<string, unknown>
   } catch {
     return null
   }

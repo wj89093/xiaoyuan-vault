@@ -40,7 +40,7 @@ export async function readAutoAISettings(): Promise<AutoAISettings | null> {
   const p = getAutoAISettingsPath()
   if (!p || !existsSync(p)) return null
   try {
-    return JSON.parse(await readFile(p, 'utf-8'))
+    return JSON.parse(await readFile(p, 'utf-8') as Record<string, unknown>)
   } catch {
     return null
   }

@@ -52,13 +52,14 @@ ${preview}
 }`
 
   try {
-    const result = await callAI('resolve', {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result: unknown = await callAI('resolve', {
       prompt: userPrompt,
       systemPrompt: '你是晓园 Vault 的知识库路由器。只返回 JSON。',
     })
     return parseResolverResult(result as string, contentTitle)
   } catch (err) {
-    log.error('[Resolver] failed:', (err as any).message)
+    log.error('[Resolver] failed:', (err as Error).message)
     return makeDefault()
   }
 }
@@ -68,20 +69,20 @@ function parseResolverResult(raw: string, fallbackTitle?: string): ResolverResul
   if (!jsonMatch) return makeDefault(fallbackTitle)
 
   try {
-    const p = JSON.parse(jsonMatch[0])
+    const p = JSON.parse(jsonMatch[0]) as Record<string, unknown>
     return {
-      intent: ['enrich', 'query', 'maintain'].includes(p.intent) ? p.intent : 'enrich',
-      type: VALID_TYPES.includes(p.type) ? p.type : 'collection',
-      confidence: ['high', 'medium', 'low'].includes(p.confidence) ? p.confidence : 'medium',
-      reason: p.reason ?? p.summary ?? '',
-      suggestedFolder: p.suggestedFolder ?? '0-收集',
+      intent: ['enrich', 'query', 'maintain'].includes(p.intent as string) ? p.intent as string : 'enrich',
+      type: VALID_TYPES.includes(p.type as string) ? p.type as string : 'collection',
+      confidence: ['high', 'medium', 'low'].includes(p.confidence as string) ? p.confidence as string : 'medium',
+      reason: String(p.reason as string || p.summary as string || ''),
+      suggestedFolder: String(p.suggestedFolder as string | undefined ?? '0-收集'),
       needsUserConfirm: p.needsUserConfirm !== false,
-      extractedNames: Array.isArray(p.extractedNames) ? p.extractedNames : [],
-      extractedCompanies: Array.isArray(p.extractedCompanies) ? p.extractedCompanies : [],
-      entities: Array.isArray(p.entities) ? p.entities : [],
-      updates: Array.isArray(p.updates) ? p.updates : [],
-      summary: p.summary ?? '',
-      tags: Array.isArray(p.tags) ? p.tags : [],
+      extractedNames: (p.extractedNames as unknown[]) as string[],
+      extractedCompanies: (p.extractedCompanies as unknown[]) as string[],
+      entities: (p.entities as unknown[]) as { name: string; entityType: string; action: "create" | "update" | "link" }[],
+      updates: (p.updates as unknown[] | undefined) as { name: string; entityType: string; action: "create" | "update" | "link"; }[],
+      summary: String(p.summary as string || ''),
+      tags: (p.tags as unknown[]) as string[],
     }
   } catch {
     return makeDefault(fallbackTitle)

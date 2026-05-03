@@ -445,7 +445,7 @@ document.getElementById('minimizeBtn').addEventListener('click', function() { wi
 
     if (raw?.startsWith('SAVE:')) {
       try {
-        const data = JSON.parse(raw.replace('SAVE:', ''))
+        const data = JSON.parse(raw.replace('SAVE:', '') as Record<string, unknown>)
         const allPaths = (data.files ?? []).map((f: any) => f.path).filter(Boolean)
         if (allPaths.length > 0) {
           const { rename } = await import('fs/promises')

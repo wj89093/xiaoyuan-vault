@@ -146,7 +146,7 @@ export async function loadFolderMap(): Promise<Record<string, string>> {
     if (!existsSync(dir)) await mkdir(dir, { recursive: true })
     const mapPath = joinPath(dir, 'folder-map.json')
     if (existsSync(mapPath)) {
-      _folderMap = JSON.parse(await readFile(mapPath, 'utf-8'))
+      _folderMap = JSON.parse(await readFile(mapPath, 'utf-8') as Record<string, unknown>)
       return _folderMap!
     }
   } catch {}
