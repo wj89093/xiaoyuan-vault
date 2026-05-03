@@ -164,3 +164,8 @@ export function registerFileHandlers(): void {
     return results
   })
 }
+
+ipcMain.handle('file:revealInFinder', async (_, filePath: string) => {
+  const { shell } = await import('electron')
+  shell.showItemInFolder(filePath)
+})

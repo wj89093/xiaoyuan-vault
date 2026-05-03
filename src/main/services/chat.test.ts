@@ -43,17 +43,17 @@ describe('Session title truncation', () => {
   })
 })
 
+import { createHash } from 'crypto'
+
 describe('Session id generation', () => {
   it('sha256 hex should be 64 chars', () => {
-    const crypto = require('crypto')
-    const hash = crypto.createHash('sha256').update('test').digest('hex')
+    const hash = createHash('sha256').update('test').digest('hex')
     expect(hash.length).toBe(64)
   })
 
   it('should generate unique ids', () => {
-    const crypto = require('crypto')
-    const id1 = crypto.createHash('sha256').update(Date.now().toString()).digest('hex')
-    const id2 = crypto.createHash('sha256').update((Date.now() + 1).toString()).digest('hex')
+    const id1 = createHash('sha256').update(Date.now().toString()).digest('hex')
+    const id2 = createHash('sha256').update((Date.now() + 1).toString()).digest('hex')
     expect(id1).not.toBe(id2)
   })
 })

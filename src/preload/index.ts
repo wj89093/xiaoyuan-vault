@@ -78,6 +78,8 @@ const api = {
     ipcRenderer.invoke('file:save', filePath, content),
   createFolder: (folderPath: string): Promise<boolean> =>
     ipcRenderer.invoke('folder:create', folderPath),
+  revealInFinder: (filePath: string): Promise<void> =>
+    ipcRenderer.invoke('file:revealInFinder', filePath),
   renameFile: (oldPath: string, newName: string): Promise<boolean> =>
     ipcRenderer.invoke('file:rename', oldPath, newName),
   deleteFile: (filePath: string): Promise<boolean> =>

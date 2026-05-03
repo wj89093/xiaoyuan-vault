@@ -204,7 +204,27 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
 
   }
 
+  const handleOpen = (file: FileInfo) => {
 
+    setContextMenu(null)
+
+    onSelect?.(file.path)
+
+  }
+
+  const handleRevealInFinder = (file: FileInfo) => {
+    setContextMenu(null)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    window.api.revealInFinder(file.path)
+  }
+
+  const handleCopyPath = async (file: FileInfo) => {
+
+    setContextMenu(null)
+
+    await navigator.clipboard.writeText(file.path)
+
+  }
 
   const renderFile = (file: FileInfo, depth: number = 0): JSX.Element | null => {
 
@@ -406,11 +426,33 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
 
           )}
 
+          <div className="context-menu-item" onClick={() => { void handleOpen(contextMenu.file) }}>
+
+            <FileText size={14} /> 打开
+
+          </div>
+
+          <div className="context-menu-separator" />
+
           <div className="context-menu-item" onClick={() => { void handleRename(contextMenu.file) }}>
 
             <Pencil size={14} /> 重命名
 
           </div>
+
+          <div className="context-menu-item" onClick={() => { void handleCopyPath(contextMenu.file) }}>
+
+            <FileText size={14} /> 复制路径
+
+          </div>
+
+          <div className="context-menu-item" onClick={() => { void handleRevealInFinder(contextMenu.file) }}>
+
+            <FileText size={14} /> 在 Finder 中显示
+
+          </div>
+
+          <div className="context-menu-separator" />
 
           <div className="context-menu-item danger" onClick={() => { void handleDelete(contextMenu.file) }}>
 
@@ -455,3 +497,5 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
   )
 
 }
+
+// APPENDIX: Extended context menu (place before closing of main component's return)
