@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, react-hooks/rules-of-hooks */
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 import React from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Editor } from './components/Editor'
@@ -13,6 +13,7 @@ import { ImportApp } from './ImportApp'
 import { useVaultState } from './hooks/useVaultState'
 import { useChatSession } from './hooks/useChatSession'
 import { useAIInsert } from './hooks/useAIInsert'
+import { useUIState } from './hooks/useUIState'
 
 function App(): JSX.Element {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
@@ -31,11 +32,15 @@ function App(): JSX.Element {
     handleSaveAIMessage,
   } = useVaultState()
 
-  const [showQuickSwitch, setShowQuickSwitch] = useState(false)
-  const [showGraph, setShowGraph] = useState(false)
-  const [showShortcuts, setShowShortcuts] = useState(false)
-  const [showVaultMenu, setShowVaultMenu] = useState(false)
   const { toasts, dismiss: dismissToast } = useToasts()
+
+  // UI state (quick switch, graph, shortcuts, vault menu)
+  const {
+    showQuickSwitch, setShowQuickSwitch,
+    showGraph, setShowGraph,
+    showShortcuts, setShowShortcuts,
+    showVaultMenu, setShowVaultMenu,
+  } = useUIState()
 
   // Chat state managed by useChatSession hook
   const {
