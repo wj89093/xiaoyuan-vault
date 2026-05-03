@@ -198,8 +198,8 @@ async function rewriteQuery(
     const cleaned = String(rewritten ?? question).trim().slice(0, 50)
     log.info(`[RAG] query rewrite: "${question.slice(0, 40)}" → "${cleaned}"`)
     return cleaned ?? question
-  } catch {
-    // Fall back to original question
+  } catch (err) {
+    log.warn('[RAG] rewriteQuery failed, using original:', err)
     return question
   }
 }
@@ -268,8 +268,8 @@ async function fetchPageContents(
       if (title.toLowerCase().includes(keywords[0]?.toLowerCase() || '')) score += 0.5
 
       results.push({ file: filePath, title, snippet, score })
-    } catch {
-      // Skip inaccessible files
+    } catch (err) {
+      log.warn('[RAG] fetchPage loop:', err)
     }
   }
 
@@ -389,7 +389,8 @@ export async function loadSessions(): Promise<ChatSession[]> {
     if (!existsSync(sessionsFile)) return []
     const raw = await readFile(sessionsFile, 'utf-8')
     return JSON.parse(raw) as Record<string, unknown>
-  } catch {
+  } catch (err) {
+    log.warn('[chat] loadSessions:', err)
     return []
   }
 }
@@ -431,7 +432,9 @@ export async function deleteSession(sessionId: string): Promise<void> {
       const { unlink } = await import('fs/promises')
       await unlink(msgFile)
     }
-  } catch {}
+  } catch (err) {
+    log.warn('[chat] deleteMsg:', err)
+  }
 }
 
 export async function loadMessages(sessionId: string): Promise<ChatMessage[]> {
@@ -441,7 +444,8 @@ export async function loadMessages(sessionId: string): Promise<ChatMessage[]> {
     if (!existsSync(msgFile)) return []
     const raw = await readFile(msgFile, 'utf-8')
     return JSON.parse(raw) as Record<string, unknown>
-  } catch {
+  } catch (err) {
+    log.warn('[chat] loadMessages:', err)
     return []
   }
 }
