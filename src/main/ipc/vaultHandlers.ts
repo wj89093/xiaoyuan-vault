@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
-import { ipcMain, dialog, type BrowserWindow } from 'electron'
+import { ipcMain, dialog, app, type BrowserWindow } from 'electron'
 import { getMainWindowRef } from '../mainWindowRef'
 import { mkdir, writeFile, readFile } from 'fs/promises'
 import { join } from 'path'
