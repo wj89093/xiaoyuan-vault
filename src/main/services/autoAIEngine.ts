@@ -6,7 +6,7 @@ import { join } from 'path'
 import { readFile, writeFile, appendFile, readdir, stat, mkdir } from 'fs/promises'
 import { parseFrontmatter, applyFrontmatter } from './frontmatter'
 import { runMaintenance } from './maintain'
-import { basename } from 'path'
+import { basename, dirname } from 'path'
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/explicit-function-return-type */
 
@@ -153,6 +153,14 @@ async function runAutoAI(): Promise<void> {
       log.info(`[AutoAI] maintenance: ${report.summary}`)
     } catch (err) {
       log.error('[AutoAI] maintenance failed:', (err as any).message)
+    }
+
+    // Weekly work log
+    try {
+      const allFolders: string[] = Array.from(new Set(files.map((f: string) => dirname(f)))
+      await appendWeeklyLog(vaultPath, { processed, skipped, folders: allFolders })
+    } catch (err) {
+      log.warn('[AutoAI] weekly log failed:', (err as Error).message)
     }
 
     log.info(`[AutoAI] completed: ${processed} processed, ${skipped} skipped`)
@@ -476,4 +484,74 @@ export function assessContentWorth(rawContent: string): AssessResult {
     reason: score >= 0.4 ? 'content has knowledge value' : `low-value (score: ${(score * 100).toFixed(0)}%)`,
     contentType,
   }
+}
+
+// ─── Weekly Work Log ─────────────────────────────────────────────────────────
+
+const WEEK_DIR = '工作日志'
+
+function getWeekId(): string {
+  const now = new Date()
+  const startOfYear = new Date(now.getFullYear(), 0, 1)
+  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
+  const week = Math.ceil((days + startOfYear.getDay() + 1) / 7)
+  return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`
+}
+
+function getWeekDateRange(): string {
+  const now = new Date()
+  const day = now.getDay()
+  const diffToMonday = (day === 0 ? 6 : day - 1)
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - diffToMonday)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const fmt = (d: Date) => `${d.getMonth()+1}月${d.getDate()}日`
+  return `${fmt(monday)}-${fmt(sunday)}`
+}
+
+// Track last week id to avoid duplicate weekly logs
+let lastWeekId = ''
+
+export async function appendWeeklyLog(vaultPath: string, stats: { processed: number; skipped: number; folders: string[] }): Promise<void> {
+  const weekId = getWeekId()
+  if (weekId === lastWeekId) return  // Already logged this week
+  lastWeekId = weekId
+
+  const weekDir = join(vaultPath, WEEK_DIR)
+  await mkdir(weekDir, { recursive: true })
+
+  const weekFile = join(weekDir, `周报-${weekId}.md`)
+  const range = getWeekDateRange()
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 16)
+
+  // Build summary content
+  const lines: string[] = [
+    `## 第${weekId}周工作汇总（${range}）`,
+    '',
+    `> 生成时间：${now}`,
+    '> AutoAI 自动汇总',
+    '',
+    '### 📊 本周处理',
+    `- 处理文件：${stats.processed} 个`,
+    `- 跳过文件：${stats.skipped} 个`,
+    '',
+  ]
+  if (stats.folders.length > 0) {
+    lines.push('### 📁 涉及目录')
+    for (const folder of stats.folders) {
+      lines.push(`- ${folder}`)
+    }
+    lines.push('')
+  }
+  lines.push('### 💡 下周计划')
+  lines.push('- [ ] 继续跟进本周未处理文件')
+  lines.push('- [ ] 检查新线索')
+  lines.push('---', '')
+  const content = lines.join('\n')
+  // Append to weekly file (create if not exists)
+  const existing = existsSync(weekFile) ? await readFile(weekFile, 'utf-8') : ''
+  const updated = existing + content
+  await writeFile(weekFile, updated, 'utf-8')
+  log.info(`[WeeklyLog] appended to ${weekFile}`)
 }
