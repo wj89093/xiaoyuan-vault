@@ -14,6 +14,7 @@ import { useVaultState } from './hooks/useVaultState'
 import { useChatSession } from './hooks/useChatSession'
 import { useAIInsert } from './hooks/useAIInsert'
 import { useUIState } from './hooks/useUIState'
+import { useKeyboardShortcuts, useGlobalShortcuts } from './hooks/useKeyboardShortcuts'
 
 function App(): JSX.Element {
   const hash = typeof window !== 'undefined' ? window.location.hash : ''
@@ -61,54 +62,11 @@ function App(): JSX.Element {
     })
   }, [setFiles])
 
-  // Cmd+P Quick Switch + Cmd+F search + Cmd+D dark mode
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-        e.preventDefault()
-        if (vaultPath) setShowQuickSwitch(v => !v)
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f' && vaultPath) {
-        if (!(document.activeElement?.closest('.cm-editor') || document.activeElement?.closest('.cm-content'))) {
-          ;(document.querySelector('.search-input') as HTMLInputElement)?.focus()
-        }
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
-        e.preventDefault()
-        const html = document.documentElement
-        const current = html.getAttribute('data-theme')
-        const next = current === 'dark' ? '' : 'dark'
-        if (next) html.setAttribute('data-theme', next)
-        else html.removeAttribute('data-theme')
-        localStorage.setItem('theme', next || 'light')
-      }
-      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
-        setShowShortcuts(v => !v)
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [vaultPath])
+  // Keyboard shortcuts (Cmd+P/F/D, ?)
+  useKeyboardShortcuts(vaultPath, setShowQuickSwitch, setShowShortcuts, showQuickSwitch, showShortcuts)
 
-  // Restore theme on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('theme')
-    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
-  }, [])
-
-  // Global shortcut Cmd+Shift+F → Quick Switch
-  useEffect(() => {
-    return window.api.onQuickSwitch?.(() => {
-      if (vaultPath) setShowQuickSwitch(true)
-    })
-  }, [vaultPath])
-
-  // Global shortcut Cmd+Shift+I → Import panel
-  useEffect(() => {
-    return window.api.onGotoImport?.(() => {
-      window.location.hash = '#/import'
-    })
-  }, [])
+  // Global shortcuts (Cmd+Shift+F → Quick Switch, Cmd+Shift+I → Import)
+  useGlobalShortcuts(vaultPath, setShowQuickSwitch)
 
   // Display files (search results or all files)
   const displayFiles = showSearchResults ? searchResults : files
