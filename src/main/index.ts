@@ -685,13 +685,13 @@ AI 自动维护反向链接。
     return queryVault(question)
   })
 
-  ipcMain.handle('chat:ask', async (_, question: string, history: any[]) {
+  ipcMain.handle('chat:ask', async (_, question: string, history: any[]) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return askQuestion(question, history || [])
   })
 
   // Streaming RAG Chat — streams answer chunks via IPC events
-  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) {
+  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const webContents = event.sender
     const abortCtrl = new AbortController()
