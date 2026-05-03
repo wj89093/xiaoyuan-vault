@@ -88,13 +88,15 @@ async function convertPdf(filePath: string): Promise<string> {
 
 async function convertDocx(filePath: string): Promise<string> {
   log.info(`[JS] converting DOCX: ${filePath}`)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const mammoth = await import('mammoth')
-  const result = await mammoth.convertToMarkdown({ path: filePath })
+  const result = await mammoth.default.convertToMarkdown({ path: filePath })
   return result.value
 }
 
 async function convertXlsx(filePath: string): Promise<string> {
   log.info(`[JS] converting XLSX: ${filePath}`)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const XLSX = await import('xlsx')
   const workbook = XLSX.default.readFile(filePath)
   const lines: string[] = []
@@ -102,12 +104,12 @@ async function convertXlsx(filePath: string): Promise<string> {
   for (const sheetName of workbook.SheetNames) {
     lines.push(`## ${sheetName}`)
     const sheet = workbook.Sheets[sheetName]
-    XLSX.default.utils.decode_range(sheet['!ref'] ?? 'A1')
+    XLSX.default.utils.decode_range(sheet['!ref'] as string ?? 'A1')
     const data = XLSX.default.utils.sheet_to_json(sheet, { header: 1, defval: '' })
-    for (const row of data as any[][]) {
-      const filtered = row.filter((c: any) => c !== '')
+    for (const row of data as string[][]) {
+      const filtered = row.filter((c: string) => c !== '')
       if (filtered.length > 0) {
-        lines.push(filtered.map((c: any) => `| ${String(c)} `).join('') + '|')
+        lines.push(filtered.map((c: string) => `| ${String(c)} `).join('') + '|')
       }
     }
     lines.push('')
@@ -117,6 +119,7 @@ async function convertXlsx(filePath: string): Promise<string> {
 }
 
 async function convertPptx(filePath: string): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const AdmZip = await import('adm-zip')
   const zip = new AdmZip.default(filePath)
   const slideEntries = zip.getEntries().filter(e => e.entryName.match(/ppt\/slides\/slide\d+\.xml$/))
@@ -157,6 +160,7 @@ async function convertText(filePath: string): Promise<string> {
 
 async function convertZip(filePath: string): Promise<string> {
   log.info(`[JS] extracting ZIP: ${filePath}`)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const AdmZip = await import('adm-zip')
   const zip = new AdmZip.default(filePath)
   const entries = zip.getEntries().filter(e => !e.isDirectory)
