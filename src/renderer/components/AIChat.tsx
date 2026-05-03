@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import React from 'react'
 import log from 'electron-log/renderer'
-import { Send, Bot, User, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, MessageCircle } from 'lucide-react'
+import { Send, Bot, User, Plus, BookOpen, ExternalLink, ChevronLeft, Loader, MessageCircle, Copy, Quote } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatMessage, ChatSession } from '../../shared/chat'
@@ -180,7 +180,7 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
             )}
 
             {messages.map((msg) => (
-              <div key={msg.id} className={`ai-chat-message ${msg.role}`}>
+              <div key={msg.id} className={`ai-chat-message ${msg.role}`} onContextMenu={(e) => { e.preventDefault(); /* eslint-disable */ setChatContextMenu({ x: e.clientX, y: e.clientY, messageId: msg.id, text: msg.content }) }}>
                 <div className="ai-chat-avatar">
                   {msg.role === 'user' ? <User size={13} /> : <Bot size={13} />}
                 </div>
@@ -327,6 +327,22 @@ export function AIChat({ messages, onSend, loading, onLoadSession, onSaveToVault
           </div>
         </>
       )}
+      {/* Context Menu for messages */}
+      {chatContextMenu ? (
+        <div
+          className="context-menu"
+          style={{ left: chatContextMenu.x, top: chatContextMenu.y }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="context-menu-item" onClick={() => { setChatContextMenu(null); void navigator.clipboard.writeText(chatContextMenu.text) }}>
+            <Copy size={14} /> 复制内容
+          </div>
+          <div className="context-menu-item" onClick={() => { setChatContextMenu(null); void onInsertToDoc?.(chatContextMenu.text) }}>
+            <Quote size={14} /> 插入文档
+          </div>
+        </div>
+      ) : null}
+
     </div>
   )
 }

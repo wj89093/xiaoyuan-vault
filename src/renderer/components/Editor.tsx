@@ -11,7 +11,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { parseFrontmatter } from '../../shared/frontmatter'
 
-import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil, FileText } from 'lucide-react'
+import { BookOpen, Link as LinkIcon, Hash, AlignLeft, Pencil, FileText, Copy, Scissors, Clipboard, Undo2, Redo2 } from 'lucide-react'
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access, react-hooks/exhaustive-deps, react-hooks/immutability, react-hooks/refs, react-hooks/set-state-in-effect */
 
 interface EditorProps {
@@ -105,11 +105,18 @@ function PDFPreview({ dataUrl }: { dataUrl: string }) {
 export function Editor({ value, onChange, nativePreview, isNativePreview = false, onReference }: EditorProps): JSX.Element {
   const [mode, setMode] = useState<Mode>('reading')
   const [splitView, setSplitView] = useState(false)
+  const [editorContextMenu, setEditorContextMenu] = useState<{ x: number; y: number } | null>(null)
   const editorViewRef = useRef<EditorView | null>(null)
   const [activeSheet, setActiveSheet] = useState(0)
 
   const handleCreate = useCallback((view: EditorView) => {
     editorViewRef.current = view
+  }, [])
+
+  useEffect(() => {
+    const handler = () => setEditorContextMenu(null)
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
   }, [])
 
   const wordCount = value.replace(/\s/g, '').length
@@ -310,6 +317,7 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
               onChange={onChange}
               onCreateEditor={handleCreate}
               theme="light"
+              onContextMenu={(e: React.MouseEvent) => { if (e.clientX && e.clientY) setEditorContextMenu({ x: e.clientX, y: e.clientY }) }}
               basicSetup={{
                 lineNumbers: false,
                 foldGutter: false,
@@ -344,6 +352,7 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
           onChange={onChange}
           onCreateEditor={handleCreate}
           theme="light"
+          onContextMenu={(e: React.MouseEvent) => { if (e.clientX && e.clientY) setEditorContextMenu({ x: e.clientX, y: e.clientY }) }}
           basicSetup={{
             lineNumbers: false,
             foldGutter: false,
@@ -361,6 +370,35 @@ export function Editor({ value, onChange, nativePreview, isNativePreview = false
         <span>约 {readMinutes} 分钟</span>
         {mode === 'reading' && <span style={{ color: 'var(--color-accent)' }}>阅读模式</span>}
       </div>
+
+      {/* Context Menu */}
+      {editorContextMenu && (
+        <div
+          className="context-menu"
+          style={{ left: editorContextMenu.x, top: editorContextMenu.y }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('selectAll') }}>
+            <Undo2 size={14} /> 全选
+          </div>
+          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('undo') }}>
+            <Undo2 size={14} /> 撤销
+          </div>
+          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('redo') }}>
+            <Redo2 size={14} /> 重做
+          </div>
+          <div className="context-menu-separator" />
+          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('cut') }}>
+            <Scissors size={14} /> 剪切
+          </div>
+          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('copy') }}>
+            <Copy size={14} /> 复制
+          </div>
+          <div className="context-menu-item" onClick={() => { setEditorContextMenu(null); document.execCommand('paste') }}>
+            <Clipboard size={14} /> 粘贴
+          </div>
+        </div>
+      )}
     </div>
   )
 }
