@@ -82,8 +82,16 @@ const api = {
     ipcRenderer.invoke('file:revealInFinder', filePath),
   renameFile: (oldPath: string, newName: string): Promise<boolean> =>
     ipcRenderer.invoke('file:rename', oldPath, newName),
-  deleteFile: (filePath: string): Promise<boolean> =>
-    ipcRenderer.invoke('file:delete', filePath),
+  deleteFile: (vaultPath: string, filePath: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:delete', vaultPath, filePath),
+  trashList: (vaultPath: string): Promise<Array<{ originalPath: string; trashPath: string; deletedAt: number; name: string }>> =>
+    ipcRenderer.invoke('file:trashList', vaultPath),
+  trashRestore: (vaultPath: string, originalPath: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:trashRestore', vaultPath, originalPath),
+  trashDelete: (vaultPath: string, originalPath: string): Promise<boolean> =>
+    ipcRenderer.invoke('file:trashDelete', vaultPath, originalPath),
+  trashClean: (vaultPath: string): Promise<number> =>
+    ipcRenderer.invoke('file:trashClean', vaultPath),
   deleteFolder: (folderPath: string): Promise<boolean> =>
     ipcRenderer.invoke('folder:delete', folderPath),
   moveFile: (filePath: string, newParentDir: string): Promise<boolean> =>

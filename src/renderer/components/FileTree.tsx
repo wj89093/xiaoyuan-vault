@@ -178,7 +178,7 @@ export function FileTree({ files, selectedFile, onSelect, onRefresh, onNewFile, 
 
     const result = file.isDirectory
       ? await window.api.deleteFolder(file.path)
-      : await window.api.deleteFile(file.path)
+      : await window.api.deleteFile(vaultPath, file.path)
 
     log.info('[FileTree] delete result:', result)
 
