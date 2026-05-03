@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import Store from 'electron-store'
 
+
 const store = new Store()
 
 // ─── Auth Token Store ───────────────────────────────────────────
@@ -436,7 +437,7 @@ AI 自动维护反向链接。
 
   // Render non-markdown files as HTML for native preview
   ipcMain.handle('file:render', async (_, filePath: string) => {
-    const { ext } = require('path')
+    const { ext } = await import('path')
     const suffix = ext(filePath).toLowerCase()
 
     if (suffix === '.pdf') {
@@ -684,12 +685,14 @@ AI 自动维护反向链接。
     return queryVault(question)
   })
 
-  ipcMain.handle('chat:ask', async (_, question: string, history: any[]) => {
+  ipcMain.handle('chat:ask', async (_, question: string, history: any[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return askQuestion(question, history || [])
   })
 
   // Streaming RAG Chat — streams answer chunks via IPC events
-  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) => {
+  ipcMain.handle('chat:askStream', async (event, question: string, history: any[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const webContents = event.sender
     const abortCtrl = new AbortController()
 

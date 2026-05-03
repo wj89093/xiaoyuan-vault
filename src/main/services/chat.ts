@@ -8,6 +8,7 @@ import log from 'electron-log/main'
 
 // ============ Types ============
 
+
 export interface ChatMessage {
   id?: number
   session_id?: string
