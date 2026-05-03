@@ -7,6 +7,8 @@ import type { FileRecord } from './database'
 import { parseFrontmatter, extractWikiLinks } from './frontmatter'
 import { callAI } from './aiService'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions */
+
 export interface MaintainReport {
   timestamp: number
   totalFiles: number

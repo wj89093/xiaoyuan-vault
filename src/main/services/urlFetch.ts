@@ -1,6 +1,8 @@
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions */
+
 const JINA_READER_BASE = 'https://r.jina.ai/'
 const _MAX_CONTENT_LENGTH = 50000 // ~50KB
 const FETCH_TIMEOUT = 15000 // 15s

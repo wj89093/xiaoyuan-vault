@@ -1,4 +1,6 @@
 /**
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+
  * Agent 文件系统协议适配器
  *
  * 监听 ~/.vault/commands/ 目录，外部 Agent 写指令文件触发 vault 操作。

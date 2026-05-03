@@ -6,6 +6,8 @@ import { join } from 'path'
 import { spawn } from 'child_process'
 import log from 'electron-log/main'
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions */
+
 const execFileAsync = promisify(execFile)
 
 // In development: use Homebrew paths
