@@ -93,12 +93,12 @@ export async function streamQwenAI(
       log.info('[Qwen] stream aborted')
     } else {
       log.error('Qwen stream exception:', err)
-      onChunk(`网络错误: ${(err as any).message}`)
+      onChunk(`网络错误: ${(err as Error).message}`)
     }
   }
 }
 
-export async function callQwenAI(action: string, params: Record<string, any>): Promise<any> {
+export async function callQwenAI(action: string, params: Record<string, unknown>): Promise<any> {
   if (!QWEN_API_KEY) {
     log.warn('QWEN_API_KEY not set')
     return action === 'tags' ? [] : '请配置 QWEN_API_KEY'
@@ -110,21 +110,21 @@ export async function callQwenAI(action: string, params: Record<string, any>): P
   switch (action) {
     case 'classify':
       systemPrompt = `你是一个文档分类助手。根据文档内容，推荐最合适的文件夹。
-现有文件夹：${params.folders.join('、')}
+现有文件夹：${(params.folders as string[]).join('、')}
 只返回一个文件夹名称，不要解释。`
-      userPrompt = params.content.slice(0, 2000)
+      userPrompt = String(params.content ?? '').slice(0, 2000)
       break
 
     case 'tags':
       systemPrompt = `你是一个标签提取助手。从文档内容中提取 3-5 个关键词标签。
 只返回标签列表，用逗号分隔，不要解释。`
-      userPrompt = params.content.slice(0, 2000)
+      userPrompt = String(params.content ?? '').slice(0, 2000)
       break
 
     case 'summary':
       systemPrompt = `你是一个摘要生成助手。为文档生成简短的摘要（100字以内）。
 只返回摘要内容，不要有其他文字。`
-      userPrompt = params.content.slice(0, 4000)
+      userPrompt = String(params.content ?? '').slice(0, 4000)
       break
 
     case 'reason':
