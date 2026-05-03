@@ -38,7 +38,7 @@ export function parseFrontmatter(content: string): { frontmatter: Frontmatter; c
       const [key, ...vals] = line.split(':')
       if (key && vals.length) result[key.trim()] = vals.join(':').trim()
     })
-    return { frontmatter: result as Frontmatter, content: content.slice(match[0].length) }
+    return { frontmatter: result, content: content.slice(match[0].length) }
   } catch {
     return { frontmatter: {}, content }
   }
