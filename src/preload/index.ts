@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ChatMessage, ChatSession, AskResult } from '../../shared/chat'
+import type { ChatMessage, ChatSession, AskResult, ImportFileResult } from '../../shared/chat'
 
 export type FileInfo = {
   path: string
@@ -39,7 +39,7 @@ const api = {
   createVault: (): Promise<string | null> => ipcRenderer.invoke('vault:create'),
   getLastVault: (): Promise<string | null> => ipcRenderer.invoke('vault:getLast'),
   clearLastVault: (): Promise<boolean> => ipcRenderer.invoke('vault:clear'),
-  importFiles: (vaultPath: string, filePaths: string[]): Promise<any[]> =>
+  importFiles: (vaultPath: string, filePaths: string[]): Promise<ImportFileResult[]> =>
     ipcRenderer.invoke('file:import', vaultPath, filePaths),
   fetchUrl: (url: string): Promise<{ title: string; content: string }> =>
     ipcRenderer.invoke('import:fetchUrl', url),
