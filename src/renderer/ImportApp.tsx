@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import type { ImportFileResult } from '../../shared/chat'
 import { Upload, Link, X, CheckCircle } from 'lucide-react'
 
 interface ImportResult {
@@ -48,7 +49,7 @@ export function ImportApp(): JSX.Element {
         return
       }
       const res = await (window.api).importFiles(vaultPath, filePaths)
-      setResults(prev => [...prev, ...res.map((r: any) => ({ type: 'file' as const, ...r }))])
+      setResults(prev => [...prev, ...res.map((r: ImportFileResult) => ({ type: 'file' as const, ...r }))])
     } catch (err) {
       setResults(prev => [...prev, { type: 'file' as const, name: '错误', path: '', status: 'error' as const, error: (err as any)?.message ?? '导入失败' }])
     } finally {
@@ -65,7 +66,7 @@ export function ImportApp(): JSX.Element {
     if (files.length === 0) return
 
     // Use webUtils.getPathForFile via preload (File.path is undefined under contextIsolation)
-    const paths = files.map(f => (window.api).getPathForFile?.(f)).filter(Boolean)
+    const paths = files.map(f => (window.api).getPathForFile?.(f)).filter(Boolean) as string[]
     if (paths.length > 0) {
       await handleFileImport(paths)
     }
@@ -77,7 +78,7 @@ export function ImportApp(): JSX.Element {
     input.multiple = true
     input.onchange = async () => {
       if (input.files) {
-        const paths = Array.from(input.files).map(f => (window.api).getPathForFile?.(f)).filter(Boolean)
+        const paths = Array.from(input.files).map(f => (window.api).getPathForFile?.(f)).filter(Boolean) as string[]
         if (paths.length > 0) {
           await handleFileImport(paths)
         }

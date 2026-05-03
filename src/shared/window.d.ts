@@ -1,3 +1,4 @@
+import type { ImportFileResult } from './chat'
 // Type declarations for window.api (mirrors preload/index.ts API surface)
 // This eliminates no-unsafe-* errors when calling window.api methods
 
@@ -114,7 +115,7 @@ export interface XyVaultAPI {
   createVault(): Promise<string | null>
   getLastVault(): Promise<string | null>
   clearLastVault(): Promise<boolean>
-  importFiles(vaultPath: string, filePaths: string[]): Promise<unknown[]>
+  importFiles(vaultPath: string, filePaths: string[]): Promise<ImportFileResult[]>
   fetchUrl(url: string): Promise<{ title: string; content: string }>
   getAutoAISettings(): Promise<AutoAISettings>
   saveAutoAISettings(settings: AutoAISettings): Promise<boolean>

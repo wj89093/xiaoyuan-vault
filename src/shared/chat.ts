@@ -27,3 +27,11 @@ export interface AskStreamChunk {
   chunk: string
   partial: string
 }
+export interface ImportFileResult {
+  name: string
+  path: string
+  status: 'ok' | 'error'
+  error?: string
+  converted?: boolean
+  mdPath?: string
+}
