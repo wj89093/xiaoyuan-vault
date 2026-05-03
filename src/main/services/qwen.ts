@@ -80,8 +80,8 @@ export async function streamQwenAI(
         if (data === '[DONE]') break
 
         try {
-          const parsed = JSON.parse(data)
-          const delta = parsed.choices?.[0]?.delta?.content
+          const parsed = JSON.parse(data) as Record<string, unknown>
+          const delta = (parsed.choices as unknown[] | undefined)?.[0] && (parsed.choices[0] as Record<string, unknown>)?.delta?.content
           if (delta) onChunk(delta)
         } catch {
           // skip malformed lines

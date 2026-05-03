@@ -3,6 +3,7 @@ import { readFile } from 'fs/promises'
 import { readFileSync } from 'fs'
 import { join as _join } from 'path'
 import { getVaultPath, listVaultFiles } from './database'
+import type { FileRecord } from './database'
 import { parseFrontmatter, extractWikiLinks } from './frontmatter'
 import { callAI } from './aiService'
 
@@ -38,7 +39,7 @@ export async function runMaintenance(): Promise<MaintainReport> {
   if (!vaultPath) return emptyReport('未打开知识库')
 
   const files = await listVaultFiles()
-  const mdFiles = flattenFiles(files).filter(f => !f.isDirectory && f.path.endsWith('.md'))
+  const mdFiles = flattenFiles(files).filter((f: FileRecord) => !f.isDirectory && f.path.endsWith('.md'))
 
   const orphanPages: MaintainReport['orphanPages'] = []
   const stalePages: MaintainReport['stalePages'] = []
@@ -96,7 +97,7 @@ export async function runMaintenance(): Promise<MaintainReport> {
     const detected = await detectContradictions(mdFiles)
     contradictions.push(...detected)
   } catch (err) {
-    log.warn('[Maintain] contradiction detection failed:', (err as any).message)
+    log.warn('[Maintain] contradiction detection failed:', String((err as unknown) instanceof Error ? (err as Error).message : err))
   }
 
   const summary = [
@@ -193,17 +194,19 @@ ${recentEntries}
 如果没有矛盾，返回：{"contradiction": null}`
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await callAI('resolve', { prompt })
     const match = String(result).match(/\{[\s\S]*\}/)
     if (!match) return null
-    const p = JSON.parse(match[0])
-    if (!p.contradiction) return null
+    const p = JSON.parse(match[0]) as Record<string, unknown>
+    const contradiction = p.contradiction as Record<string, string> | undefined
+    if (!contradiction) return null
     return {
       pagePath,
       pageTitle: title,
-      oldValue: p.contradiction.oldValue,
-      newValue: p.contradiction.newValue,
-      source: p.contradiction.source,
+      oldValue: contradiction.oldValue,
+      newValue: contradiction.newValue,
+      source: contradiction.source,
       severity: 'medium',
     }
   } catch {
@@ -213,7 +216,7 @@ ${recentEntries}
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-function flattenFiles(files: any[]): any[] {
+function flattenFiles(files: FileRecord[]): FileRecord[] {
   const result: unknown[] = []
   for (const f of files) {
     result.push(f)
