@@ -1,6 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { ChatMessage, ChatSession, AskResult, ImportFileResult } from '../../shared/chat'
 
+
+export interface AutoAISettings {
+  enabled: boolean
+  interval: number
+  onClassify: boolean
+  onTags: boolean
+  onSummary: boolean
+  provider?: string
+}
+
 export type FileInfo = {
   path: string
   name: string
@@ -43,8 +53,8 @@ const api = {
     ipcRenderer.invoke('file:import', vaultPath, filePaths),
   fetchUrl: (url: string): Promise<{ title: string; content: string }> =>
     ipcRenderer.invoke('import:fetchUrl', url),
-  getAutoAISettings: (): Promise<any> => ipcRenderer.invoke('autoAI:get'),
-  saveAutoAISettings: (settings: any): Promise<boolean> => ipcRenderer.invoke('autoAI:save', settings),
+  getAutoAISettings: (): Promise<AutoAISettings> => ipcRenderer.invoke('autoAI:get'),
+  saveAutoAISettings: (settings: AutoAISettings): Promise<boolean> => ipcRenderer.invoke('autoAI:save', settings),
   convertFile: (filePath: string): Promise<{success: boolean; markdown?: string; error?: string}> =>
     ipcRenderer.invoke('converter:convert', filePath),
   getSupportedFormats: (): Promise<string[]> =>
@@ -58,7 +68,7 @@ const api = {
   listFiles: (): Promise<FileInfo[]> => ipcRenderer.invoke('file:list'),
   searchFiles: (query: string): Promise<FileInfo[]> => ipcRenderer.invoke('file:search', query),
   readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('file:read', filePath),
-  renderFile: (filePath: string): Promise<{ type: string; [key: string]: any }> =>
+  renderFile: (filePath: string): Promise<{ type: string; [key: string]: unknown }> =>
     ipcRenderer.invoke('file:render', filePath),
   createFile: (filePath: string, title: string, type?: string): Promise<boolean> =>
     ipcRenderer.invoke('file:create', filePath, title, type),
@@ -98,17 +108,17 @@ const api = {
   chatAskStream: (question: string, history?: ChatMessage[]) =>
     ipcRenderer.invoke('chat:askStream', question, history ?? []),
   onChatStreamChunk: (callback: (data: { chunk: string; partial: string }) => void) => {
-    const sub = (_: any, data: any) => callback(data)
+    const sub = (_: unknown, data: { chunk: string; partial: string }) => callback(data)
     ipcRenderer.on('chat:streamChunk', sub)
     return () => ipcRenderer.removeListener('chat:streamChunk', sub)
   },
   onChatStreamDone: (callback: (data: AskResult) => void) => {
-    const sub = (_: any, data: any) => callback(data)
+    const sub = (_: unknown, data: AskResult) => callback(data)
     ipcRenderer.on('chat:streamDone', sub)
     return () => ipcRenderer.removeListener('chat:streamDone', sub)
   },
   onChatStreamError: (callback: (data: { error: string }) => void) => {
-    const sub = (_: any, data: any) => callback(data)
+    const sub = (_: unknown, data: { error: string }) => callback(data)
     ipcRenderer.on('chat:streamError', sub)
     return () => ipcRenderer.removeListener('chat:streamError', sub)
   },
@@ -145,7 +155,7 @@ const api = {
   authOpenLogin: (): Promise<string> =>
     ipcRenderer.invoke('auth:openLogin'),
   onAuthTokenReceived: (callback: (data: { token: string; email: string }) => void) => {
-    const sub = (_: any, data: any) => callback(data)
+    const sub = (_: unknown, data: { token: string; email: string }) => callback(data)
     ipcRenderer.on('auth:tokenReceived', sub)
     return () => ipcRenderer.removeListener('auth:tokenReceived', sub)
   },
